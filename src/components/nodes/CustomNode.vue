@@ -2,29 +2,67 @@
   <div
     :class="[
       'custom-node',
-      `node-type-${data.type}`,
+      `node-type-${nodeConfig.type}`,
       { 'is-selected': selected },
     ]"
+    :style="{ borderLeftColor: nodeConfig.color }"
   >
     <div class="custom-node-header">
-      <font-awesome-icon :icon="nodeIcon" class="mr-2" />
-      {{ data.label }}
+      <component
+        :is="nodeConfig.icon"
+        :size="28"
+        :color="nodeConfig.color"
+        :stroke-width="1.5"
+        class="flex-shrink-0"
+      />
+      <span class="ml-3 text-base">{{ nodeConfig.label }}</span>
+      <component
+        :is="statusConfig.icon"
+        :size="14"
+        :color="statusConfig.color"
+        :stroke-width="1.5"
+        class="absolute right-0 top-1/2 -translate-y-1/2"
+      />
     </div>
-    <div class="custom-node-content" v-if="data.content">
+
+    <div class="custom-node-content text-base" v-if="data.content">
       {{ data.content }}
     </div>
+
+    <div class="custom-node-description text-sm text-gray-500 mt-2">
+      {{ nodeConfig.description }}
+    </div>
+
     <div class="custom-node-ports">
       <Handle
-        v-if="!isOutput"
-        type="source"
-        position="bottom"
-        class="custom-handle"
-      />
-      <Handle
-        v-if="!isInput"
+        v-if="nodeConfig.allowedInputs > 0"
         type="target"
         position="top"
         class="custom-handle"
+        :style="{ backgroundColor: nodeConfig.color }"
+        id="top"
+      />
+      <Handle
+        type="source"
+        position="right"
+        class="custom-handle"
+        :style="{ backgroundColor: nodeConfig.color }"
+        id="right"
+      />
+      <Handle
+        v-if="nodeConfig.allowedOutputs > 0"
+        type="source"
+        position="bottom"
+        class="custom-handle"
+        :style="{ backgroundColor: nodeConfig.color }"
+        id="bottom"
+      />
+      <Handle
+        type="target"
+        position="left"
+        class="custom-handle"
+        :style="{ backgroundColor: nodeConfig.color }"
+        id="left"
       />
     </div>
   </div>
@@ -32,14 +70,8 @@
 
 <script setup>
 import { computed } from "vue";
-import { Handle } from "@vue-flow/core";
-import {
-  faFileUpload,
-  faGears,
-  faChartLine,
-  faTable,
-  faClipboardCheck,
-} from "@fortawesome/free-solid-svg-icons";
+import { Handle, Position } from "@vue-flow/core";
+import { getNodeConfig, getNodeStatus } from "../../config/nodeTypes";
 
 const props = defineProps({
   data: {
@@ -52,79 +84,69 @@ const props = defineProps({
   },
 });
 
-const nodeTypes = {
-  input: {
-    icon: faFileUpload,
-    color: "blue",
-  },
-  process: {
-    icon: faGears,
-    color: "green",
-  },
-  analysis: {
-    icon: faChartLine,
-    color: "purple",
-  },
-  visualization: {
-    icon: faTable,
-    color: "orange",
-  },
-  output: {
-    icon: faClipboardCheck,
-    color: "red",
-  },
-};
-
-const nodeIcon = computed(() => {
-  return nodeTypes[props.data.type]?.icon || faGears;
+const nodeConfig = computed(() => {
+  return getNodeConfig(props.data.type);
 });
 
-const isInput = computed(() => props.data.type === "input");
-const isOutput = computed(() => props.data.type === "output");
+const statusConfig = computed(() => {
+  return getNodeStatus(props.data.status || "IDLE");
+});
 </script>
 
 <style scoped>
 .custom-node {
-  @apply bg-white rounded-lg shadow-md p-4 min-w-[200px] border-l-4 transition-all duration-200;
+  @apply bg-white rounded-lg shadow-md p-4 min-w-[240px] border-l-4 transition-all duration-200;
 }
 
 .custom-node.is-selected {
   @apply shadow-lg ring-2 ring-blue-500 ring-opacity-50;
 }
 
-.node-type-input {
-  @apply border-l-blue-500;
-}
-
-.node-type-process {
-  @apply border-l-green-500;
-}
-
-.node-type-analysis {
-  @apply border-l-purple-500;
-}
-
-.node-type-visualization {
-  @apply border-l-orange-500;
-}
-
-.node-type-output {
-  @apply border-l-red-500;
-}
-
 .custom-node-header {
-  @apply text-lg font-semibold mb-2 flex items-center;
+  @apply text-lg font-semibold mb-3 flex items-center relative;
 }
 
 .custom-node-content {
-  @apply text-sm text-gray-600 mt-2;
+  @apply text-gray-600 mt-2;
 }
 
 .custom-handle {
-  @apply w-3 h-3 bg-gray-400 rounded-full border-2 border-white;
+  @apply w-3 h-3 rounded-full border-2 border-white transition-colors duration-200;
 }
 
 .custom-handle:hover {
-  @apply bg-blue-500;
+  @apply opacity-80;
+}
+
+.custom-node-ports {
+  @apply absolute left-0 right-0 -top-1.5 -bottom-1.5 pointer-events-none;
+}
+
+.custom-node-ports .custom-handle {
+  @apply pointer-events-auto;
+}
+
+.custom-node-ports :deep(.right) {
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.custom-node-ports :deep(.left) {
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.custom-node-ports :deep(.top) {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.custom-node-ports :deep(.bottom) {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>

@@ -8,22 +8,30 @@
         :min-zoom="0.2"
         :max-zoom="4"
         :node-types="nodeTypes"
+        :default-edge-options="defaultEdgeOptions"
         @nodeClick="onNodeClick"
+        @connect="onConnect"
+        @paneClick="onPaneClick"
       >
         <Background pattern-color="#aaa" gap="8" />
         <MiniMap />
         <Controls />
         <Panel position="top-right" class="bg-white p-2 rounded shadow-md">
-          <div class="flex space-x-2">
-            <button
-              v-for="type in availableNodeTypes"
+          <div class="flex flex-wrap gap-2">
+            <el-button
+              v-for="type in Object.values(NODE_TYPES)"
               :key="type.type"
-              class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              size="small"
               @click="() => onAddNode(type)"
             >
-              <font-awesome-icon :icon="type.icon" class="mr-2" />
+              <component
+                :is="type.icon"
+                :size="16"
+                :stroke-width="1.5"
+                class="mr-1"
+              />
               {{ type.label }}
-            </button>
+            </el-button>
           </div>
         </Panel>
       </VueFlow>
@@ -41,17 +49,11 @@
 
 <script setup>
 import { ref } from "vue";
-import { VueFlow, useVueFlow, Panel } from "@vue-flow/core";
+import { VueFlow, useVueFlow, Panel, Position } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
-import {
-  faFileUpload,
-  faGears,
-  faChartLine,
-  faTable,
-  faClipboardCheck,
-} from "@fortawesome/free-solid-svg-icons";
+import { NODE_TYPES } from "../config/nodeTypes";
 
 import CustomNode from "./nodes/CustomNode.vue";
 import NodeConfigPanel from "./NodeConfigPanel.vue";
@@ -66,58 +68,20 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
-// 可用的節點類型
-const availableNodeTypes = [
-  { type: "input", label: "數據輸入", icon: faFileUpload },
-  { type: "process", label: "數據處理", icon: faGears },
-  { type: "analysis", label: "數據分析", icon: faChartLine },
-  { type: "visualization", label: "數據可視化", icon: faTable },
-  { type: "output", label: "輸出結果", icon: faClipboardCheck },
-];
+// 設置默認的連接線選項
+const defaultEdgeOptions = {
+  type: "smoothstep",
+  animated: true,
+  style: {
+    strokeWidth: 2,
+  },
+  markerEnd: {
+    type: "arrowclosed",
+    color: "#b1b1b7",
+  },
+};
 
-const elements = ref([
-  {
-    id: "1",
-    type: "custom",
-    data: {
-      type: "input",
-      label: "數據輸入",
-      content: "上傳製程數據",
-    },
-    position: { x: 250, y: 0 },
-  },
-  {
-    id: "2",
-    type: "custom",
-    data: {
-      type: "analysis",
-      label: "數據分析",
-      content: "分析製程參數",
-    },
-    position: { x: 250, y: 150 },
-  },
-  {
-    id: "3",
-    type: "custom",
-    data: {
-      type: "output",
-      label: "分析結果",
-      content: "生成報告",
-    },
-    position: { x: 250, y: 300 },
-  },
-  {
-    id: "e1-2",
-    source: "1",
-    target: "2",
-  },
-  {
-    id: "e2-3",
-    source: "2",
-    target: "3",
-  },
-]);
-
+const elements = ref([]);
 const { project } = useVueFlow();
 const selectedNode = ref(null);
 
@@ -125,14 +89,19 @@ const onNodeClick = (event) => {
   selectedNode.value = event.node;
 };
 
+const onPaneClick = () => {
+  selectedNode.value = null;
+};
+
 const onAddNode = (type) => {
   const newNode = {
-    id: `${Date.now()}`,
+    id: `node_${Date.now()}`,
     type: "custom",
     data: {
       type: type.type,
-      label: type.label,
       content: `新的${type.label}`,
+      status: "IDLE",
+      config: { ...type.defaultConfig },
     },
     position: project({ x: 100, y: 100 }),
   };
@@ -144,6 +113,32 @@ const updateNode = (updatedNode) => {
   if (index !== -1) {
     elements.value[index] = updatedNode;
     elements.value = [...elements.value];
+  }
+};
+
+const onConnect = (connection) => {
+  // 檢查是否已經存在相同的連接
+  const existingConnection = elements.value.find(
+    (el) =>
+      el.source === connection.source &&
+      el.target === connection.target &&
+      el.sourceHandle === connection.sourceHandle &&
+      el.targetHandle === connection.targetHandle
+  );
+
+  if (!existingConnection) {
+    const newConnection = {
+      id: `edge_${connection.source}_${connection.sourceHandle}_${connection.target}_${connection.targetHandle}`,
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle,
+      targetHandle: connection.targetHandle,
+      type: "smoothstep",
+      animated: true,
+      style: defaultEdgeOptions.style,
+      markerEnd: defaultEdgeOptions.markerEnd,
+    };
+    elements.value = [...elements.value, newConnection];
   }
 };
 </script>
@@ -167,5 +162,37 @@ const updateNode = (updatedNode) => {
 
 .vue-flow__edge.selected {
   @apply stroke-blue-500;
+}
+
+:deep(.vue-flow__edge.animated) {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+:deep(.vue-flow__edge-path) {
+  stroke-width: 2;
+}
+
+:deep(.vue-flow__edge-text) {
+  font-size: 12px;
+}
+
+:deep(.vue-flow__edge-textbg) {
+  fill: white;
+}
+
+:deep(.vue-flow__edge-path) marker {
+  fill: #b1b1b7;
+  stroke: none;
+}
+
+:deep(.vue-flow__edge.selected .vue-flow__edge-path) marker {
+  fill: #3b82f6;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
 }
 </style>

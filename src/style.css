@@ -22,6 +22,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 全域字體大小設置 */
+.el-menu-item {
+  font-size: 16px !important;
+  height: 50px !important;
+  line-height: 50px !important;
+}
+
+.el-menu-item .lucide {
+  margin-right: 8px;
+  width: 24px;
+  height: 24px;
+}
+
 body {
   margin: 0;
   min-width: 320px;
