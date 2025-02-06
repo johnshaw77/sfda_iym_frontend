@@ -9,6 +9,8 @@
         :max-zoom="4"
         :node-types="nodeTypes"
         :default-edge-options="defaultEdgeOptions"
+        :auto-connect="true"
+        fit-view-on-init
         @nodeClick="onNodeClick"
         @connect="onConnect"
         @paneClick="onPaneClick"
@@ -32,6 +34,25 @@
               />
               {{ type.label }}
             </el-button>
+            <el-divider direction="vertical" />
+            <el-button size="small" @click="() => onAddNode('sticky')">
+              <component
+                :is="StickyNoteIcon"
+                :size="16"
+                :stroke-width="1.5"
+                class="mr-1"
+              />
+              便利貼
+            </el-button>
+            <el-button size="small" @click="autoLayout">
+              <component
+                :is="Layout"
+                :size="16"
+                :stroke-width="1.5"
+                class="mr-1"
+              />
+              自動布局
+            </el-button>
           </div>
         </Panel>
       </VueFlow>
@@ -54,8 +75,11 @@ import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
 import { NODE_TYPES } from "../config/nodeTypes";
+import { Layout, StickyNote as StickyNoteIcon } from "lucide-vue-next";
+import dagre from "@dagrejs/dagre";
 
 import CustomNode from "./nodes/CustomNode.vue";
+import StickyNote from "./nodes/StickyNote.vue";
 import NodeConfigPanel from "./NodeConfigPanel.vue";
 
 import "@vue-flow/core/dist/style.css";
@@ -66,6 +90,7 @@ import "@vue-flow/minimap/dist/style.css";
 // 註冊自定義節點類型
 const nodeTypes = {
   custom: CustomNode,
+  sticky: StickyNote,
 };
 
 // 設置默認的連接線選項
@@ -82,8 +107,50 @@ const defaultEdgeOptions = {
 };
 
 const elements = ref([]);
-const { project } = useVueFlow();
+const { project, fitView, getNodes, getEdges, setNodes } = useVueFlow();
 const selectedNode = ref(null);
+
+// 自動布局功能
+const autoLayout = () => {
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: "TB", nodesep: 80, ranksep: 100 });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  const nodes = elements.value.filter((el) => !el.source);
+  const edges = elements.value.filter((el) => el.source);
+
+  // 添加節點
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: 240, height: 120 });
+  });
+
+  // 添加邊
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
+  });
+
+  // 計算布局
+  dagre.layout(g);
+
+  // 更新節點位置
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = g.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - nodeWithPosition.width / 2,
+        y: nodeWithPosition.y - nodeWithPosition.height / 2,
+      },
+    };
+  });
+
+  // 更新所有元素
+  elements.value = [...layoutedNodes, ...edges];
+
+  setTimeout(() => {
+    fitView({ padding: 50 });
+  }, 100);
+};
 
 const onNodeClick = (event) => {
   selectedNode.value = event.node;
@@ -96,13 +163,19 @@ const onPaneClick = () => {
 const onAddNode = (type) => {
   const newNode = {
     id: `node_${Date.now()}`,
-    type: "custom",
-    data: {
-      type: type.type,
-      content: `新的${type.label}`,
-      status: "IDLE",
-      config: { ...type.defaultConfig },
-    },
+    type: type === "sticky" ? "sticky" : "custom",
+    data:
+      type === "sticky"
+        ? {
+            content: "",
+            color: "#fef3c7",
+          }
+        : {
+            type: type.type,
+            content: `新的${type.label}`,
+            status: "IDLE",
+            config: { ...type.defaultConfig },
+          },
     position: project({ x: 100, y: 100 }),
   };
   elements.value = [...elements.value, newNode];
@@ -117,7 +190,6 @@ const updateNode = (updatedNode) => {
 };
 
 const onConnect = (connection) => {
-  // 檢查是否已經存在相同的連接
   const existingConnection = elements.value.find(
     (el) =>
       el.source === connection.source &&

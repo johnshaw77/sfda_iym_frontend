@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.4",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
@@ -16,6 +17,7 @@
     "@vue-flow/controls": "^1.1.2",
     "@vue-flow/core": "^1.20.2",
     "@vue-flow/minimap": "^1.5.2",
+    "@vue-flow/node-resizer": "^1.4.0",
     "element-plus": "^2.5.3",
     "lucide-vue-next": "^0.474.0",
     "vue": "^3.4.15",
