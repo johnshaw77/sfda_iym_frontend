@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 :root {
+  /* Element Plus 主題顏色 */
+  --el-color-primary: #3b82f6;
+  --el-color-primary-light-3: #60a5fa;
+  --el-color-primary-light-5: #93c5fd;
+  --el-color-primary-light-7: #bfdbfe;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: #eff6ff;
+  --el-color-primary-dark-2: #1d4ed8;
+
+  /* 系統字體 */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -59,10 +69,6 @@ button:focus-visible {
 
 #app {
   @apply h-screen;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
 @media (prefers-color-scheme: light) {
@@ -76,4 +82,21 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Element Plus 全局樣式覆蓋 */
+.el-button--primary {
+  --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  --el-button-hover-border-color: var(--el-color-primary-dark-2);
+}
+
+.el-menu.el-menu--horizontal {
+  --el-menu-bg-color: transparent;
+  --el-menu-text-color: #fff;
+  --el-menu-hover-text-color: #fff;
+  --el-menu-active-color: #fff;
+}
+
+.el-menu-item.is-active {
+  background-color: rgba(255, 255, 255, 0.1);
 }
