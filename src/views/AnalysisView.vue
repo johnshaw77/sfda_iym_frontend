@@ -4,7 +4,7 @@
       <div class="flex justify-between items-center">
         <span>分析列表</span>
         <el-button type="primary" @click="handleNewAnalysis">
-          <font-awesome-icon icon="chart-line" class="mr-2" />
+          <LineChart class="mr-2" :size="16" />
           新建分析
         </el-button>
       </div>
@@ -29,10 +29,10 @@
             <template #default="scope">
               <el-button-group>
                 <el-button type="primary" link>
-                  <font-awesome-icon icon="eye" />
+                  <Eye :size="16" />
                 </el-button>
                 <el-button type="danger" link>
-                  <font-awesome-icon icon="trash" />
+                  <Trash :size="16" />
                 </el-button>
               </el-button-group>
             </template>
@@ -50,13 +50,13 @@
             <template #default="scope">
               <el-button-group>
                 <el-button type="primary" link>
-                  <font-awesome-icon icon="eye" />
+                  <Eye :size="16" />
                 </el-button>
                 <el-button type="success" link>
-                  <font-awesome-icon icon="download" />
+                  <Download :size="16" />
                 </el-button>
                 <el-button type="danger" link>
-                  <font-awesome-icon icon="trash" />
+                  <Trash :size="16" />
                 </el-button>
               </el-button-group>
             </template>

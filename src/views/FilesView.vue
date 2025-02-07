@@ -11,7 +11,7 @@
           :show-file-list="false"
         >
           <el-button type="primary">
-            <font-awesome-icon icon="upload" class="mr-2" />
+            <Upload class="mr-2" :size="16" />
             上傳文件
           </el-button>
         </el-upload>
@@ -26,10 +26,10 @@
         <template #default="scope">
           <el-button-group>
             <el-button type="primary" link>
-              <font-awesome-icon icon="download" />
+              <Download :size="16" />
             </el-button>
             <el-button type="danger" link>
-              <font-awesome-icon icon="trash" />
+              <Trash :size="16" />
             </el-button>
           </el-button-group>
         </template>

@@ -1,14 +1,18 @@
 <template>
   <div
     :class="['sticky-note', { 'is-selected': selected }]"
-    :style="{ backgroundColor: data.color || '#fef3c7' }"
+    :style="{
+      backgroundColor: data.color || '#fef3c7',
+      opacity: selected ? 1 : 0.7,
+      zIndex: selected ? 1 : 0,
+    }"
   >
     <NodeResizer
       v-if="selected"
       :min-width="150"
-      :min-height="100"
-      :max-width="500"
-      :max-height="500"
+      :max-width="1000"
+      :enable-north="false"
+      :enable-south="false"
       :is-visible="selected"
       :line-style="{ borderColor: '#3b82f6' }"
       :handle-style="{ backgroundColor: '#3b82f6' }"
@@ -122,6 +126,7 @@ const changeColor = (color) => {
   @apply p-3 rounded-lg shadow-md transition-all duration-200;
   position: relative;
   transform-origin: center center;
+  height: 120px;
 }
 
 .sticky-note.is-selected {
@@ -133,7 +138,9 @@ const changeColor = (color) => {
 }
 
 .sticky-note-text {
-  @apply text-gray-700 whitespace-pre-wrap break-words min-h-[80px];
+  @apply text-gray-700 whitespace-pre-wrap break-words;
+  height: 80px;
+  overflow-y: auto;
 }
 
 .sticky-note-textarea {

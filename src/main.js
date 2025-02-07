@@ -6,53 +6,27 @@ import "./style.css";
 import App from "./App.vue";
 import zhTw from "element-plus/dist/locale/zh-tw.mjs";
 
-// 引入 Font Awesome
-import { library } from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+// 引入 Lucide Icons
 import {
-  faChartLine,
-  faFileAlt,
-  faCog,
-  faPlus,
-  faUser,
-  faFileUpload,
-  faGears,
-  faTable,
-  faClipboardCheck,
-  faTimes,
-  faUpload,
-  faBell,
-  faUserCircle,
-  faProjectDiagram,
-  faDownload,
-  faTrash,
-  faEye,
-  faAngleLeft,
-  faAngleRight,
-} from "@fortawesome/free-solid-svg-icons";
-
-// 添加圖標到庫中
-library.add(
-  faChartLine,
-  faFileAlt,
-  faCog,
-  faPlus,
-  faUser,
-  faFileUpload,
-  faGears,
-  faTable,
-  faClipboardCheck,
-  faTimes,
-  faUpload,
-  faBell,
-  faUserCircle,
-  faProjectDiagram,
-  faDownload,
-  faTrash,
-  faEye,
-  faAngleLeft,
-  faAngleRight
-);
+  LineChart,
+  FileText,
+  Settings,
+  Plus,
+  User,
+  Upload,
+  Cog,
+  Table,
+  ClipboardCheck,
+  X,
+  Bell,
+  UserCircle,
+  GitGraph,
+  Download,
+  Trash,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-vue-next";
 
 // 路由配置
 const routes = [
@@ -92,5 +66,31 @@ app.use(ElementPlus, {
   locale: zhTw,
 });
 app.use(router);
-app.component("font-awesome-icon", FontAwesomeIcon);
+
+// 註冊 Lucide 圖標
+const icons = {
+  LineChart,
+  FileText,
+  Settings,
+  Plus,
+  User,
+  Upload,
+  Cog,
+  Table,
+  ClipboardCheck,
+  X,
+  Bell,
+  UserCircle,
+  GitGraph,
+  Download,
+  Trash,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+};
+
+Object.entries(icons).forEach(([name, component]) => {
+  app.component(name, component);
+});
+
 app.mount("#app");

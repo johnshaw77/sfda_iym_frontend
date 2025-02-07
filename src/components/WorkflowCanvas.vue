@@ -169,6 +169,7 @@ const onAddNode = (type) => {
         ? {
             content: "",
             color: "#fef3c7",
+            zIndex: 0,
           }
         : {
             type: type.type,
@@ -177,6 +178,7 @@ const onAddNode = (type) => {
             config: { ...type.defaultConfig },
           },
     position: project({ x: 100, y: 100 }),
+    zIndex: type === "sticky" ? 0 : 1,
   };
   elements.value = [...elements.value, newNode];
 };

@@ -7,17 +7,17 @@
         <div class="flex items-center space-x-4">
           <el-tooltip content="通知" placement="bottom">
             <el-button circle class="!w-10 !h-10">
-              <el-icon :size="24"><Bell /></el-icon>
+              <Bell :size="24" />
             </el-button>
           </el-tooltip>
           <el-tooltip content="設置" placement="bottom">
             <el-button circle class="!w-10 !h-10">
-              <el-icon :size="24"><Setting /></el-icon>
+              <Settings :size="24" />
             </el-button>
           </el-tooltip>
           <el-dropdown trigger="click">
             <div class="flex items-center space-x-2 cursor-pointer">
-              <el-icon :size="24"><User /></el-icon>
+              <UserCircle :size="24" />
             </div>
             <template #dropdown>
               <el-dropdown-menu>
@@ -47,25 +47,23 @@
           class="!w-full !px-2 !py-1 text-white hover:text-blue-400 text-right"
           @click="toggleCollapse"
         >
-          <el-icon :size="24">
-            <component :is="isCollapse ? 'ArrowRight' : 'ArrowLeft'" />
-          </el-icon>
+          <component :is="isCollapse ? ChevronRight : ChevronLeft" :size="24" />
         </el-button>
 
         <el-menu-item index="/workflow" @click="$router.push('/workflow')">
-          <el-icon :size="24"><Connection /></el-icon>
+          <GitGraph :size="24" />
           <template #title>工作流程</template>
         </el-menu-item>
         <el-menu-item index="/files" @click="$router.push('/files')">
-          <el-icon :size="24"><Document /></el-icon>
+          <FileText :size="24" />
           <template #title>文件管理</template>
         </el-menu-item>
         <el-menu-item index="/analysis" @click="$router.push('/analysis')">
-          <el-icon :size="24"><TrendCharts /></el-icon>
+          <LineChart :size="24" />
           <template #title>數據分析</template>
         </el-menu-item>
         <el-menu-item index="/settings" @click="$router.push('/settings')">
-          <el-icon :size="24"><Setting /></el-icon>
+          <Settings :size="24" />
           <template #title>系統設置</template>
         </el-menu-item>
       </el-menu>
@@ -82,9 +80,7 @@
               v-if="showNewButton"
               @click="handleNewAction"
             >
-              <el-icon class="mr-2">
-                <component :is="newButtonIcon" />
-              </el-icon>
+              <component :is="newButtonIcon" class="mr-2" :size="16" />
               {{ newButtonText }}
             </el-button>
           </div>
@@ -103,16 +99,17 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   Bell,
-  Setting,
+  Settings,
   User,
-  Connection,
-  Document,
-  TrendCharts,
-  ArrowRight,
-  ArrowLeft,
+  GitGraph,
+  FileText,
+  LineChart,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Upload,
-} from "@element-plus/icons-vue";
+  UserCircle,
+} from "lucide-vue-next";
 
 const route = useRoute();
 const router = useRouter();
@@ -144,11 +141,11 @@ const newButtonText = computed(() => {
 
 const newButtonIcon = computed(() => {
   const icons = {
-    "/workflow": "Plus",
-    "/files": "Upload",
-    "/analysis": "TrendCharts",
+    "/workflow": Plus,
+    "/files": Upload,
+    "/analysis": LineChart,
   };
-  return icons[route.path] || "Plus";
+  return icons[route.path] || Plus;
 });
 
 const handleNewAction = () => {
