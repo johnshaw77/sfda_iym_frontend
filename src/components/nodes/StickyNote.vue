@@ -3,7 +3,7 @@
     :class="['sticky-note', { 'is-selected': selected }]"
     :style="{
       backgroundColor: data.color || '#fef3c7',
-      opacity: selected ? 1 : 0.7,
+      opacity: selected ? 1 : 0.6,
       zIndex: selected ? 1 : 0,
     }"
   >
@@ -11,8 +11,8 @@
       v-if="selected"
       :min-width="150"
       :max-width="1000"
-      :enable-north="false"
-      :enable-south="false"
+      :min-height="80"
+      :max-height="500"
       :is-visible="selected"
       :line-style="{ borderColor: '#3b82f6' }"
       :handle-style="{ backgroundColor: '#3b82f6' }"
@@ -23,7 +23,7 @@
         v-if="isEditing"
         v-model="editingContent"
         type="textarea"
-        :rows="3"
+        :autosize="{ minRows: 3 }"
         @blur="saveContent"
         ref="textInput"
         :placeholder="'在此輸入便利貼內容...'"
@@ -121,12 +121,25 @@ const changeColor = (color) => {
 };
 </script>
 
+<style>
+.vue-flow__node[data-type="sticky"] {
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+  min-width: 150px;
+  width: auto;
+  box-shadow: none;
+}
+</style>
+
 <style scoped>
 .sticky-note {
   @apply p-3 rounded-lg shadow-md transition-all duration-200;
+  width: 100%;
+  height: 100%;
   position: relative;
   transform-origin: center center;
-  height: 120px;
 }
 
 .sticky-note.is-selected {
@@ -134,17 +147,17 @@ const changeColor = (color) => {
 }
 
 .sticky-note-content {
-  @apply h-full;
+  @apply w-full h-full;
 }
 
 .sticky-note-text {
   @apply text-gray-700 whitespace-pre-wrap break-words;
-  height: 80px;
-  overflow-y: auto;
+  padding: 0.5rem 0;
+  height: 100%;
 }
 
 .sticky-note-textarea {
-  @apply bg-transparent border-none shadow-none;
+  @apply bg-transparent border-none shadow-none w-full h-full;
 }
 
 .sticky-note-toolbar {
@@ -157,6 +170,7 @@ const changeColor = (color) => {
 
 :deep(.el-textarea__inner) {
   @apply bg-transparent border-none shadow-none resize-none;
+  height: 100% !important;
 }
 
 :deep(.vue-flow__resize-control.line) {

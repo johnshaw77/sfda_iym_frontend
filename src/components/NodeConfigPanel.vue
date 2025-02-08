@@ -3,7 +3,7 @@
     <div class="panel-header">
       <h3 class="text-lg font-semibold">節點配置</h3>
       <button @click="$emit('close')" class="text-gray-500 hover:text-gray-700">
-        <font-awesome-icon icon="times" />
+        <X :size="16" />
       </button>
     </div>
 
@@ -33,7 +33,7 @@
         <label>數據來源</label>
         <div class="flex items-center space-x-2">
           <button class="btn-secondary" @click="handleFileUpload">
-            <font-awesome-icon icon="upload" class="mr-2" />
+            <Upload :size="16" class="mr-2" />
             上傳文件
           </button>
           <span v-if="nodeData.file" class="text-sm text-gray-600">

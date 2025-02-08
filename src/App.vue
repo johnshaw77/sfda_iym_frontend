@@ -10,5 +10,5 @@ import WorkflowCanvas from "./components/WorkflowCanvas.vue";
 </template>
 
 <style>
-@import "@fortawesome/fontawesome-svg-core/styles.css";
+/* 移除 FontAwesome 引入 */
 </style>
