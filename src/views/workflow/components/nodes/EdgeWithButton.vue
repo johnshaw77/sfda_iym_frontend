@@ -1,3 +1,144 @@
+// 這個元件是為了在連線上添加按鈕，讓使用者可以更方便地調整連線的樣式,
+並且可以刪除連線，編輯連線標籤，切換動畫，調整位置 // 暫時用不上，保留。
+<template>
+  <BaseEdge
+    :id="id"
+    :style="style"
+    :path="path[0]"
+    :marker-end="markerEnd"
+    class="vue-flow__edge-path"
+  />
+
+  <EdgeLabelRenderer>
+    <div
+      :style="{
+        pointerEvents: 'all',
+        position: 'absolute',
+        transform: `translate(-50%, -50%) translate(${path[1]}px,${path[2]}px)`,
+        zIndex: 1000,
+      }"
+      class="nodrag nopan edge-buttons-container"
+    >
+      <el-tooltip
+        content="刪除連線"
+        placement="top"
+        :show-after="300"
+        :hide-after="0"
+      >
+        <el-button
+          circle
+          size="small"
+          type="danger"
+          class="edge-button edge-delete-button"
+          @click="handleDeleteEdge"
+          @mousedown.stop
+          @click.stop
+        >
+          <X :size="16" />
+        </el-button>
+      </el-tooltip>
+
+      <el-tooltip
+        content="編輯標籤"
+        placement="top"
+        :show-after="300"
+        :hide-after="0"
+      >
+        <el-button
+          circle
+          size="small"
+          type="primary"
+          class="edge-button edge-edit-button"
+          @click="handleEditLabel"
+          @mousedown.stop
+          @click.stop
+        >
+          <Edit :size="16" />
+        </el-button>
+      </el-tooltip>
+
+      <el-tooltip
+        content="切換動畫"
+        placement="top"
+        :show-after="300"
+        :hide-after="0"
+      >
+        <el-button
+          circle
+          size="small"
+          :type="isAnimated ? 'success' : 'info'"
+          class="edge-button edge-animate-button"
+          @click="handleToggleAnimation"
+          @mousedown.stop
+          @click.stop
+        >
+          <component :is="isAnimated ? Play : Pause" :size="16" />
+        </el-button>
+      </el-tooltip>
+
+      <el-tooltip
+        content="調整位置"
+        placement="top"
+        :show-after="300"
+        :hide-after="0"
+      >
+        <el-button
+          circle
+          size="small"
+          type="warning"
+          class="edge-button edge-position-button"
+          @click="handleAdjustPosition"
+          @mousedown.stop
+          @click.stop
+        >
+          <MoveVertical :size="16" />
+        </el-button>
+      </el-tooltip>
+    </div>
+
+    <el-dialog
+      v-model="showLabelDialog"
+      title="編輯連線標籤"
+      width="30%"
+      :close-on-click-modal="false"
+      destroy-on-close
+      append-to-body
+      :style="dialogStyle"
+    >
+      <el-form :model="labelForm" label-width="80px">
+        <el-form-item label="標籤文字">
+          <el-input v-model="labelForm.text" placeholder="請輸入標籤文字" />
+        </el-form-item>
+        <el-form-item label="文字顏色">
+          <el-color-picker v-model="labelForm.color" />
+        </el-form-item>
+        <el-form-item label="線條樣式">
+          <el-select v-model="labelForm.lineStyle" placeholder="請選擇線條樣式">
+            <el-option label="實線" value="solid" />
+            <el-option label="虛線" value="dashed" />
+            <el-option label="點線" value="dotted" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="線條粗細">
+          <el-slider
+            v-model="labelForm.strokeWidth"
+            :min="1"
+            :max="5"
+            :step="0.5"
+            show-stops
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showLabelDialog = false">取消</el-button>
+          <el-button type="primary" @click="handleSaveLabel">確定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </EdgeLabelRenderer>
+</template>
+
 <script setup>
 import {
   BaseEdge,
@@ -198,145 +339,6 @@ export default {
   inheritAttrs: false,
 };
 </script>
-
-<template>
-  <BaseEdge
-    :id="id"
-    :style="style"
-    :path="path[0]"
-    :marker-end="markerEnd"
-    class="vue-flow__edge-path"
-  />
-
-  <EdgeLabelRenderer>
-    <div
-      :style="{
-        pointerEvents: 'all',
-        position: 'absolute',
-        transform: `translate(-50%, -50%) translate(${path[1]}px,${path[2]}px)`,
-        zIndex: 1000,
-      }"
-      class="nodrag nopan edge-buttons-container"
-    >
-      <el-tooltip
-        content="刪除連線"
-        placement="top"
-        :show-after="300"
-        :hide-after="0"
-      >
-        <el-button
-          circle
-          size="small"
-          type="danger"
-          class="edge-button edge-delete-button"
-          @click="handleDeleteEdge"
-          @mousedown.stop
-          @click.stop
-        >
-          <X :size="16" />
-        </el-button>
-      </el-tooltip>
-
-      <el-tooltip
-        content="編輯標籤"
-        placement="top"
-        :show-after="300"
-        :hide-after="0"
-      >
-        <el-button
-          circle
-          size="small"
-          type="primary"
-          class="edge-button edge-edit-button"
-          @click="handleEditLabel"
-          @mousedown.stop
-          @click.stop
-        >
-          <Edit :size="16" />
-        </el-button>
-      </el-tooltip>
-
-      <el-tooltip
-        content="切換動畫"
-        placement="top"
-        :show-after="300"
-        :hide-after="0"
-      >
-        <el-button
-          circle
-          size="small"
-          :type="isAnimated ? 'success' : 'info'"
-          class="edge-button edge-animate-button"
-          @click="handleToggleAnimation"
-          @mousedown.stop
-          @click.stop
-        >
-          <component :is="isAnimated ? Play : Pause" :size="16" />
-        </el-button>
-      </el-tooltip>
-
-      <el-tooltip
-        content="調整位置"
-        placement="top"
-        :show-after="300"
-        :hide-after="0"
-      >
-        <el-button
-          circle
-          size="small"
-          type="warning"
-          class="edge-button edge-position-button"
-          @click="handleAdjustPosition"
-          @mousedown.stop
-          @click.stop
-        >
-          <MoveVertical :size="16" />
-        </el-button>
-      </el-tooltip>
-    </div>
-
-    <el-dialog
-      v-model="showLabelDialog"
-      title="編輯連線標籤"
-      width="30%"
-      :close-on-click-modal="false"
-      destroy-on-close
-      append-to-body
-      :style="dialogStyle"
-    >
-      <el-form :model="labelForm" label-width="80px">
-        <el-form-item label="標籤文字">
-          <el-input v-model="labelForm.text" placeholder="請輸入標籤文字" />
-        </el-form-item>
-        <el-form-item label="文字顏色">
-          <el-color-picker v-model="labelForm.color" />
-        </el-form-item>
-        <el-form-item label="線條樣式">
-          <el-select v-model="labelForm.lineStyle" placeholder="請選擇線條樣式">
-            <el-option label="實線" value="solid" />
-            <el-option label="虛線" value="dashed" />
-            <el-option label="點線" value="dotted" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="線條粗細">
-          <el-slider
-            v-model="labelForm.strokeWidth"
-            :min="1"
-            :max="5"
-            :step="0.5"
-            show-stops
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showLabelDialog = false">取消</el-button>
-          <el-button type="primary" @click="handleSaveLabel">確定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-  </EdgeLabelRenderer>
-</template>
 
 <style scoped>
 .edge-buttons-container {

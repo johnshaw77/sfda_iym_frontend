@@ -43,7 +43,15 @@ import {
 const routes = [
   {
     path: "/",
-    redirect: "/workflow",
+    redirect: "/projects",
+  },
+  {
+    path: "/projects",
+    name: "Projects",
+    component: () => import("./views/projects/index.vue"),
+    meta: {
+      keepAlive: true,
+    },
   },
   {
     path: "/workflow",
@@ -51,14 +59,6 @@ const routes = [
     component: () => import("./views/workflow/index.vue"),
     meta: {
       keepAlive: true, // 預設緩存
-    },
-  },
-  {
-    path: "/workflow-test",
-    name: "WorkflowTest",
-    component: () => import("./views/workflow-test/index.vue"),
-    meta: {
-      keepAlive: true,
     },
   },
   {
@@ -85,6 +85,15 @@ const routes = [
       keepAlive: true,
     },
   },
+
+  // {
+  //   path: "/workflow-test",
+  //   name: "WorkflowTest",
+  //   component: () => import("./views/workflow-test/index.vue"),
+  //   meta: {
+  //     keepAlive: true,
+  //   },
+  // },
 ];
 
 const router = createRouter({

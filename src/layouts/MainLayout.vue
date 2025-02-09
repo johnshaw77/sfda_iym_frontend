@@ -1,82 +1,18 @@
 <template>
   <div class="h-screen flex flex-col">
-    <!-- 頂部導航欄 - 固定在頂部 -->
-    <el-header
-      class="!px-0 !h-12 fixed top-0 left-0 right-0 z-10 bg-white border-b border-gray-200"
-    >
-      <div class="flex justify-between items-center h-full px-4">
-        <h1 class="text-xl font-semibold text-gray-800">良率分析平台</h1>
-        <div class="flex items-center space-x-4">
-          <el-tooltip content="通知" placement="bottom">
-            <Bell :size="18" class="cursor-pointer hover:text-blue-500" />
-          </el-tooltip>
-          <el-tooltip content="設置" placement="bottom">
-            <Settings :size="18" class="cursor-pointer hover:text-blue-500" />
-          </el-tooltip>
-          <el-dropdown trigger="click">
-            <div class="flex items-center space-x-2 cursor-pointer">
-              <UserCircle :size="18" />
-            </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item>個人資料</el-dropdown-item>
-                <el-dropdown-item>修改密碼</el-dropdown-item>
-                <el-dropdown-item divided>登出</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-      </div>
-    </el-header>
+    <!-- 頂部導航欄 -->
+    <AppHeader />
 
     <!-- 主要內容區 - 考慮頂部導航欄的高度 -->
     <div class="flex flex-1 pt-12">
-      <!-- 左側導航欄 - 固定在左側 -->
-      <el-menu
-        class="!w-auto fixed left-0 top-12 bottom-0 border-r border-slate-200"
-        :default-active="route.path"
-        :collapse="isCollapse"
-        background-color="#ffffff"
-        text-color="#333333"
-        active-text-color="#409EFF"
-      >
-        <el-button
-          type="text"
-          class="!w-full !px-2 !py-1 text-white hover:text-blue-400 text-right"
-          @click="toggleCollapse"
-        >
-          <component :is="isCollapse ? ChevronRight : ChevronLeft" :size="24" />
-        </el-button>
-
-        <el-menu-item index="/workflow" @click="$router.push('/workflow')">
-          <GitGraph :size="24" />
-          <template #title>工作流程</template>
-        </el-menu-item>
-
-        <el-menu-item
-          index="/workflow-test"
-          @click="$router.push('/workflow-test')"
-        >
-          <GitGraph :size="24" />
-          <template #title>工作流測試</template>
-        </el-menu-item>
-
-        <el-menu-item index="/files" @click="$router.push('/files')">
-          <FileText :size="24" />
-          <template #title>文件管理</template>
-        </el-menu-item>
-        <el-menu-item index="/analysis" @click="$router.push('/analysis')">
-          <LineChart :size="24" />
-          <template #title>數據分析</template>
-        </el-menu-item>
-        <el-menu-item index="/settings" @click="$router.push('/settings')">
-          <Settings :size="24" />
-          <template #title>系統設置</template>
-        </el-menu-item>
-      </el-menu>
+      <!-- 左側導航欄 -->
+      <AppSidebar ref="sidebarRef" />
 
       <!-- 右側內容區 - 考慮左側導航欄的寬度 -->
-      <el-container :class="['flex-1', isCollapse ? 'ml-16' : 'ml-48']">
+      <el-container
+        class="content-container"
+        :class="sidebarCollapsed ? 'collapsed' : ''"
+      >
         <el-header
           class="bg-white border-b !h-10 flex items-center justify-between px-6"
         >
@@ -108,27 +44,20 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import {
-  Bell,
-  Settings,
-  User,
-  GitGraph,
-  FileText,
-  LineChart,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Upload,
-  UserCircle,
-} from "lucide-vue-next";
+import { Plus, Upload, LineChart } from "lucide-vue-next";
+import AppSidebar from "../components/AppSidebar.vue";
+import AppHeader from "../components/AppHeader.vue";
 
 const route = useRoute();
 const router = useRouter();
-const isCollapse = ref(false);
+const sidebarRef = ref(null);
+
+const sidebarCollapsed = computed(() => sidebarRef.value?.isCollapse || false);
 
 // 根據當前路由設置頁面標題和按鈕
 const pageTitle = computed(() => {
   const titles = {
+    "/projects": "專案管理",
     "/workflow": "工作流程",
     "/workflow-test": "工作流測試",
     "/files": "文件管理",
@@ -178,10 +107,6 @@ const handleNewAction = () => {
   if (action) {
     action();
   }
-};
-
-const toggleCollapse = () => {
-  isCollapse.value = !isCollapse.value;
 };
 </script>
 
@@ -236,5 +161,22 @@ const toggleCollapse = () => {
 
 .el-menu-item:hover {
   @apply !bg-gray-50;
+}
+
+.content-container {
+  @apply flex-1 ml-48;
+  transition: margin-left 0.2s ease-in-out;
+}
+
+.content-container.collapsed {
+  @apply ml-16;
+}
+
+.el-dropdown-menu {
+  @apply !py-1;
+}
+
+.el-dropdown-item {
+  @apply !px-4 !py-2 !text-sm flex items-center;
 }
 </style>
