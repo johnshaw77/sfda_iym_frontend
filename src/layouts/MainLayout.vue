@@ -34,7 +34,7 @@
     </el-header>
 
     <!-- 主要內容區 - 考慮頂部導航欄的高度 -->
-    <div class="flex flex-1 pt-12"></div>
+    <div class="flex flex-1 pt-12">
       <!-- 左側導航欄 - 固定在左側 -->
       <el-menu
         class="!w-auto fixed left-0 top-12 bottom-0 border-r border-slate-200"

@@ -57,6 +57,10 @@
 <script setup>
 import { ref } from "vue";
 
+defineOptions({
+  name: "Files",
+});
+
 const loading = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);

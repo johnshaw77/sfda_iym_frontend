@@ -21,6 +21,10 @@ import { ref } from "vue";
 import AnalysisTable from "./components/AnalysisTable.vue";
 import NewAnalysisDialog from "./components/NewAnalysisDialog.vue";
 
+defineOptions({
+  name: "Analysis",
+});
+
 const loading = ref(false);
 const dialogVisible = ref(false);
 

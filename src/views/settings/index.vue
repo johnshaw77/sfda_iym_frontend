@@ -77,6 +77,10 @@
 <script setup>
 import { ref } from "vue";
 
+defineOptions({
+  name: "Settings",
+});
+
 const form = ref({
   systemName: "良率分析平台",
   description: "",
