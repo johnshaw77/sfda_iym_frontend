@@ -1,11 +1,10 @@
 <script setup>
 import MainLayout from "./layouts/MainLayout.vue";
-import WorkflowCanvas from "./components/WorkflowCanvas.vue";
 </script>
 
 <template>
   <MainLayout>
-    <WorkflowCanvas />
+    <router-view />
   </MainLayout>
 </template>
 

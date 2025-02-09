@@ -71,7 +71,7 @@
 <script setup>
 import { computed } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { getNodeConfig, getNodeStatus } from "../../config/nodeTypes";
+import { getNodeConfig, getNodeStatus } from "../config/nodeTypes";
 
 const props = defineProps({
   data: {

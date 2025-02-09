@@ -214,7 +214,7 @@ import {
 import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
-import { NODE_TYPES } from "../config/nodeTypes";
+import { NODE_TYPES } from "./config/nodeTypes";
 import {
   Layout,
   StickyNote as StickyNoteIcon,
