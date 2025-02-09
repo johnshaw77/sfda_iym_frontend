@@ -1,9 +1,11 @@
 <template>
   <div class="h-screen flex flex-col">
     <!-- 頂部導航欄 - 固定在頂部 -->
-    <el-header class="!px-0 !h-12 fixed top-0 left-0 right-0 z-10 bg-blue-500">
-      <div class="flex justify-between items-center h-full px-4 text-white">
-        <h1 class="text-xl font-semibold">良率分析平台</h1>
+    <el-header
+      class="!px-0 !h-12 fixed top-0 left-0 right-0 z-10 bg-white border-b border-gray-200"
+    >
+      <div class="flex justify-between items-center h-full px-4">
+        <h1 class="text-xl font-semibold text-gray-800">良率分析平台</h1>
         <div class="flex items-center space-x-4">
           <el-tooltip content="通知" placement="bottom">
             <el-button circle class="!w-10 !h-10">
@@ -32,7 +34,7 @@
     </el-header>
 
     <!-- 主要內容區 - 考慮頂部導航欄的高度 -->
-    <div class="flex flex-1 pt-14">
+    <div class="flex flex-1 pt-12"></div>
       <!-- 左側導航欄 - 固定在左側 -->
       <el-menu
         class="!w-auto fixed left-0 top-12 bottom-0 border-r border-slate-200"
@@ -87,7 +89,10 @@
         </el-header>
 
         <el-main class="!p-0 bg-gray-100">
-          <slot></slot>
+          <keep-alive>
+            <router-view v-if="$route.meta.keepAlive"></router-view>
+          </keep-alive>
+          <router-view v-if="!$route.meta.keepAlive"></router-view>
         </el-main>
       </el-container>
     </div>

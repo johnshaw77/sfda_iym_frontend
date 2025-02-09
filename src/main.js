@@ -49,21 +49,33 @@ const routes = [
     path: "/workflow",
     name: "Workflow",
     component: () => import("./views/workflow/index.vue"),
+    meta: {
+      keepAlive: true, // 預設緩存
+    },
   },
   {
     path: "/files",
     name: "Files",
     component: () => import("./views/files/index.vue"),
+    meta: {
+      keepAlive: true,
+    },
   },
   {
     path: "/analysis",
     name: "Analysis",
     component: () => import("./views/analysis/index.vue"),
+    meta: {
+      keepAlive: true,
+    },
   },
   {
     path: "/settings",
     name: "Settings",
     component: () => import("./views/settings/index.vue"),
+    meta: {
+      keepAlive: true,
+    },
   },
 ];
 
