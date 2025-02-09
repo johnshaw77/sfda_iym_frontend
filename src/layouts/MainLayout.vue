@@ -56,6 +56,15 @@
           <GitGraph :size="24" />
           <template #title>工作流程</template>
         </el-menu-item>
+
+        <el-menu-item
+          index="/workflow-test"
+          @click="$router.push('/workflow-test')"
+        >
+          <GitGraph :size="24" />
+          <template #title>工作流測試</template>
+        </el-menu-item>
+
         <el-menu-item index="/files" @click="$router.push('/files')">
           <FileText :size="24" />
           <template #title>文件管理</template>
@@ -125,6 +134,7 @@ const isCollapse = ref(false);
 const pageTitle = computed(() => {
   const titles = {
     "/workflow": "工作流程",
+    "/workflow-test": "工作流測試",
     "/files": "文件管理",
     "/analysis": "數據分析",
     "/settings": "系統設置",

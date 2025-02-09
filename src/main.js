@@ -54,6 +54,14 @@ const routes = [
     },
   },
   {
+    path: "/workflow-test",
+    name: "WorkflowTest",
+    component: () => import("./views/workflow-test/index.vue"),
+    meta: {
+      keepAlive: true,
+    },
+  },
+  {
     path: "/files",
     name: "Files",
     component: () => import("./views/files/index.vue"),
