@@ -5,6 +5,17 @@ import "element-plus/dist/index.css";
 import "./style.css";
 import App from "./App.vue";
 import zhTw from "element-plus/dist/locale/zh-tw.mjs";
+import NProgress from "nprogress";
+import "nprogress/nprogress.css";
+
+// 配置 NProgress
+NProgress.configure({
+  easing: "ease",
+  speed: 500,
+  showSpinner: false,
+  trickleSpeed: 200,
+  minimum: 0.3,
+});
 
 // 引入 Lucide Icons
 import {
@@ -59,6 +70,16 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// 路由守衛
+router.beforeEach((to, from, next) => {
+  NProgress.start();
+  next();
+});
+
+router.afterEach(() => {
+  NProgress.done();
 });
 
 const app = createApp(App);
