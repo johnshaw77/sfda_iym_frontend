@@ -8,18 +8,14 @@
         <h1 class="text-xl font-semibold text-gray-800">良率分析平台</h1>
         <div class="flex items-center space-x-4">
           <el-tooltip content="通知" placement="bottom">
-            <el-button circle class="!w-10 !h-10">
-              <Bell :size="24" />
-            </el-button>
+            <Bell :size="18" class="cursor-pointer hover:text-blue-500" />
           </el-tooltip>
           <el-tooltip content="設置" placement="bottom">
-            <el-button circle class="!w-10 !h-10">
-              <Settings :size="24" />
-            </el-button>
+            <Settings :size="18" class="cursor-pointer hover:text-blue-500" />
           </el-tooltip>
           <el-dropdown trigger="click">
             <div class="flex items-center space-x-2 cursor-pointer">
-              <UserCircle :size="24" />
+              <UserCircle :size="18" />
             </div>
             <template #dropdown>
               <el-dropdown-menu>

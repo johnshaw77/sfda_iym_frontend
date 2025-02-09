@@ -4,13 +4,13 @@
 
 :root {
   /* Element Plus 主題顏色 */
-  --el-color-primary: #3b82f6;
-  --el-color-primary-light-3: #60a5fa;
-  --el-color-primary-light-5: #93c5fd;
-  --el-color-primary-light-7: #bfdbfe;
-  --el-color-primary-light-8: #dbeafe;
-  --el-color-primary-light-9: #eff6ff;
-  --el-color-primary-dark-2: #1d4ed8;
+  --el-color-primary: #2A6DF4;
+  --el-color-primary-light-3: #5891f7;
+  --el-color-primary-light-5: #86b0f9;
+  --el-color-primary-light-7: #b4cefb;
+  --el-color-primary-light-8: #c8ddfc;
+  --el-color-primary-light-9: #dcebfd;
+  --el-color-primary-dark-2: #2258c3;
 
   /* 系統字體 */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;

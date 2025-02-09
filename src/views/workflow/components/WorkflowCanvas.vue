@@ -19,7 +19,7 @@
         :connect-on-click="false"
         :snap-to-grid="true"
         :snap-grid="[20, 20]"
-        :connection-mode="ConnectionMode.Strict"
+        :connection-mode="ConnectionMode.Loose"
         :delete-key-code="['Backspace', 'Delete']"
         :elevate-edges-on-select="true"
         :fit-view-on-init="true"
@@ -215,6 +215,7 @@ import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
 import { NODE_TYPES } from "./config/nodeTypes";
+import { EDGE_TYPES } from "./config/edgeTypes";
 import {
   Layout,
   StickyNote as StickyNoteIcon,
@@ -487,10 +488,12 @@ const updateNode = (updatedNode) => {
 
 // 連接處理函數
 const onConnect = (params) => {
+  console.log("onConnect", params);
   const newEdge = {
     id: `edge_${params.source}_${params.sourceHandle}_${params.target}_${params.targetHandle}`,
     ...params,
-    type: "button",
+    type: "step",
+    label: "新的節點",
     animated: true,
     style: {
       strokeWidth: 2,
@@ -539,36 +542,37 @@ const deleteEdge = (edgeId) => {
       // 用戶取消刪除操作
     });
 };
-const onEdgeUpdateStart = (event) => {
-  console.log("onEdgeUpdateStart", event);
+const onEdgeUpdateStart = (params) => {
+  console.log("onEdgeUpdateStart", params);
 };
 const onEdgeUpdateEnd = (event) => {
-  console.log("onEdgeUpdateEnd", event);
+  //console.log("onEdgeUpdateEnd", event);
 };
-// 線條更新事件
 
-const onEdgeUpdate = (oldEdge, newConnection) => {
-  if (!oldEdge || !newConnection) {
+// 線條更新事件(Cursor 原本給的答案是錯的)
+const onEdgeUpdate = ({ edge, connection }) => {
+  console.log("update??", edge, connection);
+  if (!edge || !connection) {
     console.warn("更新線條時缺少必要參數");
     return;
   }
 
-  console.log("Updating edge:", { oldEdge, newConnection });
+  //console.log("Updating edge:", { oldEdge, newConnection });
 
   try {
     // 直接使用 updateEdge 方法
-    const success = updateEdge(oldEdge, newConnection);
+    const success = updateEdge(edge, connection);
 
     if (success) {
       // 更新成功後，更新本地狀態
       elements.value = elements.value.map((el) => {
-        if (el.id === oldEdge.id) {
+        if (el.id === edge.id) {
           return {
             ...el,
-            source: newConnection.source,
-            target: newConnection.target,
-            sourceHandle: newConnection.sourceHandle,
-            targetHandle: newConnection.targetHandle,
+            source: connection.source,
+            target: connection.target,
+            sourceHandle: connection.sourceHandle,
+            targetHandle: connection.targetHandle,
           };
         }
         return el;
@@ -576,8 +580,8 @@ const onEdgeUpdate = (oldEdge, newConnection) => {
 
       // 記錄更新操作
       recordAction(ActionTypes.EDGE_UPDATED, {
-        oldEdge,
-        newEdge: elements.value.find((el) => el.id === oldEdge.id),
+        oldEdge: edge,
+        newEdge: elements.value.find((el) => el.id === edge.id),
       });
 
       ElMessage({
@@ -633,14 +637,17 @@ const generateMockData = () => {
 
   // 生成隨機連接線
   const mockEdges = [];
-  const edgeCount = Math.floor(Math.random() * (nodeCount - 2)) + 2;
-
+  // const edgeCount = Math.floor(Math.random() * (nodeCount - 2)) + 2;
+  const edgeCount = nodeCount - 1;
+  console.log("edgeCount", edgeCount);
   for (let i = 0; i < edgeCount; i++) {
     const sourceNode = mockNodes[Math.floor(Math.random() * mockNodes.length)];
     const targetNode = mockNodes[Math.floor(Math.random() * mockNodes.length)];
 
-    const edgeTypes = ["step", "button"];
+    //const edgeTypes = ["step", "button"];
+    const edgeTypes = Object.values(EDGE_TYPES);
     const edgeType = edgeTypes[Math.floor(Math.random() * edgeTypes.length)];
+    console.log("edgeType", edgeType);
     // 避免自己連接自己
     if (sourceNode.id !== targetNode.id) {
       const edge = {
@@ -649,7 +656,7 @@ const generateMockData = () => {
         target: targetNode.id,
         label: edgeType,
         class: "normal-edge",
-        type: "button",
+        type: edgeType,
         animated: true,
         markerEnd: defaultEdgeOptions.markerEnd,
       };
