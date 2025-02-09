@@ -1,0 +1,8 @@
+# 創建新文件
+.el-card {
+  @apply !border-none;
+}
+
+.el-tabs {
+  @apply -mx-5;
+} 

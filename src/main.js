@@ -37,22 +37,22 @@ const routes = [
   {
     path: "/workflow",
     name: "Workflow",
-    component: () => import("./views/WorkflowView.vue"),
+    component: () => import("./views/workflow/index.vue"),
   },
   {
     path: "/files",
     name: "Files",
-    component: () => import("./views/FilesView.vue"),
+    component: () => import("./views/files/index.vue"),
   },
   {
     path: "/analysis",
     name: "Analysis",
-    component: () => import("./views/AnalysisView.vue"),
+    component: () => import("./views/analysis/index.vue"),
   },
   {
     path: "/settings",
     name: "Settings",
-    component: () => import("./views/SettingsView.vue"),
+    component: () => import("./views/settings/index.vue"),
   },
 ];
 
