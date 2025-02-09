@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import WorkflowCanvas from "../components/WorkflowCanvas.vue";
+import WorkflowCanvas from "./components/WorkflowCanvas.vue";
 </script>
 
 <style scoped>
