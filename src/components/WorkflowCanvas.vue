@@ -8,16 +8,41 @@
         :min-zoom="0.2"
         :max-zoom="4"
         :node-types="nodeTypes"
+        :edge-types="edgeTypes"
         :default-edge-options="defaultEdgeOptions"
-        :auto-connect="true"
+        :auto-connect="false"
         :edges-updatable="true"
         :edges-draggable="true"
-        :edges-deletable="true"
+        :edges-focusable="true"
+        :edges-selectable="true"
+        :select-nodes-on-drag="false"
+        :connect-on-click="false"
+        :snap-to-grid="true"
+        :snap-grid="[20, 20]"
+        :connection-mode="ConnectionMode.Strict"
+        :delete-key-code="['Backspace', 'Delete']"
+        :elevate-edges-on-select="true"
+        :fit-view-on-init="true"
+        :prevent-scrolling="true"
+        :enable-pan-over-edges="true"
+        :enable-edge-updates="true"
+        :update-edge-on-drag="true"
+        :enable-connection-on-drag="true"
+        :enable-strict-connect="false"
+        :enable-edge-hover="true"
+        :enable-edge-markers="true"
+        :enable-edge-labels="true"
+        :enable-edge-buttons="true"
+        :enable-edge-update-on-drag="true"
+        :enable-edge-update-on-mode-change="true"
+        :enable-edge-update-on-handle-change="true"
         @nodeClick="onNodeClick"
         @connect="onConnect"
         @paneClick="onPaneClick"
         @edgeClick="onEdgeClick"
         @edgeUpdate="onEdgeUpdate"
+        @edgeUpdateStart="onEdgeUpdateStart"
+        @edgeUpdateEnd="onEdgeUpdateEnd"
         @nodeDragStart="onNodeDragStart"
         @nodeDragStop="onNodeDragStop"
         @nodesChange="onNodesChange"
@@ -132,20 +157,37 @@
         </el-drawer>
 
         <!-- 線條刪除按鈕 -->
-        <template #edge-label="props">
-          <div class="edge-button-wrapper">
+        <!-- <template #edge-label="props">
+          <div
+            class="edge-button-wrapper"
+            :class="{ 'opacity-100': props.selected }"
+          >
             <el-button
               circle
-              size="small"
+              size="large"
               type="danger"
-              class="edge-delete-button !bg-white hover:!bg-red-50"
+              class="edge-delete-button"
               @click="deleteEdge(props.id)"
               @mousedown.stop
               @click.stop
             >
-              <X :size="12" />
+              <X :size="16" />
             </el-button>
           </div>
+        </template> -->
+
+        <template #edge-button="buttonEdgeProps">
+          <EdgeWithButton
+            v-bind="buttonEdgeProps"
+            :source="buttonEdgeProps.source"
+            :target="buttonEdgeProps.target"
+            :selected="buttonEdgeProps.selected"
+            :animated="buttonEdgeProps.animated"
+            :label="buttonEdgeProps.label"
+          />
+        </template>
+        <template #edge-custom="props">
+          <CustomEdge v-bind="props" />
         </template>
       </VueFlow>
     </div>
@@ -162,7 +204,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
-import { VueFlow, useVueFlow, Panel, Position } from "@vue-flow/core";
+import {
+  VueFlow,
+  useVueFlow,
+  Panel,
+  Position,
+  ConnectionMode,
+} from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
@@ -183,7 +231,8 @@ import { ElMessageBox, ElMessage } from "element-plus";
 import CustomNode from "./nodes/CustomNode.vue";
 import StickyNote from "./nodes/StickyNote.vue";
 import NodeConfigPanel from "./NodeConfigPanel.vue";
-
+import CustomEdge from "./nodes/CustomEdge.vue";
+import EdgeWithButton from "./nodes/EdgeWithButton.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -195,23 +244,49 @@ const nodeTypes = {
   sticky: StickyNote,
 };
 
+// 註冊自定義邊線類型
+const edgeTypes = {
+  button: EdgeWithButton,
+  custom: CustomEdge,
+};
+
 // 設置默認的連接線選項
 const defaultEdgeOptions = {
-  type: "smoothstep",
+  type: "button",
   animated: true,
-  style: {
-    strokeWidth: 2,
-    stroke: "#3f3f3f",
-  },
+  label: "",
   markerEnd: {
     type: "arrowclosed",
     color: "#3f3f3f",
   },
   updatable: true,
+  deletable: true,
+  style: {
+    strokeWidth: 2,
+    stroke: "#3f3f3f",
+  },
 };
 
 const elements = ref([]);
-const { project, fitView, nodes, edges, viewport, getZoom } = useVueFlow();
+const {
+  project,
+  fitView,
+  nodes,
+  edges,
+  viewport,
+  getZoom,
+  onConnect: vueFlowConnect,
+  setEdges,
+  addEdges,
+  updateEdge,
+} = useVueFlow({
+  defaultEdgeOptions,
+  edgesUpdatable: true,
+  edgesDraggable: true,
+  edgesFocusable: true,
+  selectNodesOnDrag: false,
+  elevateEdgesOnSelect: true,
+});
 const selectedNode = ref(null);
 const showJsonDrawer = ref(false);
 
@@ -229,13 +304,13 @@ const ActionTypes = {
   NODE_REMOVED: "NODE_REMOVED",
   EDGE_ADDED: "EDGE_ADDED",
   EDGE_REMOVED: "EDGE_REMOVED",
+  EDGE_UPDATED: "EDGE_UPDATED",
   LAYOUT_CHANGED: "LAYOUT_CHANGED",
   MULTIPLE_CHANGES: "MULTIPLE_CHANGES",
 };
 
 // 記錄單個操作
 const recordAction = (type, data) => {
-  console.log("recordAction", type, data);
   if (!history.value.isRecording) return;
 
   const action = {
@@ -246,7 +321,6 @@ const recordAction = (type, data) => {
 
   history.value.past.push(action);
   history.value.future = [];
-  console.log("history", history.value);
 };
 
 // 保存拖動開始時的節點位置
@@ -368,9 +442,9 @@ const onAddNode = (type) => {
       .filter((el) => !el.source) // 只考慮節點，不考慮連線
       .map((el) => el.zIndex || 0)
   );
-
+  const id = `node_${Date.now()}`;
   const newNode = {
-    id: `node_${Date.now()}`,
+    id,
     type: type === "sticky" ? "sticky" : "custom",
     data:
       type === "sticky"
@@ -380,7 +454,7 @@ const onAddNode = (type) => {
           }
         : {
             type: type.type,
-            content: `新的${type.label}`,
+            content: `新的${type.label}-${id}`,
             status: "IDLE",
             config: { ...type.defaultConfig },
           },
@@ -411,29 +485,23 @@ const updateNode = (updatedNode) => {
   }
 };
 
-const onConnect = (connection) => {
-  const existingConnection = elements.value.find(
-    (el) =>
-      el.source === connection.source &&
-      el.target === connection.target &&
-      el.sourceHandle === connection.sourceHandle &&
-      el.targetHandle === connection.targetHandle
-  );
+// 連接處理函數
+const onConnect = (params) => {
+  const newEdge = {
+    id: `edge_${params.source}_${params.sourceHandle}_${params.target}_${params.targetHandle}`,
+    ...params,
+    type: "button",
+    animated: true,
+    style: {
+      strokeWidth: 2,
+      stroke: "#3f3f3f",
+    },
+    markerEnd: defaultEdgeOptions.markerEnd,
+    class: "vue-flow__edge",
+  };
 
-  if (!existingConnection) {
-    const newConnection = {
-      id: `edge_${connection.source}_${connection.sourceHandle}_${connection.target}_${connection.targetHandle}`,
-      source: connection.source,
-      target: connection.target,
-      sourceHandle: connection.sourceHandle,
-      targetHandle: connection.targetHandle,
-      type: "smoothstep",
-      animated: true,
-      style: defaultEdgeOptions.style,
-      markerEnd: defaultEdgeOptions.markerEnd,
-    };
-    recordAction(ActionTypes.EDGE_ADDED, { edge: newConnection });
-  }
+  elements.value = [...elements.value, newEdge];
+  recordAction(ActionTypes.EDGE_ADDED, { edge: newEdge });
 };
 
 // 刪除線條
@@ -444,32 +512,87 @@ const deleteEdge = (edgeId) => {
     type: "warning",
   })
     .then(() => {
-      const newElements = elements.value.filter((el) => el.id !== edgeId);
+      // 先保存要刪除的邊以供撤銷使用
+      const edgeToRemove = elements.value.find((el) => el.id === edgeId);
+      if (!edgeToRemove) {
+        ElMessage({
+          type: "error",
+          message: "找不到要刪除的連接線",
+        });
+        return;
+      }
+
+      // 記錄刪除操作
       recordAction(ActionTypes.EDGE_REMOVED, {
-        edge: elements.value.find((el) => el.id === edgeId),
+        edge: edgeToRemove,
       });
+
+      // 更新元素列表
+      elements.value = elements.value.filter((el) => el.id !== edgeId);
+
       ElMessage({
         type: "success",
         message: "已刪除連接線",
       });
     })
-    .catch(() => {});
+    .catch(() => {
+      // 用戶取消刪除操作
+    });
 };
-
+const onEdgeUpdateStart = (event) => {
+  console.log("onEdgeUpdateStart", event);
+};
+const onEdgeUpdateEnd = (event) => {
+  console.log("onEdgeUpdateEnd", event);
+};
 // 線條更新事件
+
 const onEdgeUpdate = (oldEdge, newConnection) => {
-  const edge = elements.value.find((el) => el.id === oldEdge.id);
-  if (edge) {
-    const index = elements.value.indexOf(edge);
-    const newEdge = {
-      ...edge,
-      source: newConnection.source,
-      target: newConnection.target,
-      sourceHandle: newConnection.sourceHandle,
-      targetHandle: newConnection.targetHandle,
-    };
-    elements.value.splice(index, 1, newEdge);
-    elements.value = [...elements.value];
+  if (!oldEdge || !newConnection) {
+    console.warn("更新線條時缺少必要參數");
+    return;
+  }
+
+  console.log("Updating edge:", { oldEdge, newConnection });
+
+  try {
+    // 直接使用 updateEdge 方法
+    const success = updateEdge(oldEdge, newConnection);
+
+    if (success) {
+      // 更新成功後，更新本地狀態
+      elements.value = elements.value.map((el) => {
+        if (el.id === oldEdge.id) {
+          return {
+            ...el,
+            source: newConnection.source,
+            target: newConnection.target,
+            sourceHandle: newConnection.sourceHandle,
+            targetHandle: newConnection.targetHandle,
+          };
+        }
+        return el;
+      });
+
+      // 記錄更新操作
+      recordAction(ActionTypes.EDGE_UPDATED, {
+        oldEdge,
+        newEdge: elements.value.find((el) => el.id === oldEdge.id),
+      });
+
+      ElMessage({
+        type: "success",
+        message: "已更新連線位置",
+      });
+    } else {
+      throw new Error("更新邊線失敗");
+    }
+  } catch (error) {
+    console.error("更新邊線時發生錯誤:", error);
+    ElMessage({
+      type: "error",
+      message: "更新連線失敗",
+    });
   }
 };
 
@@ -516,15 +639,18 @@ const generateMockData = () => {
     const sourceNode = mockNodes[Math.floor(Math.random() * mockNodes.length)];
     const targetNode = mockNodes[Math.floor(Math.random() * mockNodes.length)];
 
+    const edgeTypes = ["step", "button"];
+    const edgeType = edgeTypes[Math.floor(Math.random() * edgeTypes.length)];
     // 避免自己連接自己
     if (sourceNode.id !== targetNode.id) {
       const edge = {
         id: `edge_${Date.now()}_${i}`,
         source: sourceNode.id,
         target: targetNode.id,
-        type: "smoothstep",
+        label: edgeType,
+        class: "normal-edge",
+        type: "button",
         animated: true,
-        style: defaultEdgeOptions.style,
         markerEnd: defaultEdgeOptions.markerEnd,
       };
       mockEdges.push(edge);
@@ -570,11 +696,9 @@ const handleFitView = () => {
 
 // 修改撤銷功能
 const handleUndo = () => {
-  console.log("handleUndo", history.value);
   if (history.value.past.length === 0) return;
 
   const action = history.value.past.pop();
-  console.log("action", action);
   history.value.isRecording = false;
 
   try {
@@ -605,6 +729,17 @@ const handleUndo = () => {
       case ActionTypes.EDGE_REMOVED:
         // 恢復被刪除的連線
         elements.value = [...elements.value, action.data.edge];
+        break;
+      case ActionTypes.EDGE_UPDATED:
+        // 恢復連線的原始狀態
+        const edgeToRestore = elements.value.find(
+          (el) => el.id === action.data.oldEdge.id
+        );
+        if (edgeToRestore) {
+          const index = elements.value.indexOf(edgeToRestore);
+          elements.value.splice(index, 1, action.data.oldEdge);
+          elements.value = [...elements.value];
+        }
         break;
       case ActionTypes.LAYOUT_CHANGED:
         elements.value = action.data.oldElements;
@@ -655,6 +790,17 @@ const handleRedo = () => {
           (el) => el.id !== action.data.edge.id
         );
         break;
+      case ActionTypes.EDGE_UPDATED:
+        // 重新應用連線的更新
+        const edgeToUpdate = elements.value.find(
+          (el) => el.id === action.data.newEdge.id
+        );
+        if (edgeToUpdate) {
+          const index = elements.value.indexOf(edgeToUpdate);
+          elements.value.splice(index, 1, action.data.newEdge);
+          elements.value = [...elements.value];
+        }
+        break;
       case ActionTypes.LAYOUT_CHANGED:
         elements.value = action.data.newElements;
         break;
@@ -693,17 +839,11 @@ onUnmounted(() => {
   @apply bg-gray-50;
 }
 
-/* 只為一般節點設置樣式，不包括便利貼 */
-.vue-flow__node[data-type="custom"] {
-  @apply px-4 py-2 rounded-lg shadow-md bg-white border-2 border-gray-200;
-}
-
 .vue-flow__node[data-type="custom"].selected {
   @apply border-blue-500;
 }
 
 .vue-flow__edge {
-  @apply stroke-gray-600;
   stroke: #3f3f3f;
 }
 
@@ -736,37 +876,65 @@ onUnmounted(() => {
 
 :deep(.vue-flow__edge.selected .vue-flow__edge-path) marker {
   fill: #3f3f3f;
+  stroke: 100px;
+}
+
+:deep(.vue-flow__handle) {
+  width: 10px;
+  height: 10px;
+  background: #3f3f3f;
+  border: 2px solid white;
+}
+
+:deep(.vue-flow__handle:hover) {
+  background: #1d4ed8;
+}
+
+/* 線條刪除按鈕樣式 */
+:deep(.vue-flow__edge-label) {
+  background: transparent;
+  padding: 0;
+  pointer-events: all;
+}
+
+.edge-button-wrapper {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: all;
+  z-index: 1000;
+  padding: 4px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.vue-flow__edge:hover) .edge-button-wrapper,
+:deep(.vue-flow__edge.selected) .edge-button-wrapper {
+  opacity: 1;
+}
+
+.edge-delete-button {
+  @apply !w-8 !h-8 !p-1.5 !text-red-500 hover:!text-red-600;
+  background: white;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edge-delete-button:hover {
+  transform: scale(1.1);
+  background-color: #fee2e2;
 }
 
 @keyframes dashdraw {
   from {
     stroke-dashoffset: 10;
   }
-}
-
-.edge-button-wrapper {
-  @apply flex items-center justify-center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.2s;
-  z-index: 10;
-}
-
-.vue-flow__edge:hover .edge-button-wrapper {
-  opacity: 1;
-}
-
-.edge-delete-button {
-  @apply !w-5 !h-5 !p-0 !border !border-red-200;
-}
-
-:deep(.edge-delete-button .el-icon) {
-  @apply !w-3 !h-3;
 }
 </style>
