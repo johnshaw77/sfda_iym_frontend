@@ -7,6 +7,7 @@ import App from "./App.vue";
 import zhTw from "element-plus/dist/locale/zh-tw.mjs";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
+import { setupMock } from "./mock";
 
 // 配置 NProgress
 NProgress.configure({
@@ -142,5 +143,8 @@ const icons = {
 Object.entries(icons).forEach(([name, component]) => {
   app.component(name, component);
 });
+
+// 設置 Mock 服務
+setupMock();
 
 app.mount("#app");

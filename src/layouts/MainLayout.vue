@@ -147,8 +147,7 @@ const handleNewAction = () => {
 
 /* 確保內容區域不會被固定元素遮擋 */
 .el-main {
-  height: calc(100vh - 3.5rem);
-  overflow-y: auto;
+  @apply !p-0 flex-1 overflow-hidden;
 }
 
 .el-menu-item {
@@ -164,7 +163,7 @@ const handleNewAction = () => {
 }
 
 .content-container {
-  @apply flex-1 ml-48;
+  @apply flex-1 ml-48 flex flex-col;
   transition: margin-left 0.2s ease-in-out;
 }
 
