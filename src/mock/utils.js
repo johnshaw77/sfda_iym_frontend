@@ -45,7 +45,7 @@ export const generateError = (message = "操作失敗", code = 500) => {
 };
 
 // 添加請求延遲
-export const withDelay = (callback, delay = 300) => {
+export const withDelay = (callback, delay = 500) => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(callback());

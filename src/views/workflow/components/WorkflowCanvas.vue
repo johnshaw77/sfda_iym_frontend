@@ -1,5 +1,11 @@
 <template>
-  <div class="h-full bg-white rounded-lg shadow-lg overflow-hidden flex">
+  <div
+    class="h-full bg-white rounded-lg shadow-lg overflow-hidden flex"
+    @dragover.prevent="handleDragOver"
+    @dragleave.prevent="handleDragLeave"
+    @drop.prevent="handleDrop"
+    :class="{ 'is-dragover': isDragOver }"
+  >
     <div class="flex-1">
       <VueFlow
         v-model="elements"
@@ -238,12 +244,18 @@ import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
+import { uploadFile } from "@/api/modules/workflow";
+import FileNode from "./nodes/FileNode.vue";
 
 // 註冊自定義節點類型
 const nodeTypes = {
   custom: CustomNode,
   sticky: StickyNote,
+  file: FileNode,
 };
+
+// 當前工作流程 ID（這裡先用預設值）
+const currentWorkflowId = ref("default");
 
 // 註冊自定義邊線類型
 const edgeTypes = {
@@ -280,6 +292,8 @@ const {
   setEdges,
   addEdges,
   updateEdge,
+  addNodes,
+  removeNodes,
 } = useVueFlow({
   defaultEdgeOptions,
   edgesUpdatable: true,
@@ -839,6 +853,125 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
 });
+
+// 拖放相關
+const isDragOver = ref(false);
+
+const handleDragOver = (event) => {
+  isDragOver.value = true;
+  // 只接受檔案拖放
+  if (event.dataTransfer.types.includes("Files")) {
+    event.dataTransfer.dropEffect = "copy";
+  }
+};
+
+const handleDragLeave = () => {
+  isDragOver.value = false;
+};
+
+// 在 handleDrop 函數之前添加檔案類型限制
+const ALLOWED_FILE_TYPES = {
+  "image/*": "圖片檔案",
+  "application/pdf": "PDF 檔案",
+  "text/plain": "文字檔案",
+  "text/csv": "CSV 檔案",
+  "application/json": "JSON 檔案",
+  "application/vnd.ms-excel": "Excel 檔案",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+    "Excel 檔案",
+};
+
+const isFileTypeAllowed = (file) => {
+  return Object.keys(ALLOWED_FILE_TYPES).some((type) => {
+    if (type.endsWith("*")) {
+      return file.type.startsWith(type.slice(0, -1));
+    }
+    return file.type === type;
+  });
+};
+
+const handleDrop = async (event) => {
+  isDragOver.value = false;
+  const files = Array.from(event.dataTransfer.files);
+
+  // 檢查檔案類型
+  const invalidFiles = files.filter((file) => !isFileTypeAllowed(file));
+  if (invalidFiles.length > 0) {
+    ElMessage.error(
+      `不支援的檔案類型：${invalidFiles.map((f) => f.name).join(", ")}`
+    );
+    return;
+  }
+
+  // 獲取滑鼠在畫布上的位置
+  const bounds = event.currentTarget.getBoundingClientRect();
+  const position = project({
+    x: event.clientX - bounds.left,
+    y: event.clientY - bounds.top,
+  });
+
+  // 處理每個檔案
+  for (const file of files) {
+    try {
+      // 創建檔案節點（先顯示上傳進度）
+      const nodeId = `file-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      const newNode = {
+        id: nodeId,
+        type: "file",
+        position,
+        data: {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          uploadProgress: 0,
+        },
+      };
+
+      // 使用 addNodes 而不是 addNode
+      addNodes([newNode]);
+
+      // 模擬上傳進度
+      const updateProgress = (progress) => {
+        const node = nodes.value.find((n) => n.id === nodeId);
+        if (node) {
+          node.data = { ...node.data, uploadProgress: progress };
+        }
+      };
+
+      // 模擬分段上傳進度
+      for (let progress = 0; progress <= 100; progress += 10) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        updateProgress(progress);
+      }
+
+      // 上傳檔案
+      const result = await uploadFile(file, currentWorkflowId.value);
+
+      // 更新節點資訊
+      const node = nodes.value.find((n) => n.id === nodeId);
+      if (node) {
+        node.data = {
+          ...node.data,
+          fileId: result.id,
+          fileUrl: result.url,
+          uploadProgress: 100,
+        };
+      }
+
+      ElMessage.success(`檔案 ${file.name} 上傳成功`);
+    } catch (error) {
+      console.error("上傳檔案失敗", error);
+      ElMessage.error(`檔案 ${file.name} 上傳失敗`);
+      // 使用 removeNodes 而不是 removeNode
+      const node = nodes.value.find((n) => n.data.fileName === file.name);
+      if (node) {
+        removeNodes([node]);
+      }
+    }
+  }
+};
 </script>
 
 <style scoped>
@@ -943,5 +1076,11 @@ onUnmounted(() => {
   from {
     stroke-dashoffset: 10;
   }
+}
+
+/* 拖放相關樣式 */
+.is-dragover::after {
+  content: "";
+  @apply absolute inset-0 bg-blue-500 bg-opacity-10 border-2 border-dashed border-blue-500 pointer-events-none z-50;
 }
 </style>

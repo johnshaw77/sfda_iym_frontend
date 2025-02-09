@@ -5,9 +5,6 @@ import { ElMessage } from "element-plus";
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api", // 從環境變數獲取 baseURL
   timeout: 15000, // 請求超時時間
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // 請求攔截器
@@ -18,6 +15,12 @@ service.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+
+    // 如果是 FormData，不要設置 Content-Type，讓瀏覽器自動設置
+    if (!(config.data instanceof FormData)) {
+      config.headers["Content-Type"] = "application/json";
+    }
+
     return config;
   },
   (error) => {
@@ -30,10 +33,16 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response) => {
     const { data } = response;
+    console.log("響應攔截器收到數據：", data);
+
+    // 如果是 Mock 數據，直接返回
+    if (import.meta.env.VITE_ENABLE_MOCK === "true") {
+      return data;
+    }
 
     // 這裡假設後端返回的數據結構為 { code, data, message }
     if (data.code === 200) {
-      return data.data;
+      return data;
     }
 
     // 處理其他狀態碼
@@ -73,7 +82,7 @@ service.interceptors.response.use(
 // 封裝請求方法
 export const request = {
   get: (url, params) => service.get(url, { params }),
-  post: (url, data) => service.post(url, data),
+  post: (url, data, config = {}) => service.post(url, data, config),
   put: (url, data) => service.put(url, data),
   delete: (url) => service.delete(url),
   upload: (url, file) => {

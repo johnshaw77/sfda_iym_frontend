@@ -9,7 +9,6 @@ import {
   generateEnglishName,
   generateEmail,
   generateRole,
-  withDelay,
 } from "../utils";
 
 // 模擬用戶數據
@@ -65,32 +64,30 @@ Mock.mock("/api/user/login", "post", (options) => {
 
   // 模擬登入驗證
   if (username === "admin" && password === "admin123") {
-    return withDelay(() =>
-      generateResponse({
-        token: "mock-token-" + generateId(),
-        user: currentUser,
-      })
-    );
+    return generateResponse({
+      token: "mock-token-" + generateId(),
+      user: currentUser,
+    });
   }
 
-  return withDelay(() => generateError("用戶名或密碼錯誤", 401));
+  return generateError("用戶名或密碼錯誤", 401);
 });
 
 // 登出
 Mock.mock("/api/user/logout", "post", () => {
-  return withDelay(() => generateResponse(null, "登出成功"));
+  return generateResponse(null, "登出成功");
 });
 
 // 獲取用戶資訊
 Mock.mock("/api/user/info", "get", () => {
-  return withDelay(() => generateResponse(currentUser));
+  return generateResponse(currentUser);
 });
 
 // 更新用戶資訊
 Mock.mock("/api/user/info", "put", (options) => {
   const data = JSON.parse(options.body);
   currentUser = { ...currentUser, ...data, updatedAt: generateDate() };
-  return withDelay(() => generateResponse(currentUser));
+  return generateResponse(currentUser);
 });
 
 // 更新密碼
@@ -98,10 +95,10 @@ Mock.mock("/api/user/password", "put", (options) => {
   const { oldPassword, newPassword } = JSON.parse(options.body);
 
   if (oldPassword === "admin123") {
-    return withDelay(() => generateResponse(null, "密碼更新成功"));
+    return generateResponse(null, "密碼更新成功");
   }
 
-  return withDelay(() => generateError("原密碼錯誤"));
+  return generateError("原密碼錯誤");
 });
 
 // 獲取通知列表
@@ -109,12 +106,10 @@ Mock.mock(/\/api\/user\/notifications(\?.*)?$/, "get", (options) => {
   const url = new URL(options.url, "http://dummy.com");
   const params = Object.fromEntries(url.searchParams);
 
-  return withDelay(() =>
-    generateResponse({
-      list: notifications,
-      unreadCount: notifications.filter((n) => n.status === "unread").length,
-    })
-  );
+  return generateResponse({
+    list: notifications,
+    unreadCount: notifications.filter((n) => n.status === "unread").length,
+  });
 });
 
 // 標記通知為已讀
@@ -124,27 +119,44 @@ Mock.mock(/\/api\/user\/notifications\/.*\/read$/, "put", (options) => {
 
   if (notification) {
     notification.status = "read";
-    return withDelay(() => generateResponse(notification));
+    return generateResponse(notification);
   }
 
-  return withDelay(() => generateError("通知不存在"));
+  return generateError("通知不存在");
 });
 
 // 獲取用戶設置
 Mock.mock("/api/user/settings", "get", () => {
-  return withDelay(() => generateResponse(userSettings));
+  return generateResponse(userSettings);
 });
 
 // 更新用戶設置
 Mock.mock("/api/user/settings", "put", (options) => {
   const data = JSON.parse(options.body);
   Object.assign(userSettings, data);
-  return withDelay(() => generateResponse(userSettings));
+  return generateResponse(userSettings);
 });
 
 // 上傳頭像
 Mock.mock("/api/user/avatar", "post", () => {
   const avatarUrl = generateAvatar(Math.floor(Math.random() * 11));
   currentUser.avatar = avatarUrl;
-  return withDelay(() => generateResponse({ url: avatarUrl }));
+  return generateResponse({ url: avatarUrl });
+});
+
+// 獲取用戶列表
+Mock.mock(new RegExp("^/api/user/list"), "get", (options) => {
+  console.log("Mock 服務攔截到用戶列表請求：", options);
+  const responseData = {
+    code: 200,
+    data: {
+      list: users,
+      total: users.length,
+      page: 1,
+      pageSize: users.length,
+    },
+    message: "獲取用戶列表成功",
+  };
+  console.log("返回模擬用戶數據：", responseData);
+  return responseData;
 });

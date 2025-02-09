@@ -1,15 +1,36 @@
 import { request } from "../request";
 
-// 上傳檔案
-export const uploadFile = (file, workflowId) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("workflowId", workflowId);
-  return request.post("/workflow/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+/**
+ * 上傳檔案
+ * @param {File} file - 要上傳的檔案
+ * @param {string} workflowId - 工作流程 ID
+ * @returns {Promise} - 上傳結果
+ */
+export const uploadFile = async (file, workflowId) => {
+  console.log("準備上傳檔案：", {
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    workflowId,
   });
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("workflowId", workflowId);
+
+    const response = await request.post("/workflow/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    console.log("上傳檔案回應：", response);
+    return response;
+  } catch (error) {
+    console.error("檔案上傳失敗：", error);
+    throw error;
+  }
 };
 
 // 獲取工作流程的檔案列表

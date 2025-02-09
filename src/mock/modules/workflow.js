@@ -4,77 +4,89 @@ import {
   generateError,
   generateId,
   generateDate,
-  withDelay,
 } from "../utils";
 
-// 模擬檔案列表
+// 模擬檔案存儲
 const files = new Map();
+const workflowFiles = new Map();
 
 // 模擬檔案上傳
-Mock.mock("/api/workflow/upload", "post", (options) => {
-  const workflowId = options.body.get("workflowId");
-  const file = options.body.get("file");
+Mock.mock(new RegExp("^/api/workflow/upload"), "post", (options) => {
+  console.log("Mock 服務收到上傳請求：", options);
+  try {
+    // 解析上傳的檔案資訊
+    const fileInfo = {
+      id: generateId(),
+      workflowId: "default",
+      name: "模擬檔案.txt",
+      size: 1024,
+      type: "text/plain",
+      url: "data:text/plain;base64,5pW45L2N5qiZ5qiZ5paH5Lu2",
+      uploadedAt: generateDate(),
+      updatedAt: generateDate(),
+    };
 
-  // 生成檔案資訊
-  const fileInfo = {
-    id: generateId(),
-    workflowId,
-    name: file.name,
-    size: file.size,
-    type: file.type,
-    url: URL.createObjectURL(file),
-    uploadedAt: generateDate(),
-    updatedAt: generateDate(),
-  };
+    console.log("Mock 服務處理檔案資訊：", fileInfo);
 
-  // 儲存檔案資訊
-  if (!files.has(workflowId)) {
-    files.set(workflowId, new Map());
+    // 儲存檔案資訊
+    files.set(fileInfo.id, fileInfo);
+
+    // 關聯檔案到工作流程
+    if (!workflowFiles.has(fileInfo.workflowId)) {
+      workflowFiles.set(fileInfo.workflowId, new Set());
+    }
+    workflowFiles.get(fileInfo.workflowId).add(fileInfo.id);
+
+    return generateResponse(fileInfo);
+  } catch (error) {
+    console.error("Mock 檔案上傳失敗:", error);
+    return generateError("檔案上傳失敗");
   }
-  files.get(workflowId).set(fileInfo.id, fileInfo);
-
-  return withDelay(() => generateResponse(fileInfo, "檔案上傳成功"));
 });
 
 // 獲取工作流程的檔案列表
 Mock.mock(/\/api\/workflow\/.*\/files$/, "get", (options) => {
   const workflowId = options.url.split("/")[3];
-  const workflowFiles = Array.from(files.get(workflowId)?.values() || []);
+  const fileIds = workflowFiles.get(workflowId) || new Set();
+  const workflowFileList = Array.from(fileIds)
+    .map((fileId) => files.get(fileId))
+    .filter(Boolean);
 
-  return withDelay(() => generateResponse(workflowFiles));
+  return generateResponse(workflowFileList);
 });
 
 // 刪除檔案
 Mock.mock(/\/api\/workflow\/files\/.*$/, "delete", (options) => {
   const fileId = options.url.split("/").pop();
+  const fileInfo = files.get(fileId);
 
-  // 尋找並刪除檔案
-  for (const [workflowId, workflowFiles] of files.entries()) {
-    if (workflowFiles.has(fileId)) {
-      workflowFiles.delete(fileId);
-      return withDelay(() => generateResponse(null, "檔案刪除成功"));
-    }
+  if (!fileInfo) {
+    return generateError("檔案不存在");
   }
 
-  return withDelay(() => generateError("檔案不存在"));
+  // 從檔案存儲中刪除
+  files.delete(fileId);
+
+  // 從工作流程關聯中刪除
+  const workflowFileSet = workflowFiles.get(fileInfo.workflowId);
+  if (workflowFileSet) {
+    workflowFileSet.delete(fileId);
+  }
+
+  return generateResponse(null, "檔案刪除成功");
 });
 
 // 下載檔案
 Mock.mock(/\/api\/workflow\/files\/.*\/download$/, "get", (options) => {
   const fileId = options.url.split("/")[4];
+  const fileInfo = files.get(fileId);
 
-  // 尋找檔案
-  for (const [workflowId, workflowFiles] of files.entries()) {
-    const file = workflowFiles.get(fileId);
-    if (file) {
-      return withDelay(() =>
-        generateResponse({
-          url: file.url,
-          name: file.name,
-        })
-      );
-    }
+  if (!fileInfo) {
+    return generateError("檔案不存在");
   }
 
-  return withDelay(() => generateError("檔案不存在"));
+  return generateResponse({
+    url: fileInfo.url,
+    name: fileInfo.name,
+  });
 });

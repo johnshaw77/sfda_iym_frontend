@@ -86,6 +86,14 @@ const routes = [
       keepAlive: true,
     },
   },
+  {
+    path: "/api-test",
+    name: "ApiTest",
+    component: () => import("./views/api-test/index.vue"),
+    meta: {
+      keepAlive: true,
+    },
+  },
 
   // {
   //   path: "/workflow-test",
