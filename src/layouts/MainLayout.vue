@@ -89,10 +89,11 @@
         </el-header>
 
         <el-main class="!p-0 bg-gray-100">
-          <keep-alive>
-            <router-view v-if="$route.meta.keepAlive"></router-view>
-          </keep-alive>
-          <router-view v-if="!$route.meta.keepAlive"></router-view>
+          <router-view v-slot="{ Component }">
+            <keep-alive :exclude="['Settings']">
+              <component :is="Component" />
+            </keep-alive>
+          </router-view>
         </el-main>
       </el-container>
     </div>

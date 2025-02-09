@@ -6,6 +6,10 @@
 
 <script setup>
 import WorkflowCanvas from "./components/WorkflowCanvas.vue";
+
+defineOptions({
+  name: "Workflow",
+});
 </script>
 
 <style scoped>
