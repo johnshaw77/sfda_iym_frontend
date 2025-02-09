@@ -10,21 +10,66 @@ import {
 const files = new Map();
 const workflowFiles = new Map();
 
+const demoFiles = [
+  {
+    id: generateId(),
+    workflowId: "default",
+    name: "avatar6.png",
+    size: 1024 * 50, // 50KB
+    type: "image/png",
+    url: "/avatar/avatar1.png",
+    uploadedAt: generateDate(),
+    updatedAt: generateDate(),
+  },
+  {
+    id: generateId(),
+    workflowId: "default",
+    name: "avatar6.png",
+    size: 1024 * 50, // 50KB
+    type: "image/png",
+    url: "/avatar/avatar5.png",
+    uploadedAt: generateDate(),
+    updatedAt: generateDate(),
+  },
+  {
+    id: generateId(),
+    workflowId: "default",
+    name: "avatar6.png",
+    size: 1024 * 50, // 50KB
+    type: "image/png",
+    url: "/avatar/avatar6.png",
+    uploadedAt: generateDate(),
+    updatedAt: generateDate(),
+  },
+  {
+    id: generateId(),
+    workflowId: "default",
+    name: "工業大數據-摘要.pdf",
+    size: 1024 * 50, // 50KB
+    type: "application/pdf",
+    url: "/sample/example.pdf",
+    uploadedAt: generateDate(),
+    updatedAt: generateDate(),
+  },
+];
+
 // 模擬檔案上傳
 Mock.mock(new RegExp("^/api/workflow/upload"), "post", (options) => {
   console.log("Mock 服務收到上傳請求：", options);
   try {
-    // 解析上傳的檔案資訊
-    const fileInfo = {
-      id: generateId(),
-      workflowId: "default",
-      name: "模擬檔案.txt",
-      size: 1024,
-      type: "text/plain",
-      url: "data:text/plain;base64,5pW45L2N5qiZ5qiZ5paH5Lu2",
-      uploadedAt: generateDate(),
-      updatedAt: generateDate(),
-    };
+    // 模擬檔案資訊
+    // const fileInfo = {
+    //   id: generateId(),
+    //   workflowId: "default",
+    //   name: "avatar6.png",
+    //   size: 1024 * 50, // 50KB
+    //   type: "image/png",
+    //   url: "/avatar/avatar1.png",
+    //   uploadedAt: generateDate(),
+    //   updatedAt: generateDate(),
+    // };
+
+    const fileInfo = demoFiles[Math.floor(Math.random() * demoFiles.length)];
 
     console.log("Mock 服務處理檔案資訊：", fileInfo);
 

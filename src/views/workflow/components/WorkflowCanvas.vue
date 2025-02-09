@@ -948,16 +948,19 @@ const handleDrop = async (event) => {
 
       // 上傳檔案
       const result = await uploadFile(file, currentWorkflowId.value);
-
+      console.log("result", result);
       // 更新節點資訊
       const node = nodes.value.find((n) => n.id === nodeId);
+      console.log("nodenodenode", node);
       if (node) {
         node.data = {
           ...node.data,
-          fileId: result.id,
-          fileUrl: result.url,
+          fileId: result.data.id,
+          fileUrl: result.data.url,
+          fileName: result.data.name,
           uploadProgress: 100,
         };
+        console.log("nodenodenode", node.data.value);
       }
 
       ElMessage.success(`檔案 ${file.name} 上傳成功`);
