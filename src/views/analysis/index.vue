@@ -20,7 +20,6 @@
 import { ref } from "vue";
 import AnalysisTable from "./components/AnalysisTable.vue";
 import NewAnalysisDialog from "./components/NewAnalysisDialog.vue";
-import "./styles/index.css";
 
 const loading = ref(false);
 const dialogVisible = ref(false);
