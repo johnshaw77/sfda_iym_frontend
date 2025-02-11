@@ -876,9 +876,21 @@ const ALLOWED_FILE_TYPES = {
   "text/plain": "文字檔案",
   "text/csv": "CSV 檔案",
   "application/json": "JSON 檔案",
+  // Excel 相關
   "application/vnd.ms-excel": "Excel 檔案",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
     "Excel 檔案",
+  "application/excel": "Excel 檔案",
+  "application/x-excel": "Excel 檔案",
+  "application/x-msexcel": "Excel 檔案",
+  // PPT 相關
+  "application/vnd.ms-powerpoint": "PPT 檔案",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    "PPT 檔案",
+  "application/powerpoint": "PPT 檔案",
+  "application/mspowerpoint": "PPT 檔案",
+  "application/x-mspowerpoint": "PPT 檔案",
+  "application/ppt": "PPT 檔案",
 };
 
 const isFileTypeAllowed = (file) => {
