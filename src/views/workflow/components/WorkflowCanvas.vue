@@ -951,7 +951,7 @@ const handleDrop = async (event) => {
       console.log("result", result);
       // 更新節點資訊
       const node = nodes.value.find((n) => n.id === nodeId);
-      console.log("nodenodenode", node);
+      console.log("nodenodenode", result);
       if (node) {
         node.data = {
           ...node.data,
@@ -960,7 +960,7 @@ const handleDrop = async (event) => {
           fileName: result.data.name,
           uploadProgress: 100,
         };
-        console.log("nodenodenode", node.data.value);
+        console.log("nodenodenode", node.data);
       }
 
       ElMessage.success(`檔案 ${file.name} 上傳成功`);

@@ -1,7 +1,7 @@
 <template>
   <div
     class="file-node"
-    :class="{ selected: selected }"
+    :class="{ selected: selected, 'is-uploading': isUploading }"
     @click="$emit('click', $event)"
   >
     <Handle
@@ -16,7 +16,7 @@
     <div class="file-content">
       <!-- 圖片預覽 - 只在上傳完成且是圖片類型時顯示 -->
       <div v-if="isImage && data.uploadProgress === 100" class="node-preview">
-        <img :src="data.fileUrl" :alt="data.fileName" class="preview-image" />
+        <img :src="data.fileUrl" :alt="decodedFileName" class="preview-image" />
       </div>
       <!-- 上傳中或非圖片類型顯示圖標 -->
       <div v-else class="icon-wrapper">
@@ -32,7 +32,16 @@
       </div>
 
       <div class="file-info">
-        <div class="file-name">{{ data.fileName }}</div>
+        <el-tooltip
+          :content="data.fileName"
+          placement="top"
+          :show-after="500"
+          :hide-after="0"
+        >
+          <div class="file-name" :title="data.fileName">
+            {{ truncatedFileName }}
+          </div>
+        </el-tooltip>
         <div class="file-size">{{ formatFileSize(data.fileSize) }}</div>
         <div v-if="data.uploadProgress < 100" class="upload-progress">
           <el-progress
@@ -44,7 +53,12 @@
         </div>
         <!-- 添加預覽按鈕 -->
         <div v-else-if="isPreviewable" class="file-actions mt-2">
-          <el-button type="primary" link size="small" @click="handlePreview">
+          <el-button
+            type="primary"
+            link
+            size="small"
+            @click.stop="handlePreview"
+          >
             <Eye :size="14" class="mr-1" />預覽
           </el-button>
         </div>
@@ -82,10 +96,15 @@
     <el-dialog
       v-model="previewVisible"
       :title="data.fileName"
-      width="90%"
-      destroy-on-close
-      class="file-preview-dialog"
       :fullscreen="isFullscreen"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      :show-close="false"
+      class="file-preview-dialog"
+      width="80%"
+      top="5vh"
+      :draggable="true"
+      @click.stop
     >
       <template #header="{ close, titleId, titleClass }">
         <div class="flex items-center justify-between w-full">
@@ -121,16 +140,16 @@
           {{ data.url }}
           <img
             ref="imageRef"
-            :src="data.url"
+            :src="data.fileUrl"
             :alt="data.fileName"
             :style="{
               transform: `scale(${zoomLevel})`,
               cursor: isDragging ? 'grabbing' : 'grab',
             }"
-            @mousedown="startDrag"
-            @mousemove="onDrag"
-            @mouseup="stopDrag"
-            @mouseleave="stopDrag"
+            @mousedown.stop="startDrag"
+            @mousemove.stop="onDrag"
+            @mouseup.stop="stopDrag"
+            @mouseleave.stop="stopDrag"
           />
         </div>
 
@@ -144,16 +163,6 @@
                 :total="totalPages"
                 layout="prev, pager, next"
               />
-              <div class="flex items-center space-x-2">
-                <el-button-group>
-                  <el-button @click="handlePdfZoomOut">
-                    <ZoomOut :size="16" />
-                  </el-button>
-                  <el-button @click="handlePdfZoomIn">
-                    <ZoomIn :size="16" />
-                  </el-button>
-                </el-button-group>
-              </div>
             </div>
           </div>
           <div class="pdf-container" :class="{ 'is-fullscreen': isFullscreen }">
@@ -201,7 +210,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick, shallowRef } from "vue";
 import { Handle } from "@vue-flow/core";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -280,10 +289,32 @@ const showZoomControls = computed(() => isImage.value || isPdf.value);
 const spreadsheetData = ref([]);
 const spreadsheetColumns = ref([]);
 
-const pdfDoc = ref(null);
+// const pdfDoc = ref(null);
+// 使用 shallowRef 來優化效能(一定要用這個)
+const pdfDoc = shallowRef();
 const pdfCanvas = ref(null);
 const pdfContext = ref(null);
 const currentScale = ref(1.0);
+
+// 解碼檔案名
+const decodedFileName = computed(() => {
+  console.log(
+    "decodedFileName",
+    props.data.fileName,
+    decodeURI(props.data.fileName)
+  );
+  try {
+    return props.data.fileName; //decodeURI(props.data.fileName);
+  } catch (e) {
+    return props.data.fileName;
+  }
+});
+
+const isUploading = computed(() => {
+  return (
+    props.data.uploadProgress !== undefined && props.data.uploadProgress < 100
+  );
+});
 
 // 載入 PDF 文件
 const loadPDF = async (url) => {
@@ -300,7 +331,6 @@ const loadPDF = async (url) => {
       url: absoluteUrl,
       cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/cmaps/",
       cMapPacked: true,
-      verbosity: pdfjsLib.VerbosityLevel.ERRORS,
     });
 
     // 添加載入進度處理
@@ -308,10 +338,12 @@ const loadPDF = async (url) => {
       console.log("PDF 載入進度：", progress);
     };
 
-    pdfDoc.value = await loadingTask.promise;
-    console.log("PDF 載入成功，總頁數：", pdfDoc.value.numPages);
+    // arkRaw(await pdfjsLib.getDocument(url).promise);
+    const pdf = await loadingTask.promise;
+    pdfDoc.value = pdf;
+    console.log("PDF 載入成功，總頁數：", pdf.numPages);
 
-    totalPages.value = pdfDoc.value.numPages;
+    totalPages.value = pdf.numPages;
     currentPage.value = 1;
     await renderPage(1);
   } catch (error) {
@@ -325,7 +357,7 @@ const loadPDF = async (url) => {
 
 // 渲染 PDF 頁面
 const renderPage = async (pageNumber) => {
-  console.log("renderPage", pageNumber);
+  console.log("渲染 PDF 頁面", pageNumber);
   if (!pdfDoc.value) return;
 
   try {
@@ -335,33 +367,62 @@ const renderPage = async (pageNumber) => {
 
     // 設置 canvas 大小
     const canvas = pdfCanvas.value;
+    if (!canvas) {
+      console.error("Canvas 元素不存在");
+      return;
+    }
+
     const context = canvas.getContext("2d");
     canvas.height = viewport.height;
     canvas.width = viewport.width;
 
     // 渲染 PDF 頁面到 canvas
-    await page.render({
+    const renderContext = {
       canvasContext: context,
       viewport: viewport,
-    }).promise;
+    };
+
+    try {
+      await page.render(renderContext).promise;
+    } catch (renderError) {
+      console.error("PDF 頁面渲染失敗:", renderError);
+      ElMessage.error("PDF 頁面渲染失敗");
+    }
   } catch (error) {
-    console.error("PDF 頁面渲染失敗:", error);
-    ElMessage.error("PDF 頁面渲染失敗");
+    console.error("獲取 PDF 頁面失敗:", error);
+    ElMessage.error("獲取 PDF 頁面失敗");
   }
 };
 
 // 監聽頁碼變化
 watch(currentPage, (newPage) => {
-  renderPage(newPage);
+  if (isPdf.value && pdfDoc.value) {
+    renderPage(newPage);
+  }
+});
+
+// 監聽縮放比例變化
+watch(currentScale, (newScale) => {
+  if (isPdf.value && pdfDoc.value) {
+    renderPage(currentPage.value);
+  }
 });
 
 // 處理縮放
 const handleZoomIn = () => {
-  zoomLevel.value = Math.min(zoomLevel.value + 0.1, 3);
+  if (isPdf.value) {
+    currentScale.value = Math.min(currentScale.value + 0.2, 3);
+  } else if (isImage.value) {
+    zoomLevel.value = Math.min(zoomLevel.value + 0.1, 3);
+  }
 };
 
 const handleZoomOut = () => {
-  zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.5);
+  if (isPdf.value) {
+    currentScale.value = Math.max(currentScale.value - 0.2, 0.5);
+  } else if (isImage.value) {
+    zoomLevel.value = Math.max(zoomLevel.value - 0.1, 0.5);
+  }
 };
 
 // 處理全螢幕
@@ -519,13 +580,61 @@ const onConnect = (params) => {
 // 在預覽對話框打開時載入 PDF
 watch(previewVisible, async (visible) => {
   if (visible && isPdf.value && props.data.fileUrl) {
+    // 重置縮放和頁碼
+    currentScale.value = 1.0;
+    currentPage.value = 1;
+
     // 確保檔案類型是 PDF 才進行載入
     if (props.data.fileType === "application/pdf") {
+      console.log("載入 PDF", props.data.fileUrl);
       await loadPDF(props.data.fileUrl);
     } else {
       console.warn("非 PDF 檔案，跳過 PDF 載入");
     }
   }
+});
+
+// 監聽全螢幕狀態變化
+watch(isFullscreen, () => {
+  if (isPdf.value && pdfDoc.value) {
+    // 在下一個 tick 重新渲染，確保容器大小已更新
+    nextTick(() => {
+      renderPage(currentPage.value);
+    });
+  }
+});
+
+// 檔案名截斷處理
+const truncatedFileName = computed(() => {
+  const fileName = props.data.fileName;
+  if (!fileName) return "";
+
+  const maxLength = 20; // 最大顯示長度
+
+  // 如果檔案名包含副檔名
+  if (fileName.includes(".")) {
+    const parts = fileName.split(".");
+    const ext = parts.pop(); // 取得副檔名
+    const name = parts.join("."); // 檔案名（不含副檔名）
+
+    if (name.length + ext.length + 1 <= maxLength) {
+      return fileName;
+    }
+
+    // 計算要顯示的檔案名長度
+    const availableLength = maxLength - ext.length - 3; // 減去省略號和點的長度
+    if (availableLength < 1) {
+      return `...${ext}`;
+    }
+
+    return `${name.slice(0, availableLength)}...${ext}`;
+  }
+
+  // 如果檔案名不包含副檔名
+  if (fileName.length <= maxLength) {
+    return fileName;
+  }
+  return `${fileName.slice(0, maxLength - 3)}...`;
 });
 </script>
 
@@ -564,7 +673,11 @@ watch(previewVisible, async (visible) => {
 }
 
 .file-name {
-  @apply text-sm font-medium text-gray-700 truncate;
+  @apply text-sm font-medium text-gray-700;
+  max-width: 180px; /* 設置最大寬度 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .file-size {
@@ -587,57 +700,47 @@ watch(previewVisible, async (visible) => {
 
 /* 預覽對話框樣式 */
 .file-preview-dialog {
+  :deep(.el-dialog) {
+    @apply rounded-lg overflow-hidden;
+  }
+
+  :deep(.el-dialog__header) {
+    @apply m-0 p-4 border-b border-gray-200;
+  }
+
   :deep(.el-dialog__body) {
-    @apply p-4;
+    @apply p-0;
+  }
+
+  :deep(.el-dialog__title) {
+    @apply text-lg font-medium;
   }
 }
 
 .preview-content {
-  @apply relative;
-  transition: all 0.3s ease;
-}
-
-.preview-content.is-fullscreen {
-  @apply fixed inset-0 bg-white z-50;
+  @apply relative bg-gray-50;
+  height: calc(90vh - 120px);
 }
 
 .image-preview {
-  @apply flex items-center justify-center overflow-hidden;
-  height: 70vh;
+  @apply h-full flex items-center justify-center bg-gray-900 bg-opacity-50;
 }
 
 .image-preview img {
   @apply max-w-full max-h-full object-contain;
-  transition: transform 0.1s ease;
+  transition: transform 0.2s ease;
 }
 
 .pdf-preview {
-  @apply flex flex-col h-full;
+  @apply h-full flex flex-col;
 }
 
 .pdf-controls {
-  @apply sticky top-0 bg-white border-b border-gray-200 py-4 z-10;
+  @apply bg-white border-b border-gray-200 p-4;
 }
 
 .pdf-container {
-  @apply flex justify-center overflow-auto p-4;
-  height: calc(100vh - 200px);
-}
-
-.pdf-container.is-fullscreen {
-  height: calc(100vh - 100px);
-}
-
-.pdf-canvas {
-  @apply bg-white shadow-lg;
-}
-
-.text-preview {
-  @apply bg-gray-50 p-4 rounded max-h-[70vh] overflow-auto font-mono text-sm;
-}
-
-.text-preview.is-fullscreen {
-  @apply h-screen max-h-screen;
+  @apply flex-1 overflow-auto p-4 flex justify-center;
 }
 
 .spreadsheet-preview {
@@ -645,26 +748,6 @@ watch(previewVisible, async (visible) => {
 }
 
 .unsupported-preview {
-  @apply text-center py-8;
-}
-
-:deep(.el-dialog__header) {
-  @apply mb-4 border-b;
-}
-
-:deep(.el-dialog__body) {
-  @apply p-4;
-}
-
-.upload-overlay {
-  @apply absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-sm font-medium rounded-lg;
-}
-
-.file-actions {
-  @apply flex items-center space-x-2;
-}
-
-.file-actions :deep(.el-button) {
-  @apply !p-0 !h-6;
+  @apply h-full flex flex-col items-center justify-center;
 }
 </style>

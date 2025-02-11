@@ -68,7 +68,7 @@
         <el-upload
           class="upload-demo"
           drag
-          action="/api/workflow/upload"
+          action="http://localhost:3001/api/file/upload"
           :on-success="handleUploadSuccess"
           :on-error="handleUploadError"
           :before-upload="handleBeforeUpload"
@@ -138,12 +138,12 @@ const handleFetchUsers = async () => {
 
   try {
     const response = await request.get("/user/list");
-    console.log("Mock 響應：", response);
+    console.log("API響應：", response);
 
     // 正確解析響應數據
     if (response.code === 200) {
       console.log("Mock 響應數據：", response.data);
-      userList.value = response.data.list;
+      userList.value = response.data;
       userApiResult.value = {
         success: true,
         message: response.message,

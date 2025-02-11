@@ -19,7 +19,7 @@ export const uploadFile = async (file, workflowId) => {
     formData.append("file", file);
     formData.append("workflowId", workflowId);
 
-    const response = await request.post("/workflow/upload", formData, {
+    const response = await request.post("/file/upload", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

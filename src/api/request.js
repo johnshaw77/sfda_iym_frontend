@@ -3,7 +3,7 @@ import { ElMessage } from "element-plus";
 
 // 創建 axios 實例
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api", // 從環境變數獲取 baseURL
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15000, // 請求超時時間
 });
 
@@ -24,7 +24,6 @@ service.interceptors.request.use(
     return config;
   },
   (error) => {
-    console.error("Request error:", error);
     return Promise.reject(error);
   }
 );
@@ -33,48 +32,36 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response) => {
     const { data } = response;
-    console.log("響應攔截器收到數據：", data);
-
-    // 如果是 Mock 數據，直接返回
-    if (import.meta.env.VITE_ENABLE_MOCK === "true") {
-      return data;
-    }
-
-    // 這裡假設後端返回的數據結構為 { code, data, message }
-    if (data.code === 200) {
-      return data;
-    }
-
-    // 處理其他狀態碼
-    ElMessage.error(data.message || "請求失敗");
-    return Promise.reject(new Error(data.message || "請求失敗"));
+    return data;
   },
   (error) => {
-    // 處理 HTTP 錯誤狀態
-    const message =
-      {
-        400: "請求錯誤",
-        401: "未授權，請重新登入",
-        403: "拒絕訪問",
-        404: "請求地址出錯",
-        408: "請求超時",
-        500: "伺服器內部錯誤",
-        501: "服務未實現",
-        502: "網關錯誤",
-        503: "服務不可用",
-        504: "網關超時",
-        505: "HTTP版本不受支援",
-      }[error.response?.status] || "網路異常";
+    const { response } = error;
+    let message = "系統錯誤";
 
-    ElMessage.error(message);
-
-    // 如果是 401 未授權，清除 token 並重新登入
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      // 重定向到登入頁
-      window.location.href = "/login";
+    if (response) {
+      switch (response.status) {
+        case 400:
+          message = response.data.error || "請求參數錯誤";
+          break;
+        case 401:
+          message = "未授權，請重新登入";
+          // 這裡可以處理登出邏輯
+          break;
+        case 403:
+          message = "拒絕訪問";
+          break;
+        case 404:
+          message = "請求錯誤，未找到該資源";
+          break;
+        case 500:
+          message = "伺服器錯誤";
+          break;
+        default:
+          message = response.data.error || "系統錯誤";
+      }
     }
 
+    ElMessage.error(message);
     return Promise.reject(error);
   }
 );
