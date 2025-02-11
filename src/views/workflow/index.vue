@@ -5,55 +5,83 @@
       <WorkflowCanvas />
     </div>
 
-    <!-- 右側面板 -->
-    <div class="workflow-panel">
-      <el-tabs tab-position="top">
-        <!-- 檔案上傳面板 -->
-        <el-tab-pane class="flex-1 overflow-hidden">
-          <template #label>
-            <div class="flex items-center">
-              <FileText :size="16" class="mr-1" />
-              檔案
-            </div>
-          </template>
+    <!-- 浮動面板 -->
+    <div
+      class="workflow-panel"
+      :class="{
+        'panel-collapsed': isPanelCollapsed,
+        'panel-fixed': !isPanelCollapsed,
+      }"
+    >
+      <div class="panel-toggle" @click="handleTogglePanel">
+        <component
+          :is="isPanelCollapsed ? ChevronLeft : ChevronRight"
+          :size="16"
+          class="toggle-icon"
+          :class="{ 'icon-collapsed': isPanelCollapsed }"
+        />
+      </div>
 
-          <div class="h-full overflow-y-auto p-4">
-            <FileUpload
-              :workflowId="currentWorkflowId"
-              :multiple="true"
-              accept=".pdf,.jpg,.png,.xlsx,.csv"
-              @file-uploaded="handleFileUploaded"
-              @file-deleted="handleFileDeleted"
-            />
-          </div>
-        </el-tab-pane>
+      <div
+        class="panel-content"
+        :style="{ width: isPanelCollapsed ? '0' : '100%' }"
+      >
+        <el-tabs tab-position="top" v-show="!isPanelCollapsed">
+          <!-- 檔案上傳面板 -->
+          <el-tab-pane class="flex-1 overflow-hidden">
+            <template #label>
+              <div class="flex items-center">
+                <FileText :size="16" class="mr-1" />
+                檔案
+              </div>
+            </template>
 
-        <!-- 節點配置面板 -->
-        <el-tab-pane class="flex-1 overflow-hidden">
-          <template #label>
-            <div class="flex items-center">
-              <Settings :size="16" class="mr-1" />
-              設定
+            <div class="h-full overflow-y-auto p-4">
+              <FileUpload
+                :workflowId="currentWorkflowId"
+                :multiple="true"
+                accept=".pdf,.jpg,.png,.xlsx,.csv"
+                @file-uploaded="handleFileUploaded"
+                @file-deleted="handleFileDeleted"
+              />
             </div>
-          </template>
-          <div class="h-full overflow-y-auto p-4">
-            <NodeConfigPanel />
-          </div>
-        </el-tab-pane>
-      </el-tabs>
+          </el-tab-pane>
+
+          <!-- 節點配置面板 -->
+          <el-tab-pane class="flex-1 overflow-hidden">
+            <template #label>
+              <div class="flex items-center">
+                <Settings :size="16" class="mr-1" />
+                設定
+              </div>
+            </template>
+            <div class="h-full overflow-y-auto p-4">
+              <NodeConfigPanel />
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { FileText, Settings } from "lucide-vue-next";
+import { FileText, Settings, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import WorkflowCanvas from "./components/WorkflowCanvas.vue";
 import NodeConfigPanel from "./components/NodeConfigPanel.vue";
 import FileUpload from "@/components/FileUpload.vue";
 
 // 當前工作流程 ID（這裡先用模擬數據）
 const currentWorkflowId = ref("workflow-001");
+
+// 面板折疊狀態
+const isPanelCollapsed = ref(false);
+
+// 處理面板折疊/展開
+const handleTogglePanel = () => {
+  isPanelCollapsed.value = !isPanelCollapsed.value;
+};
 
 // 處理檔案上傳成功
 const handleFileUploaded = (file) => {
@@ -68,8 +96,8 @@ const handleFileDeleted = (file) => {
 
 <style scoped>
 .workflow-container {
-  @apply h-full flex;
-  height: calc(100vh - 5.5rem); /* 減去頂部導航欄和頁面標題的高度 */
+  @apply h-full flex relative;
+  height: calc(100vh - 5.5rem);
 }
 
 .workflow-canvas {
@@ -78,8 +106,57 @@ const handleFileDeleted = (file) => {
 }
 
 .workflow-panel {
-  @apply w-80 border-l bg-white flex flex-col;
   height: 100%;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.panel-fixed {
+  @apply relative border-l bg-white flex;
+  width: 320px;
+}
+
+.panel-collapsed {
+  @apply fixed right-0 top-[5.5rem] bottom-0;
+  width: 0;
+  background: white;
+  border-left: 1px solid #e5e7eb;
+}
+
+.panel-toggle {
+  @apply absolute left-0 top-[5.5rem] -translate-y-1/2;
+  @apply w-6 h-12 bg-white rounded-l-md shadow-sm cursor-pointer;
+  @apply flex items-center justify-center;
+  @apply border border-r-0 border-gray-200;
+  transform: translateX(-100%);
+  transition: all 0.2s ease;
+}
+
+.panel-toggle:hover {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+.toggle-icon {
+  @apply text-gray-400;
+  transition: color 0.2s ease;
+}
+
+.panel-toggle:hover .toggle-icon {
+  color: white;
+}
+
+.icon-collapsed {
+  @apply text-gray-600;
+}
+
+.panel-toggle:hover .icon-collapsed {
+  color: white;
+}
+
+.panel-content {
+  @apply w-full h-full flex flex-col bg-white;
+  transition: opacity 0.3s ease;
 }
 
 :deep(.el-tabs) {
