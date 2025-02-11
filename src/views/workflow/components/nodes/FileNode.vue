@@ -51,15 +51,26 @@
             class="mt-1"
           />
         </div>
-        <!-- 添加預覽按鈕 -->
-        <div v-else-if="isPreviewable" class="file-actions mt-2">
+        <!-- 檔案操作按鈕 -->
+        <div v-if="data.uploadProgress === 100" class="file-actions mt-2">
+          <!-- 預覽按鈕 - 只對可預覽的檔案顯示 -->
           <el-button
+            v-if="isPreviewable && !isOfficeFile"
             type="primary"
             link
             size="small"
             @click.stop="handlePreview"
           >
             <Eye :size="14" class="mr-1" />預覽
+          </el-button>
+          <!-- 下載按鈕 - 所有檔案都顯示 -->
+          <el-button
+            type="primary"
+            link
+            size="small"
+            @click.stop="handleDownload"
+          >
+            <Download :size="14" class="mr-1" />下載
           </el-button>
         </div>
       </div>
@@ -79,7 +90,10 @@
       <div class="w-full h-full absolute top-0 left-0"></div>
       <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item command="preview" v-if="isPreviewable">
+          <el-dropdown-item
+            command="preview"
+            v-if="isPreviewable && !isOfficeFile"
+          >
             <Eye :size="14" class="mr-2" />預覽
           </el-dropdown-item>
           <el-dropdown-item command="download">
@@ -101,7 +115,7 @@
       :close-on-click-modal="false"
       :show-close="false"
       class="file-preview-dialog"
-      width="80%"
+      width="60%"
       top="5vh"
       :draggable="true"
       @click.stop
@@ -196,6 +210,15 @@
           >{{ textContent }}</pre
         >
 
+        <!-- PPT 預覽 -->
+        <div v-else-if="isPpt" class="ppt-preview">
+          <PptPreview v-if="pptFile" :file="pptFile" @error="handlePptError" />
+          <div v-else class="flex items-center justify-center h-full">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span class="ml-2">正在載入 PPT...</span>
+          </div>
+        </div>
+
         <!-- 不支援預覽 -->
         <div v-else class="unsupported-preview">
           <FileX :size="48" class="mx-auto mb-4 text-gray-400" />
@@ -228,8 +251,11 @@ import {
   Maximize2,
   Minimize2,
   X,
+  FileType,
 } from "lucide-vue-next";
+import { Loading } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import PptPreview from "@/components/PptPreview.vue";
 
 const props = defineProps({
   id: {
@@ -259,6 +285,7 @@ const totalPages = ref(1);
 const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
 const imageRef = ref(null);
+const pptFile = ref(null);
 
 // 設置 PDF.js 的 worker 路徑
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -266,7 +293,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 // 檔案類型判斷
 const isImage = computed(() => props.data.fileType?.startsWith("image/"));
 const isPdf = computed(() => props.data.fileType === "application/pdf");
-console.log("isPdf", isPdf.value);
 const isText = computed(() =>
   ["text/plain", "text/csv", "application/json"].includes(props.data.fileType)
 );
@@ -277,9 +303,55 @@ const isSpreadsheet = computed(() =>
     "text/csv",
   ].includes(props.data.fileType)
 );
+const isPpt = computed(() => {
+  const type = props.data.fileType?.toLowerCase();
+  const filename = props.data.fileName?.toLowerCase();
+
+  // 檢查檔案類型
+  const validTypes = [
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/powerpoint",
+    "application/mspowerpoint",
+    "application/x-mspowerpoint",
+    "application/ppt",
+  ];
+
+  // 檢查副檔名
+  const validExtensions = [".ppt", ".pptx"];
+
+  console.log("檔案類型檢查：", {
+    檔案名稱: filename,
+    MIME類型: type,
+    副檔名符合:
+      filename && validExtensions.some((ext) => filename.endsWith(ext)),
+    MIME類型符合: validTypes.includes(type),
+    原始資料: props.data,
+  });
+
+  return (
+    validTypes.includes(type) ||
+    (filename && validExtensions.some((ext) => filename.endsWith(ext)))
+  );
+});
+
+const isOfficeFile = computed(() => {
+  const type = props.data.fileType?.toLowerCase();
+  const filename = props.data.fileName?.toLowerCase();
+
+  // 檢查檔案類型和副檔名
+  return (
+    type?.includes("powerpoint") ||
+    type?.includes("excel") ||
+    filename?.endsWith(".ppt") ||
+    filename?.endsWith(".pptx") ||
+    filename?.endsWith(".xls") ||
+    filename?.endsWith(".xlsx")
+  );
+});
 
 const isPreviewable = computed(
-  () => isImage.value || isPdf.value || isText.value || isSpreadsheet.value
+  () => isImage.value || isPdf.value || isText.value
 );
 
 // 是否顯示縮放控制
@@ -319,13 +391,13 @@ const isUploading = computed(() => {
 // 載入 PDF 文件
 const loadPDF = async (url) => {
   try {
-    console.log("開始載入 PDF：", url);
+    //console.log("開始載入 PDF：", url);
 
     // 確保 URL 是絕對路徑
     const absoluteUrl = url.startsWith("http")
       ? url
       : window.location.origin + url;
-    console.log("絕對路徑：", absoluteUrl);
+    //console.log("絕對路徑：", absoluteUrl);
 
     const loadingTask = pdfjsLib.getDocument({
       url: absoluteUrl,
@@ -357,12 +429,12 @@ const loadPDF = async (url) => {
 
 // 渲染 PDF 頁面
 const renderPage = async (pageNumber) => {
-  console.log("渲染 PDF 頁面", pageNumber);
+  //console.log("渲染 PDF 頁面", pageNumber);
   if (!pdfDoc.value) return;
 
   try {
     const page = await pdfDoc.value.getPage(pageNumber);
-    console.log("page", page);
+    //console.log("page", page);
     const viewport = page.getViewport({ scale: currentScale.value });
 
     // 設置 canvas 大小
@@ -465,16 +537,49 @@ const handlePdfZoomOut = () => {
 
 // 根據檔案類型獲取對應圖標和顏色
 const getFileIcon = (type) => {
-  if (type?.startsWith("image/")) return ImageIcon;
-  if (type?.includes("pdf")) return FileText;
+  if (!type) return File;
+  type = type.toLowerCase();
+
+  if (type.includes("image")) return ImageIcon;
+  if (type.includes("pdf")) return FileText;
+  if (
+    type.includes("powerpoint") ||
+    type.endsWith("ppt") ||
+    type.endsWith("pptx")
+  )
+    return FileType;
   return File;
 };
 
 const getIconColorClass = (type) => {
-  if (type?.startsWith("image/")) return "text-green-500";
-  if (type?.includes("pdf")) return "text-red-500";
-  if (type?.includes("text")) return "text-blue-500";
-  return "text-gray-500";
+  if (!type) return "text-gray-400";
+  type = type.toLowerCase();
+
+  // PPT 檔案使用橘紅色
+  if (
+    type.includes("powerpoint") ||
+    type.endsWith("ppt") ||
+    type.endsWith("pptx") ||
+    type.includes("application/vnd.ms-powerpoint") ||
+    type.includes(
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
+  )
+    return "text-orange-600";
+
+  // Excel 檔案使用綠色
+  if (
+    type.includes("excel") ||
+    type.includes("spreadsheet") ||
+    type.endsWith("xls") ||
+    type.endsWith("xlsx")
+  )
+    return "text-green-600";
+
+  // 其他檔案類型保持不變
+  if (type.includes("image")) return "text-green-500";
+  if (type.includes("pdf")) return "text-red-500";
+  return "text-gray-400";
 };
 
 // 格式化檔案大小
@@ -511,6 +616,24 @@ const handlePreview = async () => {
     fileType: props.data.fileType,
     fileUrl: fileUrl,
   });
+
+  if (isPpt.value) {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      // 使用 Object.assign 來添加必要的屬性
+      pptFile.value = Object.assign(blob, {
+        lastModified: new Date().getTime(),
+        name: props.data.fileName,
+        // 如果 fileType 為空，則使用一個預設值
+        type: props.data.fileType || "application/vnd.ms-powerpoint",
+      });
+    } catch (error) {
+      console.error("PPT 檔案載入失敗：", error);
+      ElMessage.error("無法載入 PPT 檔案");
+      return;
+    }
+  }
 
   if (isText.value || isSpreadsheet.value) {
     try {
@@ -636,11 +759,38 @@ const truncatedFileName = computed(() => {
   }
   return `${fileName.slice(0, maxLength - 3)}...`;
 });
+
+// 處理 PPT 預覽失敗
+const handlePptError = (error) => {
+  ElMessage.error("PPT 預覽失敗：" + error.message);
+};
+
+// 監聽預覽對話框關閉事件，清理資源
+watch(previewVisible, (visible) => {
+  if (!visible) {
+    pptFile.value = null;
+  }
+
+  if (visible && isPdf.value && props.data.fileUrl) {
+    // ... existing PDF preview code ...
+  }
+});
+
+// 添加下載處理函數
+const handleDownload = () => {
+  const link = document.createElement("a");
+  link.href = props.data.fileUrl;
+  link.download = props.data.fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  ElMessage.success("開始下載檔案");
+};
 </script>
 
 <style scoped>
 .file-node {
-  @apply bg-white rounded-lg shadow-md p-4 min-w-[200px] relative border-2 border-transparent;
+  @apply bg-white rounded-lg shadow-md p-2 min-w-[200px] min-h-[60px] relative border-2 border-transparent;
   transition: all 0.2s ease;
 }
 
@@ -653,7 +803,7 @@ const truncatedFileName = computed(() => {
 }
 
 .node-preview {
-  @apply w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100;
+  @apply w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100;
 }
 
 .preview-image {
@@ -661,7 +811,7 @@ const truncatedFileName = computed(() => {
 }
 
 .icon-wrapper {
-  @apply w-16 h-16 rounded-lg flex items-center justify-center bg-gray-50 flex-shrink-0 relative;
+  @apply w-12 h-12 rounded-lg flex items-center justify-center bg-gray-50 flex-shrink-0 relative;
 }
 
 .file-icon {
@@ -669,7 +819,7 @@ const truncatedFileName = computed(() => {
 }
 
 .file-info {
-  @apply flex-1 min-w-0;
+  @apply flex-1 min-w-0 flex flex-col justify-center;
 }
 
 .file-name {
@@ -686,6 +836,10 @@ const truncatedFileName = computed(() => {
 
 .upload-progress {
   @apply mt-1;
+}
+
+.file-actions {
+  @apply mt-2 flex items-center justify-end space-x-2;
 }
 
 /* Handle 樣式 */
@@ -745,6 +899,10 @@ const truncatedFileName = computed(() => {
 
 .spreadsheet-preview {
   @apply bg-white rounded shadow;
+}
+
+.ppt-preview {
+  @apply h-full flex flex-col items-center justify-center;
 }
 
 .unsupported-preview {
