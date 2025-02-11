@@ -3,7 +3,7 @@ import { ElMessage } from "element-plus";
 
 // 創建 axios 實例
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3001/api",
   timeout: 15000, // 請求超時時間
 });
 
@@ -24,6 +24,7 @@ service.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error("請求錯誤:", error);
     return Promise.reject(error);
   }
 );
@@ -31,37 +32,21 @@ service.interceptors.request.use(
 // 響應攔截器
 service.interceptors.response.use(
   (response) => {
-    const { data } = response;
-    return data;
+    return response.data;
   },
   (error) => {
-    const { response } = error;
-    let message = "系統錯誤";
+    console.error("響應錯誤:", error);
 
-    if (response) {
-      switch (response.status) {
-        case 400:
-          message = response.data.error || "請求參數錯誤";
-          break;
-        case 401:
-          message = "未授權，請重新登入";
-          // 這裡可以處理登出邏輯
-          break;
-        case 403:
-          message = "拒絕訪問";
-          break;
-        case 404:
-          message = "請求錯誤，未找到該資源";
-          break;
-        case 500:
-          message = "伺服器錯誤";
-          break;
-        default:
-          message = response.data.error || "系統錯誤";
-      }
+    // 處理錯誤響應
+    const message = error.response?.data?.message || "請求失敗";
+    ElMessage.error(message);
+
+    // 處理 401 未授權錯誤
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
     }
 
-    ElMessage.error(message);
     return Promise.reject(error);
   }
 );

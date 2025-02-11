@@ -1,11 +1,19 @@
 <script setup>
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 import MainLayout from "./layouts/MainLayout.vue";
+import BlankLayout from "./layouts/BlankLayout.vue";
+
+const route = useRoute();
+const layout = computed(() => {
+  return route.meta.layout === "blank" ? BlankLayout : MainLayout;
+});
 </script>
 
 <template>
-  <MainLayout>
+  <component :is="layout">
     <router-view />
-  </MainLayout>
+  </component>
 </template>
 
 <style>

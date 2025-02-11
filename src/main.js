@@ -42,8 +42,20 @@ import {
 // 路由配置
 const routes = [
   {
+    path: "/login",
+    name: "Login",
+    component: () => import("./views/auth/Login.vue"),
+    meta: {
+      guest: true,
+      layout: "blank",
+    },
+  },
+  {
     path: "/",
     redirect: "/projects",
+    meta: {
+      requiresAuth: true,
+    },
   },
   {
     path: "/projects",
@@ -51,6 +63,7 @@ const routes = [
     component: () => import("./views/projects/index.vue"),
     meta: {
       keepAlive: true,
+      requiresAuth: true,
     },
   },
   {
@@ -58,7 +71,8 @@ const routes = [
     name: "Workflow",
     component: () => import("./views/workflow/index.vue"),
     meta: {
-      keepAlive: true, // 預設緩存
+      keepAlive: true,
+      requiresAuth: true,
     },
   },
   {
@@ -67,6 +81,7 @@ const routes = [
     component: () => import("./views/files/index.vue"),
     meta: {
       keepAlive: true,
+      requiresAuth: true,
     },
   },
   {
@@ -75,6 +90,7 @@ const routes = [
     component: () => import("./views/analysis/index.vue"),
     meta: {
       keepAlive: true,
+      requiresAuth: true,
     },
   },
   {
@@ -83,6 +99,7 @@ const routes = [
     component: () => import("./views/settings/index.vue"),
     meta: {
       keepAlive: true,
+      requiresAuth: true,
     },
   },
   {
@@ -112,7 +129,19 @@ const router = createRouter({
 // 路由守衛
 router.beforeEach((to, from, next) => {
   NProgress.start();
-  next();
+
+  // 檢查是否需要認證
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  const isGuest = to.matched.some((record) => record.meta.guest);
+  const token = localStorage.getItem("token");
+
+  if (requiresAuth && !token) {
+    next({ path: "/login", query: { redirect: to.fullPath } });
+  } else if (isGuest && token) {
+    next("/");
+  } else {
+    next();
+  }
 });
 
 router.afterEach(() => {
