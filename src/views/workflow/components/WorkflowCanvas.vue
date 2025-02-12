@@ -244,7 +244,7 @@ import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
-import { uploadFile } from "@/api/modules/workflow";
+import { uploadWorkflowFile } from "@/api/modules/workflow";
 import FileNode from "./nodes/FileNode.vue";
 
 // 註冊自定義節點類型
@@ -255,7 +255,7 @@ const nodeTypes = {
 };
 
 // 當前工作流程 ID（這裡先用預設值）
-const currentWorkflowId = ref("default");
+const currentWorkflowId = ref("69f40f6e-6718-4588-881f-373444fe5ecb");
 
 // 註冊自定義邊線類型
 const edgeTypes = {
@@ -925,6 +925,7 @@ const handleDrop = async (event) => {
   // 處理每個檔案
   for (const file of files) {
     try {
+      console.log("file", file);
       // 創建檔案節點（先顯示上傳進度）
       const nodeId = `file-${Date.now()}-${Math.random()
         .toString(36)
@@ -959,7 +960,8 @@ const handleDrop = async (event) => {
       }
 
       // 上傳檔案
-      const result = await uploadFile(file, currentWorkflowId.value);
+      console.log("currentWorkflowId.value", currentWorkflowId.value);
+      const result = await uploadWorkflowFile(file, currentWorkflowId.value);
       console.log("result", result);
       // 更新節點資訊
       const node = nodes.value.find((n) => n.id === nodeId);
@@ -968,8 +970,8 @@ const handleDrop = async (event) => {
         node.data = {
           ...node.data,
           fileId: result.data.id,
-          fileUrl: result.data.url,
-          fileName: result.data.name,
+          fileUrl: result.data.fileUrl,
+          fileName: result.data.fileName,
           uploadProgress: 100,
         };
         console.log("nodenodenode", node.data);

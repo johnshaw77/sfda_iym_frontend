@@ -74,14 +74,29 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import { FileText, Settings, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import WorkflowCanvas from "./components/WorkflowCanvas.vue";
 import NodeConfigPanel from "./components/NodeConfigPanel.vue";
 import FileUpload from "@/components/FileUpload.vue";
 
-// 當前工作流程 ID（這裡先用模擬數據）
-const currentWorkflowId = ref("workflow-001");
+const route = useRoute();
+// 當前工作流程 ID（從路由參數中獲取）
+const currentWorkflowId = ref(
+  route.params.id || "69f40f6e-6718-4588-881f-373444fe5ecb"
+);
+console.log(currentWorkflowId.value);
+
+// 監聽路由參數變化
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      currentWorkflowId.value = newId;
+    }
+  }
+);
 
 // 面板折疊狀態
 const isPanelCollapsed = ref(false);

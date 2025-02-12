@@ -262,6 +262,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  workflowId: {
+    type: String,
+    required: true,
+  },
   data: {
     type: Object,
     required: true,
@@ -609,7 +613,7 @@ const handlePreview = async () => {
   currentPage.value = 1;
   isFullscreen.value = false;
 
-  // 確保使用正確的 URL
+  // 確保使用正確的 URL //TODO:here
   const fileUrl = props.data.fileUrl;
   console.log("預覽檔案：", {
     fileName: props.data.fileName,
@@ -781,6 +785,7 @@ const handleDownload = () => {
   const link = document.createElement("a");
   link.href = props.data.fileUrl;
   link.download = props.data.fileName;
+  link.target = "_blank";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

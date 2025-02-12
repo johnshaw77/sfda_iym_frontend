@@ -48,7 +48,7 @@ const isCollapse = ref(false);
 // 從路由配置生成選單項目
 const menuItems = computed(() => {
   return router.options.routes
-    .filter((route) => !route.redirect && route.name)
+    .filter((route) => !route.redirect && route.name && !route.meta?.guest)
     .map((route) => ({
       path: route.path,
       name: route.name,

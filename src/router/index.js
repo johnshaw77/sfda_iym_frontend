@@ -26,6 +26,14 @@ const routes = [
           title: "首頁",
         },
       },
+      {
+        path: "workflow/:id?",
+        name: "Workflow",
+        component: () => import("../views/workflow/index.vue"),
+        meta: {
+          title: "工作流程",
+        },
+      },
     ],
   },
 ];

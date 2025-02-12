@@ -27,8 +27,7 @@
         {{ acceptText }}
       </div>
     </div>
-
-    <!-- 檔案列表 -->
+    <!-- 檔案列表(右側的面板) -->
     <div v-if="fileList.length > 0" class="mt-4">
       <div
         v-for="file in fileList"
@@ -37,18 +36,18 @@
       >
         <div class="flex items-center">
           <component
-            :is="getFileIcon(file.type)"
+            :is="getFileIcon(file.fileType)"
             :size="20"
             class="text-gray-400"
           />
-          <span class="ml-2 text-sm text-gray-600">{{ file.name }}</span>
+          <span class="ml-2 text-sm text-gray-600">{{ file.fileName }}</span>
           <span class="ml-2 text-xs text-gray-400"
-            >({{ formatFileSize(file.size) }})</span
+            >({{ formatFileSize(file.fileSize) }})</span
           >
         </div>
         <div class="flex items-center space-x-2">
           <el-button
-            v-if="file.url"
+            v-if="file.fileUrl"
             type="primary"
             link
             size="small"
@@ -84,7 +83,11 @@ import {
   Download,
   Trash,
 } from "lucide-vue-next";
-import { uploadFile, deleteFile, downloadFile } from "@/api/modules/workflow";
+import {
+  uploadWorkflowFile,
+  deleteWorkflowFile,
+  downloadWorkflowFile,
+} from "@/api/modules/workflow";
 
 const props = defineProps({
   // 是否允許多檔案上傳
@@ -144,7 +147,7 @@ const handleFileSelect = async (e) => {
 const handleFiles = async (files) => {
   for (const file of files) {
     try {
-      const result = await uploadFile(file, props.workflowId);
+      const result = await uploadWorkflowFile(file, props.workflowId);
       fileList.value.push(result);
       emit("file-uploaded", result);
       ElMessage.success("檔案上傳成功");
@@ -157,7 +160,7 @@ const handleFiles = async (files) => {
 // 處理檔案刪除
 const handleDelete = async (file) => {
   try {
-    await deleteFile(file.id);
+    await deleteWorkflowFile(file.id);
     fileList.value = fileList.value.filter((f) => f.id !== file.id);
     emit("file-deleted", file);
     ElMessage.success("檔案刪除成功");
@@ -169,7 +172,7 @@ const handleDelete = async (file) => {
 // 處理檔案下載
 const handleDownload = async (file) => {
   try {
-    const result = await downloadFile(file.id);
+    const result = await downloadWorkflowFile(file.id);
     // 創建下載連結
     const link = document.createElement("a");
     link.href = result.url;
@@ -184,6 +187,7 @@ const handleDownload = async (file) => {
 
 // 根據檔案類型獲取對應圖標
 const getFileIcon = (type) => {
+  console.log("getFileIcon", type);
   if (type.startsWith("image/")) return ImageIcon;
   if (type.includes("pdf")) return FileText;
   return File;

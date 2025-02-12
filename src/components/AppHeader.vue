@@ -95,19 +95,38 @@
       <div class="flex flex-col items-center">
         <!-- 預覽區域 -->
         <div class="mb-4 relative group">
-          <el-avatar
-            :size="120"
-            :src="previewUrl || userInfo.avatar"
-            class="!bg-blue-100"
+          <el-upload
+            ref="avatarUploadRef"
+            class="avatar-preview-uploader"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleFileChange"
+            accept="image/jpeg,image/png,image/gif"
+            drag
           >
-            <span class="text-2xl font-medium text-blue-600">{{
-              userInfo.username?.slice(0, 1)
-            }}</span>
-          </el-avatar>
+            <el-avatar
+              :size="120"
+              :src="previewUrl || userInfo.avatar"
+              class="!bg-blue-100 hover:opacity-80 transition-all duration-300"
+            >
+              <span class="text-2xl font-medium text-blue-600">{{
+                userInfo.username?.slice(0, 1)
+              }}</span>
+            </el-avatar>
+            <!-- 懸停提示 -->
+            <div
+              class="absolute inset-0 bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            >
+              <div class="text-white text-sm">
+                <Upload class="mx-auto mb-1" :size="20" />
+                <div class="text-xs">點擊或拖拉</div>
+              </div>
+            </div>
+          </el-upload>
         </div>
 
         <!-- 上傳區域 -->
-        <el-upload
+        <!-- <el-upload
           ref="uploadRef"
           class="avatar-uploader"
           :auto-upload="false"
@@ -123,7 +142,7 @@
             <div class="text-gray-600">拖拉圖片至此處，或</div>
             <el-button type="primary" class="mt-2"> 點擊選擇圖片 </el-button>
           </div>
-        </el-upload>
+        </el-upload> -->
 
         <!-- 提示文字 -->
         <p class="text-xs text-gray-500 mt-2">
@@ -301,7 +320,9 @@ onMounted(() => {
 .el-dropdown-menu {
   @apply min-w-[240px];
 }
-
+:deep(.el-upload-dragger) {
+  @apply w-full border-none p-0;
+}
 .avatar-uploader {
   :deep(.el-upload) {
     @apply w-full;
@@ -317,6 +338,20 @@ onMounted(() => {
 
   .upload-area {
     @apply w-full flex flex-col items-center;
+  }
+}
+
+.avatar-preview-uploader {
+  :deep(.el-upload) {
+    @apply block;
+  }
+
+  :deep(.el-upload-dragger) {
+    @apply w-[120px] h-[120px] border-none p-0 bg-transparent;
+  }
+
+  :deep(.el-upload-dragger:hover) {
+    @apply bg-transparent;
   }
 }
 

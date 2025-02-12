@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="p-2">
     <div
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
     >
@@ -38,9 +38,6 @@
                   <el-dropdown-item @click="handleEditProject(project)"
                     >編輯</el-dropdown-item
                   >
-                  <el-dropdown-item @click="handleDuplicateProject(project)"
-                    >複製</el-dropdown-item
-                  >
                   <el-dropdown-item
                     divided
                     @click="handleDeleteProject(project)"
@@ -59,16 +56,17 @@
               <span>更新於 {{ formatDate(project.updatedAt) }}</span>
             </div>
             <div class="mt-2 flex items-center text-sm text-gray-500">
-              <Users :size="16" class="mr-2" />
-              <span>{{ project.members }} 位成員</span>
+              <User :size="16" class="mr-2" />
+              <span>{{ project.creator.username }}</span>
             </div>
           </div>
 
+          <el-divider />
           <div class="mt-4 flex items-center justify-between">
             <el-tag :type="getStatusType(project.status)" size="small">
               {{ getStatusText(project.status) }}
             </el-tag>
-            <el-button type="primary" link @click="handleOpenProject(project)">
+            <el-button type="primary" link @click="handleViewProject(project)">
               開啟專案
             </el-button>
           </div>
@@ -83,23 +81,33 @@
       width="500px"
       destroy-on-close
     >
-      <el-form :model="projectForm" label-width="80px">
-        <el-form-item label="專案名稱" required>
-          <el-input v-model="projectForm.name" placeholder="請輸入專案名稱" />
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="專案名稱" prop="name">
+          <el-input v-model="form.name" placeholder="請輸入專案名稱" />
         </el-form-item>
-        <el-form-item label="描述">
+        <el-form-item label="描述" prop="description">
           <el-input
-            v-model="projectForm.description"
+            v-model="form.description"
             type="textarea"
             :rows="3"
             placeholder="請輸入專案描述"
           />
         </el-form-item>
+        <el-form-item label="狀態" prop="status">
+          <el-select v-model="form.status" class="w-full">
+            <el-option label="草稿" value="draft" />
+            <el-option label="進行中" value="in_progress" />
+            <el-option label="已完成" value="completed" />
+            <el-option label="已取消" value="cancelled" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSaveProject">確定</el-button>
+          <el-button type="primary" :loading="loading" @click="handleSubmit">
+            確定
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -107,36 +115,50 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { Plus, MoreVertical, Calendar, Users } from "lucide-vue-next";
+import { ref, onMounted } from "vue";
+import { Plus, MoreVertical, Calendar, User } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  getProjects,
+  createProject,
+  updateProject,
+  deleteProject,
+} from "@/api/modules/project";
 
-// 模擬數據
-const projects = ref([
-  {
-    id: 1,
-    name: "2024年Q1良率分析",
-    description: "分析2024年第一季度的產品良率數據，找出影響良率的關鍵因素。",
-    status: "in_progress",
-    members: 5,
-    updatedAt: "2024-03-15T10:30:00",
-  },
-  {
-    id: 2,
-    name: "產品A良率優化",
-    description: "針對產品A的良率問題進行深入分析和優化。",
-    status: "completed",
-    members: 3,
-    updatedAt: "2024-03-14T15:20:00",
-  },
-]);
-
+// 狀態
+const loading = ref(false);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
-const projectForm = ref({
+const projects = ref([]);
+
+// 表單相關
+const formRef = ref(null);
+const form = ref({
+  id: "",
   name: "",
   description: "",
+  status: "draft",
 });
+
+// 表單驗證規則
+const rules = {
+  name: [{ required: true, message: "請輸入專案名稱", trigger: "blur" }],
+  description: [{ required: true, message: "請輸入專案描述", trigger: "blur" }],
+  status: [{ required: true, message: "請選擇專案狀態", trigger: "change" }],
+};
+
+// 獲取專案列表
+const fetchProjects = async () => {
+  try {
+    loading.value = true;
+    projects.value = await getProjects();
+  } catch (error) {
+    console.error("獲取專案列表失敗:", error);
+    ElMessage.error("獲取專案列表失敗");
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 格式化日期
 const formatDate = (date) => {
@@ -150,10 +172,10 @@ const formatDate = (date) => {
 // 獲取狀態標籤類型
 const getStatusType = (status) => {
   const types = {
-    not_started: "info",
+    draft: "info",
     in_progress: "warning",
     completed: "success",
-    archived: "info",
+    cancelled: "danger",
   };
   return types[status] || "info";
 };
@@ -161,10 +183,10 @@ const getStatusType = (status) => {
 // 獲取狀態文字
 const getStatusText = (status) => {
   const texts = {
-    not_started: "未開始",
+    draft: "草稿",
     in_progress: "進行中",
     completed: "已完成",
-    archived: "已歸檔",
+    cancelled: "已取消",
   };
   return texts[status] || status;
 };
@@ -172,9 +194,10 @@ const getStatusText = (status) => {
 // 處理新增專案
 const handleCreateProject = () => {
   isEdit.value = false;
-  projectForm.value = {
+  form.value = {
     name: "",
     description: "",
+    status: "draft",
   };
   dialogVisible.value = true;
 };
@@ -182,45 +205,82 @@ const handleCreateProject = () => {
 // 處理編輯專案
 const handleEditProject = (project) => {
   isEdit.value = true;
-  projectForm.value = {
-    ...project,
+  form.value = {
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    status: project.status,
   };
   dialogVisible.value = true;
 };
 
-// 處理保存專案
-const handleSaveProject = () => {
-  if (!projectForm.value.name) {
-    ElMessage.warning("請輸入專案名稱");
-    return;
-  }
-  // TODO: 實現保存邏輯
-  dialogVisible.value = false;
-  ElMessage.success(isEdit.value ? "專案已更新" : "專案已創建");
+// 處理查看專案
+const handleViewProject = (project) => {
+  // TODO: 實現查看專案詳情
+  ElMessage.info("查看專案功能開發中");
 };
 
 // 處理刪除專案
-const handleDeleteProject = (project) => {
-  ElMessageBox.confirm("確定要刪除此專案嗎？此操作不可恢復。", "警告", {
-    confirmButtonText: "確定",
-    cancelButtonText: "取消",
-    type: "warning",
-  }).then(() => {
-    // TODO: 實現刪除邏輯
-    ElMessage.success("專案已刪除");
-  });
+const handleDeleteProject = async (project) => {
+  try {
+    await ElMessageBox.confirm(
+      "確定要刪除此專案嗎？此操作不可恢復。",
+      "刪除確認",
+      {
+        confirmButtonText: "確定",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
+    );
+
+    await deleteProject(project.id);
+    ElMessage.success("專案刪除成功");
+    fetchProjects();
+  } catch (error) {
+    if (error !== "cancel") {
+      console.error("刪除專案失敗:", error);
+      ElMessage.error("刪除專案失敗");
+    }
+  }
 };
 
-// 處理複製專案
-const handleDuplicateProject = (project) => {
-  // TODO: 實現複製邏輯
-  ElMessage.success("專案已複製");
+// 處理提交
+const handleSubmit = async () => {
+  if (!formRef.value) return;
+
+  try {
+    await formRef.value.validate();
+    loading.value = true;
+
+    if (isEdit.value) {
+      await updateProject(form.value.id, {
+        name: form.value.name,
+        description: form.value.description,
+        status: form.value.status,
+      });
+      ElMessage.success("專案更新成功");
+    } else {
+      await createProject({
+        name: form.value.name,
+        description: form.value.description,
+        status: form.value.status,
+      });
+      ElMessage.success("專案創建成功");
+    }
+
+    dialogVisible.value = false;
+    fetchProjects();
+  } catch (error) {
+    console.error("提交失敗:", error);
+    ElMessage.error(error.response?.data?.message || "操作失敗");
+  } finally {
+    loading.value = false;
+  }
 };
 
-// 處理開啟專案
-const handleOpenProject = (project) => {
-  // TODO: 實現開啟專案邏輯
-};
+onMounted(() => {
+  fetchProjects();
+});
 </script>
 
 <style scoped>
