@@ -96,7 +96,7 @@
         <el-form-item label="狀態" prop="status">
           <el-select v-model="form.status" class="w-full">
             <el-option label="草稿" value="draft" />
-            <el-option label="進行中" value="in_progress" />
+            <el-option label="進行中" value="active" />
             <el-option label="已完成" value="completed" />
             <el-option label="已取消" value="cancelled" />
           </el-select>
@@ -173,7 +173,7 @@ const formatDate = (date) => {
 const getStatusType = (status) => {
   const types = {
     draft: "info",
-    in_progress: "warning",
+    active: "warning",
     completed: "success",
     cancelled: "danger",
   };
@@ -184,7 +184,7 @@ const getStatusType = (status) => {
 const getStatusText = (status) => {
   const texts = {
     draft: "草稿",
-    in_progress: "進行中",
+    active: "進行中",
     completed: "已完成",
     cancelled: "已取消",
   };
@@ -289,5 +289,30 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 專案卡片狀態邊框 */
+.bg-white {
+  border-top: 3px solid transparent;
+}
+
+/* 草稿狀態 */
+.bg-white:has(.el-tag--info) {
+  border-top-color: var(--el-color-info);
+}
+
+/* 進行中狀態 */
+.bg-white:has(.el-tag--warning) {
+  border-top-color: var(--el-color-warning);
+}
+
+/* 已完成狀態 */
+.bg-white:has(.el-tag--success) {
+  border-top-color: var(--el-color-success);
+}
+
+/* 已取消狀態 */
+.bg-white:has(.el-tag--danger) {
+  border-top-color: var(--el-color-danger);
 }
 </style>

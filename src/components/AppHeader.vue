@@ -372,4 +372,68 @@ onMounted(() => {
 .group:hover .group-hover\:opacity-100 {
   opacity: 1;
 }
+
+/* 移除 el-dropdown 的外框和優化互動樣式 */
+.el-dropdown {
+  outline: none !important;
+}
+
+.el-dropdown-link {
+  outline: none !important;
+  cursor: pointer;
+}
+
+:deep(.el-dropdown__popper) {
+  outline: none !important;
+}
+
+:deep(.el-dropdown-menu__item:not(.is-disabled):focus) {
+  background-color: var(--el-dropdown-menuItem-hover-fill);
+  color: var(--el-dropdown-menuItem-hover-color);
+  outline: none !important;
+}
+
+/* 保持鍵盤無障礙性，但使用更柔和的視覺效果 */
+.el-dropdown:focus-visible {
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+  border-radius: 4px;
+}
+
+/* 移除所有可能的外框 */
+:deep(.el-dropdown-menu) {
+  outline: none !important;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-dropdown-menu__item) {
+  outline: none !important;
+}
+
+:deep(.el-dropdown *) {
+  outline: none !important;
+}
+
+:deep(.el-button) {
+  outline: none !important;
+}
+
+:deep(.el-avatar) {
+  outline: none !important;
+}
+
+/* 移除所有元素的外框 */
+* {
+  outline: none !important;
+}
+
+/* 優化懸停效果 */
+:deep(.el-dropdown-menu__item:hover) {
+  background-color: var(--el-dropdown-menuItem-hover-fill);
+  color: var(--el-dropdown-menuItem-hover-color);
+}
+
+:deep(.el-dropdown-menu__item:active) {
+  background-color: var(--el-dropdown-menuItem-hover-fill);
+  color: var(--el-dropdown-menuItem-hover-color);
+}
 </style>

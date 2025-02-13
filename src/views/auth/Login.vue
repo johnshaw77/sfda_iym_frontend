@@ -15,6 +15,18 @@
       <h1 class="text-xl font-semibold text-gray-900 mb-2">登入</h1>
       <p class="text-gray-500 text-sm mb-8">歡迎回來！請輸入您的帳號密碼</p>
 
+      <!-- 測試登入按鈕 -->
+      <div class="mb-4">
+        <el-button
+          type="info"
+          size="small"
+          class="w-full"
+          @click="handleTestLogin"
+        >
+          測試帳號登入
+        </el-button>
+      </div>
+
       <!-- 登入表單 -->
       <el-form
         ref="formRef"
@@ -164,7 +176,6 @@ const handleSubmit = async () => {
     ElMessage.success("登入成功");
   } catch (error) {
     console.error("登入錯誤:", error);
-    ElMessage.error(error.response?.data?.message || "登入失敗，請稍後再試");
   } finally {
     loading.value = false;
   }
@@ -178,6 +189,12 @@ const handleForgotPassword = () => {
 // 處理註冊
 const handleRegister = () => {
   router.push("/register");
+};
+
+// 處理測試登入
+const handleTestLogin = () => {
+  formData.email = "john_hsiao@example.com";
+  formData.password = "888888";
 };
 </script>
 

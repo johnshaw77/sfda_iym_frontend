@@ -1,5 +1,22 @@
 import axios from "axios";
 import { ElMessage } from "element-plus";
+import router from "@/router";
+
+/**
+ * 生成安全的檔案名
+ * @param {File} file - 原始檔案
+ * @returns {string} 安全的檔案名
+ */
+const generateSafeFileName = (file) => {
+  // 獲取檔案副檔名
+  const ext = file.name.split(".").pop().toLowerCase();
+  // 生成時間戳
+  const timestamp = new Date().getTime();
+  // 生成 6 位隨機字串
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  // 組合新檔案名：時間戳_隨機字串.副檔名
+  return `${timestamp}_${randomStr}.${ext}`;
+};
 
 // 創建 axios 實例
 const service = axios.create({
@@ -37,14 +54,40 @@ service.interceptors.response.use(
   (error) => {
     console.error("響應錯誤:", error);
 
+    // 根據錯誤類型設置不同的顯示時間
+    let duration = 3000; // 預設 3 秒
+
+    // 401 未授權錯誤（如登入失敗）設置為 30 秒
+    if (error.response?.status === 401) {
+      duration = 30000;
+    }
+    // 404 找不到資源，設置為 5 秒
+    else if (error.response?.status === 404) {
+      duration = 5000;
+    }
+    // 500 伺服器錯誤，設置為 8 秒
+    else if (error.response?.status >= 500) {
+      duration = 8000;
+    }
+
     // 處理錯誤響應
     const message = error.response?.data?.message || "請求失敗";
-    ElMessage.error(message);
+    ElMessage.error({
+      message,
+      duration, // 使用根據錯誤類型設置的顯示時間
+      showClose: true,
+    });
 
     // 處理 401 未授權錯誤
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      // 使用 Vue Router 進行導航
+      if (router.currentRoute.value.path !== "/login") {
+        router.push({
+          path: "/login",
+          query: { redirect: router.currentRoute.value.fullPath },
+        });
+      }
     }
 
     return Promise.reject(error);
@@ -59,7 +102,12 @@ export const request = {
   delete: (url) => service.delete(url),
   upload: (url, file) => {
     const formData = new FormData();
-    formData.append("file", file);
+    // 使用安全的檔案名
+    const safeFileName = generateSafeFileName(file);
+    formData.append("file", file, safeFileName);
+    // 添加原始檔案名，以便後端記錄
+    formData.append("originalName", file.name);
+
     return service.post(url, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
