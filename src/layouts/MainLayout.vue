@@ -14,6 +14,7 @@
         :class="sidebarCollapsed ? 'collapsed' : ''"
       >
         <el-header
+          v-if="showContentHeader"
           class="bg-white border-b !h-10 flex items-center justify-between px-6"
         >
           <h2 class="text-lg font-medium">{{ pageTitle }}</h2>
@@ -54,12 +55,17 @@ const sidebarRef = ref(null);
 
 const sidebarCollapsed = computed(() => sidebarRef.value?.isCollapse || false);
 
+// 根據路由 meta 決定是否顯示內容區的 header
+const showContentHeader = computed(() => {
+  return route.meta.showContentHeader !== false;
+});
+
 // 根據當前路由設置頁面標題和按鈕
 const pageTitle = computed(() => {
   const titles = {
     "/projects": "專案管理",
     "/workflow": "工作流程",
-    "/workflow-test": "工作流測試",
+    "/workflow-templates": "工作流程範本管理",
     "/files": "文件管理",
     "/analysis": "數據分析",
     "/settings": "系統設置",

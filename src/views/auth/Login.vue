@@ -162,6 +162,8 @@ const handleSubmit = async () => {
 
     // 保存 token
     localStorage.setItem("token", response.token);
+    // 保存用戶資訊
+    localStorage.setItem("user", JSON.stringify(response.user));
     // 保存記住我的狀態
     if (formData.remember) {
       localStorage.setItem("remember", "true");

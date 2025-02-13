@@ -7,6 +7,7 @@ import App from "./App.vue";
 import zhTw from "element-plus/dist/locale/zh-tw.mjs";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
+import { ElMessage } from "element-plus";
 
 // 配置 NProgress
 NProgress.configure({
@@ -37,6 +38,8 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  FolderKanban,
+  Workflow,
 } from "lucide-vue-next";
 
 // 路由配置
@@ -47,8 +50,10 @@ const routes = [
     component: () => import("./views/auth/Login.vue"),
     meta: {
       guest: true,
-      requiresAuth: false, // 確保這個設為 false
+      requiresAuth: false,
       layout: "blank",
+      title: "登入",
+      icon: User,
     },
   },
   {
@@ -65,6 +70,8 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
+      title: "專案管理",
+      icon: FolderKanban,
     },
   },
   {
@@ -74,6 +81,34 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
+      title: "工作流程",
+      icon: GitGraph,
+    },
+  },
+  {
+    path: "/workflow-templates",
+    name: "WorkflowTemplates",
+    component: () => import("./views/workflow-templates/index.vue"),
+    meta: {
+      keepAlive: true,
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: "工作流程範本",
+      icon: Workflow,
+    },
+  },
+  {
+    path: "/workflow-templates/:id/design",
+    name: "WorkflowTemplateDesign",
+    component: () => import("./views/workflow-templates/design.vue"),
+    meta: {
+      keepAlive: false,
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: "工作流程範本設計",
+      showContentHeader: false,
+      hidden: true,
+      icon: Workflow,
     },
   },
   {
@@ -83,6 +118,8 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
+      title: "文件管理",
+      icon: FileText,
     },
   },
   {
@@ -92,6 +129,8 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
+      title: "數據分析",
+      icon: LineChart,
     },
   },
   {
@@ -101,6 +140,8 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
+      title: "系統設置",
+      icon: Settings,
     },
   },
   {
@@ -109,6 +150,11 @@ const routes = [
     component: () => import("./views/api-test/index.vue"),
     meta: {
       keepAlive: true,
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: "API 測試",
+      showContentHeader: false,
+      icon: Cog,
     },
   },
 
@@ -133,12 +179,20 @@ router.beforeEach((to, from, next) => {
 
   // 檢查是否需要認證
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
   const isGuest = to.matched.some((record) => record.meta.guest);
   const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
   if (requiresAuth && !token) {
     next({ path: "/login", query: { redirect: to.fullPath } });
   } else if (isGuest && token) {
+    next("/");
+  } else if (
+    requiresAdmin &&
+    (!user || !user.roles.some((role) => role.name === "ADMIN"))
+  ) {
+    ElMessage.error("需要管理員權限");
     next("/");
   } else {
     next();
@@ -175,6 +229,8 @@ const icons = {
   Eye,
   ChevronLeft,
   ChevronRight,
+  FolderKanban,
+  Workflow,
 };
 
 Object.entries(icons).forEach(([name, component]) => {

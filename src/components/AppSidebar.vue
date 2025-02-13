@@ -33,6 +33,7 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   GitGraph,
+  Workflow,
   FileText,
   LineChart,
   Settings,
@@ -48,41 +49,22 @@ const isCollapse = ref(false);
 // 從路由配置生成選單項目
 const menuItems = computed(() => {
   return router.options.routes
-    .filter((route) => !route.redirect && route.name && !route.meta?.guest)
+    .filter(
+      (route) =>
+        !route.redirect &&
+        route.name &&
+        !route.meta?.guest &&
+        !route.meta?.hidden
+    )
     .map((route) => ({
       path: route.path,
       name: route.name,
-      icon: getMenuIcon(route.path),
-      title: getMenuTitle(route.path),
+      icon: route.meta?.icon || Settings,
+      title: route.meta?.title || route.name,
     }));
 });
 
-// 根據路徑獲取對應的圖標
-const getMenuIcon = (path) => {
-  const icons = {
-    "/projects": FolderKanban,
-    "/workflow": GitGraph,
-    "/workflow-test": GitGraph,
-    "/files": FileText,
-    "/analysis": LineChart,
-    "/settings": Settings,
-  };
-  return icons[path] || Settings;
-};
-
-// 根據路徑獲取對應的標題
-const getMenuTitle = (path) => {
-  const titles = {
-    "/projects": "專案管理",
-    "/workflow": "工作流程",
-    "/workflow-test": "工作流測試",
-    "/files": "文件管理",
-    "/analysis": "數據分析",
-    "/settings": "系統設置",
-  };
-  return titles[path] || path;
-};
-
+// 折疊切換
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value;
 };
