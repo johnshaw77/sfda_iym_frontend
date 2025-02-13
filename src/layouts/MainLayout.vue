@@ -3,8 +3,8 @@
     <!-- 頂部導航欄 -->
     <AppHeader />
 
-    <!-- 主要內容區 - 考慮頂部導航欄的高度 -->
-    <div class="flex flex-1 pt-20">
+    <!-- 主要內容區 - 考慮頂部導航欄的高度 !TODO: 需要固定? -->
+    <div class="flex flex-1 pt-12">
       <!-- 左側導航欄 -->
       <AppSidebar ref="sidebarRef" />
 

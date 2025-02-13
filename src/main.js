@@ -47,6 +47,7 @@ const routes = [
     component: () => import("./views/auth/Login.vue"),
     meta: {
       guest: true,
+      requiresAuth: false, // 確保這個設為 false
       layout: "blank",
     },
   },

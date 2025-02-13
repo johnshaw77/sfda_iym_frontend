@@ -10,10 +10,7 @@ import request from "@/api/request";
  * @returns {Promise<Object>} 返回用戶資料
  */
 export function getCurrentUser() {
-  return request({
-    url: "/auth/me",
-    method: "get",
-  });
+  return request.get("/auth/me");
 }
 
 /**

@@ -6,7 +6,7 @@
       <!-- Logo 區域 -->
       <div class="flex items-center space-x-0">
         <img src="/logo.png" class="w-10 h-10" />
-        <h1 class="text-xl font-semibold text-gray-800">良率分析平台</h1>
+        <h1 class="text-xl font-semibold text-gray-800">IYM 良率分析平台</h1>
       </div>
 
       <!-- 右側工具列 -->
@@ -24,11 +24,11 @@
         </el-tooltip>
 
         <!-- 用戶選單 -->
-        <el-dropdown trigger="click" @command="handleCommand">
+        <el-dropdown trigger="hover" @command="handleCommand">
           <div class="flex items-center space-x-2 cursor-pointer">
             <div class="relative" @click.stop="handleAvatarClick">
               <el-avatar
-                :size="48"
+                :size="36"
                 :src="userInfo.avatar"
                 :alt="userInfo.username"
                 class="!bg-blue-100 hover:opacity-80 transition-opacity cursor-pointer"
@@ -52,10 +52,12 @@
           <template #dropdown>
             <el-dropdown-menu>
               <div class="px-4 py-2">
-                <div class="font-medium text-gray-900">
+                <div class="text-base font-semibold text-gray-900">
                   {{ userInfo.username }}
                 </div>
-                <div class="text-sm text-gray-500">{{ userInfo.email }}</div>
+                <div class="text-xs text-gray-500">
+                  {{ userInfo.email }}
+                </div>
                 <div class="text-xs text-gray-500 mt-1">
                   {{ userInfo.role }}
                 </div>
@@ -201,6 +203,13 @@ const fetchUserInfo = async () => {
     };
   } catch (error) {
     console.error("獲取用戶資訊失敗:", error);
+    // 如果是認證錯誤，清除 token 並重定向到登入頁面
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      router.push("/login");
+    } else {
+      ElMessage.error("獲取用戶資訊失敗，請重新登入");
+    }
   }
 };
 
@@ -312,7 +321,11 @@ const handleCommand = async (command) => {
 };
 
 onMounted(() => {
-  fetchUserInfo();
+  // 檢查是否有 token，沒有就不要嘗試獲取用戶資訊
+  const token = localStorage.getItem("token");
+  if (token) {
+    fetchUserInfo();
+  }
 });
 </script>
 

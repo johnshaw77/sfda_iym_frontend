@@ -1,4 +1,4 @@
-import request from "@/api/request";
+import { request } from "../request";
 
 /**
  * 認證相關 API
@@ -13,11 +13,8 @@ import request from "@/api/request";
  * @returns {Promise<{token: string, user: Object}>} 返回包含 token 和用戶資料的響應
  */
 export function login(data) {
-  return request({
-    url: "/auth/login",
-    method: "post",
-    data,
-  });
+  console.log("data login", data);
+  return request.post("/auth/login", data);
 }
 
 /**
