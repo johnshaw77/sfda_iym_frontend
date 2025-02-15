@@ -49,10 +49,7 @@ export function verifyToken() {
  * @returns {Promise<void>}
  */
 export function logout() {
-  return request({
-    url: "/auth/logout",
-    method: "post",
-  });
+  return request.post("/auth/logout");
 }
 
 /**
@@ -82,4 +79,20 @@ export function resetPassword(data) {
     method: "post",
     data,
   });
+}
+
+/**
+ * 獲取當前登入用戶資料
+ * @returns {Promise<Object>} 返回用戶資料
+ */
+export function getCurrentUser() {
+  return request.get("/auth/me");
+}
+
+/**
+ * 獲取用戶權限
+ * @returns {Promise<string[]>} 返回權限列表
+ */
+export function getUserPermissions() {
+  return request.get("/auth/permissions");
 }

@@ -9,6 +9,7 @@ import zhTw from "element-plus/dist/locale/zh-tw.mjs";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { ElMessage } from "element-plus";
+import { useUserStore } from "./stores/user";
 
 // 配置 NProgress
 NProgress.configure({
@@ -217,21 +218,18 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   NProgress.start();
 
+  const userStore = useUserStore();
+
   // 檢查是否需要認證
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin);
   const isGuest = to.matched.some((record) => record.meta.guest);
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "null");
 
-  if (requiresAuth && !token) {
+  if (requiresAuth && !userStore.isAuthenticated) {
     next({ path: "/login", query: { redirect: to.fullPath } });
-  } else if (isGuest && token) {
+  } else if (isGuest && userStore.isAuthenticated) {
     next("/");
-  } else if (
-    requiresAdmin &&
-    (!user || !user.roles.some((role) => role.name === "ADMIN"))
-  ) {
+  } else if (requiresAdmin && !userStore.isAdmin) {
     ElMessage.error("需要管理員權限");
     next("/");
   } else {

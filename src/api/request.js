@@ -2,6 +2,7 @@ import axios from "axios";
 import { ElMessage } from "element-plus";
 import router from "@/router";
 import { getApiBaseUrl } from "@/utils/url";
+import { useUserStore } from "@/stores/user";
 
 /**
  * 生成安全的檔案名
@@ -28,8 +29,9 @@ const service = axios.create({
 // 請求攔截器
 service.interceptors.request.use(
   (config) => {
-    // 從 localStorage 獲取 token
-    const token = localStorage.getItem("token");
+    // 從 userStore 獲取 token
+    const userStore = useUserStore();
+    const token = userStore.token;
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -52,7 +54,7 @@ service.interceptors.response.use(
   (response) => {
     return response.data;
   },
-  (error) => {
+  async (error) => {
     console.error("響應錯誤:", error);
 
     // 根據錯誤類型設置不同的顯示時間
@@ -81,7 +83,8 @@ service.interceptors.response.use(
 
     // 處理 401 未授權錯誤
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
+      const userStore = useUserStore();
+      await userStore.handleLogout();
       // 使用 Vue Router 進行導航
       if (router.currentRoute.value.path !== "/login") {
         router.push({

@@ -18,14 +18,6 @@ const API_ENDPOINTS = {
 };
 
 /**
- * 獲取當前登入用戶資料
- * @returns {Promise<Object>} 返回用戶資料
- */
-export function getCurrentUser() {
-  return request.get("/auth/me");
-}
-
-/**
  * 更新用戶資料
  * @param {Object} data - 要更新的用戶資料
  * @param {string} [data.username] - 用戶名稱

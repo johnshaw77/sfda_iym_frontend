@@ -120,12 +120,13 @@
 import { ref, reactive } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
-import { login } from "@/api";
+import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
 const route = useRoute();
 const formRef = ref(null);
 const loading = ref(false);
+const userStore = useUserStore();
 
 // 表單數據
 const formData = reactive({
@@ -154,22 +155,11 @@ const handleSubmit = async () => {
     await formRef.value.validate();
     loading.value = true;
 
-    const response = await login({
+    await userStore.handleLogin({
       email: formData.email,
       password: formData.password,
       remember: formData.remember,
     });
-
-    // 保存 token
-    localStorage.setItem("token", response.token);
-    // 保存用戶資訊
-    localStorage.setItem("user", JSON.stringify(response.user));
-    // 保存記住我的狀態
-    if (formData.remember) {
-      localStorage.setItem("remember", "true");
-    } else {
-      localStorage.removeItem("remember");
-    }
 
     // 如果有重定向地址，則跳轉到重定向地址
     const redirectPath = route.query.redirect || "/";
@@ -178,6 +168,7 @@ const handleSubmit = async () => {
     ElMessage.success("登入成功");
   } catch (error) {
     console.error("登入錯誤:", error);
+    ElMessage.error(error.response?.data?.message || "登入失敗");
   } finally {
     loading.value = false;
   }

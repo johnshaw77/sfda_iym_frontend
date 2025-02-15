@@ -157,8 +157,10 @@ import { Bell, Settings, User, Shield, LogOut, Upload } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getCurrentUser, updateAvatar } from "@/api";
 import { getAvatarUrl } from "@/utils/url";
+import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
+const userStore = useUserStore();
 const userInfo = ref({
   username: "",
   email: "",
@@ -176,19 +178,12 @@ const uploading = ref(false);
 // 獲取用戶資訊
 const fetchUserInfo = async () => {
   try {
-    const data = await getCurrentUser();
-    userInfo.value = {
-      ...data,
-    };
+    await userStore.fetchUser();
+    userInfo.value = userStore.user;
   } catch (error) {
     console.error("獲取用戶資訊失敗:", error);
-    // 如果是認證錯誤，清除 token 並重定向到登入頁面
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      router.push("/login");
-    } else {
-      ElMessage.error("獲取用戶資訊失敗，請重新登入");
-    }
+    ElMessage.error("獲取用戶資訊失敗，請重新登入");
+    router.push("/login");
   }
 };
 
@@ -284,25 +279,19 @@ const handleCommand = async (command) => {
       break;
     case "logout":
       try {
-        await ElMessageBox.confirm("確定要登出嗎？", "登出確認", {
-          confirmButtonText: "確定",
-          cancelButtonText: "取消",
-          type: "warning",
-        });
-        localStorage.removeItem("token");
+        await userStore.handleLogout();
         router.push("/login");
-        ElMessage.success("已成功登出");
-      } catch {
-        // 用戶取消登出
+        ElMessage.success("登出成功");
+      } catch (error) {
+        console.error("登出失敗:", error);
+        ElMessage.error("登出失敗");
       }
       break;
   }
 };
 
 onMounted(() => {
-  // 檢查是否有 token，沒有就不要嘗試獲取用戶資訊
-  const token = localStorage.getItem("token");
-  if (token) {
+  if (userStore.isAuthenticated) {
     fetchUserInfo();
   }
 });

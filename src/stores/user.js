@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-import axios from "axios";
 import {
   getUsers,
   createUser,
@@ -8,6 +7,12 @@ import {
   getUserRoles,
   uploadAvatar,
 } from "@/api/modules/user";
+import {
+  login,
+  logout,
+  getCurrentUser,
+  getUserPermissions,
+} from "@/api/modules/auth";
 
 // 定義系統中所有可能的權限
 const ALL_PERMISSIONS = [
@@ -34,6 +39,7 @@ export const useUserStore = defineStore("user", {
     isAuthenticated: (state) => !!state.user,
     isAdmin: (state) =>
       state.user?.role === "ADMIN" || state.user?.role === "SUPER_ADMIN",
+    token: () => localStorage.getItem("token"),
     // 如果是管理員，返回所有權限；否則返回用戶實際擁有的權限
     effectivePermissions: (state) =>
       state.user?.role === "SUPER_ADMIN"
@@ -63,11 +69,9 @@ export const useUserStore = defineStore("user", {
 
   actions: {
     // 認證相關
-    async login(credentials) {
+    async handleLogin(credentials) {
       try {
-        const response = await axios.post("/api/auth/login", credentials);
-        const { token, user } = response.data;
-
+        const { token, user } = await login(credentials);
         localStorage.setItem("token", token);
         this.user = user;
 
@@ -84,17 +88,23 @@ export const useUserStore = defineStore("user", {
       }
     },
 
-    async logout() {
-      localStorage.removeItem("token");
-      this.user = null;
-      this.userPermissions = [];
-      this.users = [];
+    async handleLogout() {
+      try {
+        await logout();
+        localStorage.removeItem("token");
+        this.user = null;
+        this.userPermissions = [];
+        this.users = [];
+      } catch (error) {
+        console.error("登出失敗:", error);
+        throw error;
+      }
     },
 
     async fetchUser() {
       try {
-        const response = await axios.get("/api/auth/me");
-        this.user = response.data;
+        const userData = await getCurrentUser();
+        this.user = userData;
 
         if (this.user.role !== "SUPER_ADMIN" && this.user.role !== "ADMIN") {
           await this.fetchUserPermissions();
@@ -103,7 +113,7 @@ export const useUserStore = defineStore("user", {
         }
       } catch (error) {
         console.error("獲取用戶信息失敗:", error);
-        this.logout();
+        this.handleLogout();
       }
     },
 
@@ -115,8 +125,8 @@ export const useUserStore = defineStore("user", {
           return;
         }
 
-        const response = await axios.get("/api/rbac/user-permissions");
-        this.userPermissions = response.data;
+        const permissions = await getUserPermissions();
+        this.userPermissions = permissions;
       } catch (error) {
         console.error("獲取權限失敗:", error);
         this.userPermissions = [];

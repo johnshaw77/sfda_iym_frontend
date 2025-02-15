@@ -129,13 +129,11 @@ router.beforeEach(async (to, from, next) => {
   // 設置頁面標題
   document.title = `${to.meta.title} - SFDA IYM` || "SFDA IYM";
 
-  // 獲取 token
-  const token = localStorage.getItem("token");
   const userStore = useUserStore();
 
   // 需要認證的頁面
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    if (!token) {
+    if (!userStore.isAuthenticated) {
       next({
         path: "/login",
         query: { redirect: to.fullPath },
@@ -157,7 +155,7 @@ router.beforeEach(async (to, from, next) => {
   }
   // 訪客頁面（如登入頁）
   else if (to.matched.some((record) => record.meta.guest)) {
-    if (token) {
+    if (userStore.isAuthenticated) {
       next("/");
     } else {
       next();
