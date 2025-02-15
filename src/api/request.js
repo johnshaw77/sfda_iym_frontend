@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import router from "@/router";
+import { getApiBaseUrl } from "@/utils/url";
 
 /**
  * 生成安全的檔案名
@@ -20,7 +21,7 @@ const generateSafeFileName = (file) => {
 
 // 創建 axios 實例
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3001/api",
+  baseURL: getApiBaseUrl(),
   timeout: 15000, // 請求超時時間
 });
 

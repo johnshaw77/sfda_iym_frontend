@@ -153,7 +153,7 @@ const handleNewAction = () => {
 
 /* 確保內容區域不會被固定元素遮擋 */
 .el-main {
-  height: calc(100vh - 3.5rem);
+  height: calc(100vh - 3.3rem);
   overflow-y: auto;
 }
 

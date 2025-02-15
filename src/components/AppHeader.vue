@@ -175,6 +175,7 @@ import { useRouter } from "vue-router";
 import { Bell, Settings, User, Shield, LogOut, Upload } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getCurrentUser, updateAvatar } from "@/api";
+import { getAvatarUrl } from "@/utils/url";
 
 const router = useRouter();
 const userInfo = ref({
@@ -195,11 +196,9 @@ const uploading = ref(false);
 const fetchUserInfo = async () => {
   try {
     const data = await getCurrentUser();
-    // 確保頭像 URL 是完整的，但不包含 api 路徑
-    const baseUrl = import.meta.env.VITE_API_URL.replace(/\/api$/, "");
     userInfo.value = {
       ...data,
-      avatar: data.avatar ? `${baseUrl}${data.avatar}` : "",
+      avatar: getAvatarUrl(data.avatar),
     };
   } catch (error) {
     console.error("獲取用戶資訊失敗:", error);
@@ -250,11 +249,11 @@ const handleUpload = async () => {
     const { user } = await updateAvatar(formData);
 
     // 更新用戶資訊，確保頭像 URL 是完整的，但不包含 api 路徑
-    const baseUrl = import.meta.env.VITE_API_URL.replace(/\/api$/, "");
+    const avatarUrl = getAvatarUrl(user.avatar);
     userInfo.value = {
       ...userInfo.value,
       ...user,
-      avatar: user.avatar ? `${baseUrl}${user.avatar}` : "",
+      avatar: avatarUrl, //avatar: user.avatar ? `${avatarUrl}${user.avatar}` : "",
     };
 
     // 清理預覽 URL

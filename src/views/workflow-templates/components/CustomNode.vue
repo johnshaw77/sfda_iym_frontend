@@ -2,10 +2,25 @@
   <div
     :class="[
       'min-w-[180px] bg-white rounded-lg border shadow-md transition-shadow hover:shadow-lg relative',
-      selected ? 'ring-2 ring-blue-500' : '',
+      selected ? 'ring-0 ring-blue-500' : '',
       data.disabled ? 'opacity-50 cursor-not-allowed' : '',
     ]"
+    :style="{ width: '100%', height: '100%' }"
   >
+    <NodeResizer
+      :minWidth="180"
+      :minHeight="100"
+      :isVisible="selected"
+      class="!border-blue-400"
+      :lineStyle="{ borderWidth: '1px' }"
+      :handleStyle="{
+        width: '16px',
+        height: '16px',
+        border: '2px solid white',
+        transition: 'all 0.2s ease',
+        zIndex: '1',
+      }"
+    />
     <!-- 頂部標題欄 -->
     <div
       :class="[
@@ -31,47 +46,41 @@
     </div>
 
     <!-- 連接點 -->
-    <!-- 頂部連接點 -->
+    <!-- 頂部連接點 (target) -->
     <Handle
       type="target"
       position="top"
-      :class="['!absolute', handleClasses[data.type] || '']"
+      :class="['!absolute', 'target-handle', handleClasses[data.type] || '']"
       :style="{
-        left: 'calc(50% - 5px)',
-        top: '-5px',
+        left: 'calc(50% - 6px)',
+        top: '-6px',
       }"
     />
-    <!-- 底部連接點 -->
+    <!-- 底部連接點 (source) -->
     <Handle
       type="source"
       position="bottom"
-      :class="['!absolute', handleClasses[data.type] || '']"
-      :style="{
-        left: 'calc(50% - 5px)',
-        bottom: '-5px',
-      }"
+      :class="['!absolute', 'source-handle', handleClasses[data.type] || '']"
+      data-handlepos="bottom"
     />
-    <!-- 左側連接點 -->
+    <!-- 左側連接點 (target) -->
     <Handle
       type="target"
       position="left"
       id="left-target"
-      :class="['!absolute', handleClasses[data.type] || '']"
+      :class="['!absolute', 'target-handle', handleClasses[data.type] || '']"
       :style="{
-        left: '-10px',
-        top: 'calc(50% - 5px)',
+        left: '-6px',
+        top: 'calc(50% - 6px)',
       }"
     />
-    <!-- 右側連接點 -->
+    <!-- 右側連接點 (source) -->
     <Handle
       type="source"
       position="right"
       id="right-source"
-      :class="['!absolute', handleClasses[data.type] || '']"
-      :style="{
-        right: '-5px',
-        top: 'calc(50% - 5px)',
-      }"
+      :class="['!absolute', 'source-handle', handleClasses[data.type] || '']"
+      data-handlepos="right"
     />
   </div>
 </template>
@@ -79,12 +88,14 @@
 <script setup>
 import { computed } from "vue";
 import { Handle } from "@vue-flow/core";
+import { NodeResizer } from "@vue-flow/node-resizer";
+import "@vue-flow/node-resizer/dist/style.css";
 import {
   FileInput,
   Database,
   Filter,
   Calculator,
-  ChartBar,
+  BarChart,
   FileOutput,
   Table,
 } from "lucide-vue-next";
@@ -149,15 +160,56 @@ const handleNodeClick = () => {
 <style scoped>
 /* 連接點基本樣式 */
 :deep(.vue-flow__handle) {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  width: 12px;
+  height: 12px;
   border: 2px solid white;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+/* Source 連接點樣式（箭頭形狀） */
+:deep(.source-handle) {
+  background-color: #0eba44 !important;
+  border-radius: 2px !important;
+  border: none !important;
+  cursor: crosshair;
   transition: all 0.2s ease;
 }
 
-:deep(.vue-flow__handle:hover) {
-  transform: scale(1.2);
+/* 右側箭頭 */
+:deep(.source-handle[data-handlepos="right"]) {
+  transform: rotate(0deg);
+  right: -4px !important;
+  top: calc(50% - 6px);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+:deep(.source-handle[data-handlepos="right"]:hover) {
+  transform: scale(1.2) translateX(5px) !important;
+  background-color: #f05e1c !important;
+  z-index: 10;
+}
+
+/* 底部箭頭 */
+:deep(.source-handle[data-handlepos="bottom"]) {
+  transform: rotate(0deg);
+  bottom: -4px !important;
+  left: calc(50% - 6px);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+
+:deep(.source-handle[data-handlepos="bottom"]:hover) {
+  transform: scale(1.2) translatey(5px) !important;
+  background-color: #f05e1c !important;
+  z-index: 10;
+}
+
+/* Target 連接點樣式（圓形） */
+:deep(.target-handle) {
+  background-color: #3b82f6 !important;
+  border-radius: 50% !important;
+  cursor: crosshair;
+  transition: all 0.2s ease;
 }
 
 /* 為連接線添加箭頭 */
