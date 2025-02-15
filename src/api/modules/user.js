@@ -5,6 +5,18 @@ import request from "@/api/request";
  * 包含用戶資料的查詢、更新等功能
  */
 
+// API 端點
+const API_ENDPOINTS = {
+  users: "/users",
+  userProfile: "/auth/me",
+  updateProfile: "/auth/profile",
+  updatePassword: "/auth/password",
+  updateAvatar: "/auth/avatar",
+  userAvatar: (id) => `/users/${id}/avatar`,
+  userRoles: (userId) => `/users/${userId}/roles`,
+  userRole: (userId, roleId) => `/user-roles/${userId}/${roleId}`,
+};
+
 /**
  * 獲取當前登入用戶資料
  * @returns {Promise<Object>} 返回用戶資料
@@ -23,7 +35,7 @@ export function getCurrentUser() {
  */
 export function updateProfile(data) {
   return request({
-    url: "/auth/profile",
+    url: API_ENDPOINTS.updateProfile,
     method: "put",
     data,
   });
@@ -38,7 +50,7 @@ export function updateProfile(data) {
  */
 export function updatePassword(data) {
   return request({
-    url: "/auth/password",
+    url: API_ENDPOINTS.updatePassword,
     method: "put",
     data,
   });
@@ -51,7 +63,7 @@ export function updatePassword(data) {
  */
 export function updateAvatar(data) {
   return request({
-    url: "/auth/avatar",
+    url: API_ENDPOINTS.updateAvatar,
     method: "put",
     headers: {
       "Content-Type": "multipart/form-data",
@@ -69,7 +81,7 @@ export function updateAvatar(data) {
  */
 export function getUsers(params) {
   return request({
-    url: "/users",
+    url: API_ENDPOINTS.users,
     method: "get",
     params,
   });
@@ -157,3 +169,19 @@ export const assignRoleToUser = (data) => request.post("/user-roles", data);
  */
 export const removeRoleFromUser = (userId, roleId) =>
   request.delete(`/user-roles/${userId}/${roleId}`);
+
+/**
+ * 上傳用戶頭像
+ * @param {string} userId - 用戶ID
+ * @param {File} file - 頭像文件
+ */
+export const uploadAvatar = (userId, file) => {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  return request.post(API_ENDPOINTS.userAvatar(userId), formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};

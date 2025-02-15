@@ -127,25 +127,6 @@
           </el-upload>
         </div>
 
-        <!-- 上傳區域 -->
-        <!-- <el-upload
-          ref="uploadRef"
-          class="avatar-uploader"
-          :auto-upload="false"
-          :show-file-list="false"
-          :on-change="handleFileChange"
-          accept="image/jpeg,image/png,image/gif"
-          drag
-        >
-          <div
-            class="upload-area p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors"
-          >
-            <Upload class="mx-auto mb-2 text-gray-400" :size="24" />
-            <div class="text-gray-600">拖拉圖片至此處，或</div>
-            <el-button type="primary" class="mt-2"> 點擊選擇圖片 </el-button>
-          </div>
-        </el-upload> -->
-
         <!-- 提示文字 -->
         <p class="text-xs text-gray-500 mt-2">
           支援 JPG、PNG、GIF 格式，檔案大小不超過 2MB
@@ -198,7 +179,6 @@ const fetchUserInfo = async () => {
     const data = await getCurrentUser();
     userInfo.value = {
       ...data,
-      avatar: getAvatarUrl(data.avatar),
     };
   } catch (error) {
     console.error("獲取用戶資訊失敗:", error);
@@ -247,14 +227,14 @@ const handleUpload = async () => {
     formData.append("avatar", selectedFile.value);
 
     const { user } = await updateAvatar(formData);
-
     // 更新用戶資訊，確保頭像 URL 是完整的，但不包含 api 路徑
-    const avatarUrl = getAvatarUrl(user.avatar);
+
     userInfo.value = {
       ...userInfo.value,
       ...user,
-      avatar: avatarUrl,
     };
+
+    console.log(userInfo.value);
 
     // 清理預覽 URL
     if (previewUrl.value) {

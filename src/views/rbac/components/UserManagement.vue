@@ -28,6 +28,25 @@
         :highlight-current-row="true"
       >
         <el-table-column type="index" label="序號" width="80" align="center" />
+        <el-table-column label="頭像" width="100" align="center">
+          <template #default="{ row }">
+            <div class="avatar-container" @click.stop="handleAvatarClick(row)">
+              <el-avatar :size="40" :src="row.avatar" :alt="row.username">
+                {{ row.username.charAt(0).toUpperCase() }}
+              </el-avatar>
+              <div class="avatar-overlay">
+                <el-icon><Upload /></el-icon>
+              </div>
+            </div>
+            <input
+              type="file"
+              :ref="(el) => (avatarInputRefs[row.id] = el)"
+              class="hidden-file-input"
+              accept="image/*"
+              @change="(event) => handleAvatarChange(event, row)"
+            />
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="用戶名" sortable />
         <el-table-column prop="email" label="郵箱" sortable />
         <el-table-column prop="status" label="狀態" width="100" align="center">
@@ -195,19 +214,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { ElMessage } from "element-plus";
+import { ref, computed, onMounted, h } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Plus,
   Edit,
   Delete,
   Search,
   InfoFilled,
+  Upload,
 } from "@element-plus/icons-vue";
 import { useRbacStore } from "@/stores/rbac";
+import { useUserStore } from "@/stores/user";
 
 // Store
 const rbacStore = useRbacStore();
+const userStore = useUserStore();
 
 // 狀態
 const loading = ref(false);
@@ -248,7 +270,7 @@ const userFormRules = {
 // 計算屬性
 const filteredUsers = computed(() => {
   const query = searchQuery.value.toLowerCase();
-  return rbacStore.users
+  return userStore.users
     .map((user) => ({
       ...user,
       rolesLoading: false,
@@ -417,10 +439,10 @@ const handleSubmitUser = async () => {
     submitting.value = true;
     try {
       if (isEdit.value) {
-        await rbacStore.updateUser(userForm.value.id, userForm.value);
+        await userStore.updateUser(userForm.value.id, userForm.value);
         ElMessage.success("用戶更新成功");
       } else {
-        await rbacStore.createUser(userForm.value);
+        await userStore.createUser(userForm.value);
         ElMessage.success("用戶創建成功");
       }
       dialogVisible.value = false;
@@ -438,7 +460,7 @@ const handleDeleteConfirm = async () => {
 
   deleting.value = true;
   try {
-    await rbacStore.deleteUser(selectedUser.value.id);
+    await userStore.deleteUser(selectedUser.value.id);
     ElMessage.success("用戶刪除成功");
     deleteDialogVisible.value = false;
     selectedUser.value = null;
@@ -449,13 +471,82 @@ const handleDeleteConfirm = async () => {
   }
 };
 
+// 頭像相關
+const avatarInputRefs = ref({});
+const uploadingUser = ref(null);
+
+const handleAvatarClick = async (user) => {
+  try {
+    await ElMessageBox.confirm(
+      `確定要更改 ${user.username} 的頭像嗎？`,
+      "更改用戶頭像",
+      {
+        confirmButtonText: "確定",
+        cancelButtonText: "取消",
+        type: "warning",
+        showClose: true,
+        draggable: true,
+        message: h("div", null, [
+          h(
+            "p",
+            {
+              style: "color: #f56c6c; font-weight: bold; margin-bottom: 10px;",
+            },
+            "【請注意】："
+          ),
+          h("ul", { style: "margin: 10px 0; color: #f56c6c;" }, [
+            h("li", null, "上傳的頭像將立即生效"),
+            h("li", null, "此操作無法復原"),
+            h("li", null, "僅支援 JPG、PNG、GIF 格式"),
+            h("li", null, "檔案大小不能超過 5MB"),
+          ]),
+        ]),
+      }
+    );
+    avatarInputRefs.value[user.id]?.click();
+  } catch (error) {
+    // 用戶取消操作，不做任何事
+  }
+};
+
+const handleAvatarChange = async (event, user) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // 檢查文件類型
+  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+  if (!allowedTypes.includes(file.type)) {
+    ElMessage.error("只允許上傳 JPG、PNG 或 GIF 格式的圖片");
+    event.target.value = "";
+    return;
+  }
+
+  // 檢查文件大小（5MB）
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    ElMessage.error("圖片大小不能超過 5MB");
+    event.target.value = "";
+    return;
+  }
+
+  try {
+    await userStore.uploadUserAvatar(user.id, file);
+    ElMessage.success("頭像上傳成功");
+  } catch (error) {
+    ElMessage.error("頭像上傳失敗");
+  } finally {
+    // 清空文件輸入框，以便可以重複上傳同一個文件
+    event.target.value = "";
+  }
+};
+
 // 初始化
 onMounted(async () => {
   loading.value = true;
   try {
-    await rbacStore.fetchUsers();
+    await Promise.all([userStore.fetchUsers(), rbacStore.initialize()]);
   } catch (error) {
-    ElMessage.error("獲取用戶列表失敗");
+    ElMessage.error("初始化失敗");
   } finally {
     loading.value = false;
   }
@@ -543,5 +634,55 @@ onMounted(async () => {
   display: flex;
   gap: 4px;
   flex-shrink: 0; /* 防止按鈕被壓縮 */
+}
+
+:deep(.el-avatar) {
+  background-color: var(--el-color-primary);
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.el-avatar img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.avatar-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  border-radius: 50%;
+}
+
+.avatar-container:hover .avatar-overlay {
+  opacity: 1;
+}
+
+.avatar-overlay .el-icon {
+  color: white;
+  font-size: 20px;
+}
+
+.hidden-file-input {
+  display: none;
 }
 </style>

@@ -1,5 +1,13 @@
 import { defineStore } from "pinia";
 import axios from "axios";
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  getUserRoles,
+  uploadAvatar,
+} from "@/api/modules/user";
 
 // 定義系統中所有可能的權限
 const ALL_PERMISSIONS = [
@@ -18,6 +26,8 @@ export const useUserStore = defineStore("user", {
   state: () => ({
     user: null,
     userPermissions: [], // 用戶權限列表
+    users: [], // 所有用戶列表
+    usersLoading: false,
   }),
 
   getters: {
@@ -52,6 +62,7 @@ export const useUserStore = defineStore("user", {
   },
 
   actions: {
+    // 認證相關
     async login(credentials) {
       try {
         const response = await axios.post("/api/auth/login", credentials);
@@ -60,24 +71,45 @@ export const useUserStore = defineStore("user", {
         localStorage.setItem("token", token);
         this.user = user;
 
-        // 如果不是管理員才需要獲取具體權限
         if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN") {
           await this.fetchUserPermissions();
         } else {
-          // 管理員直接賦予所有權限
           this.userPermissions = ALL_PERMISSIONS;
         }
 
         return true;
       } catch (error) {
-        console.error("Login error:", error);
+        console.error("登入失敗:", error);
         throw error;
       }
     },
 
+    async logout() {
+      localStorage.removeItem("token");
+      this.user = null;
+      this.userPermissions = [];
+      this.users = [];
+    },
+
+    async fetchUser() {
+      try {
+        const response = await axios.get("/api/auth/me");
+        this.user = response.data;
+
+        if (this.user.role !== "SUPER_ADMIN" && this.user.role !== "ADMIN") {
+          await this.fetchUserPermissions();
+        } else {
+          this.userPermissions = ALL_PERMISSIONS;
+        }
+      } catch (error) {
+        console.error("獲取用戶信息失敗:", error);
+        this.logout();
+      }
+    },
+
+    // 權限相關
     async fetchUserPermissions() {
       try {
-        // 如果是管理員，直接返回所有權限
         if (this.user?.role === "SUPER_ADMIN" || this.user?.role === "ADMIN") {
           this.userPermissions = ALL_PERMISSIONS;
           return;
@@ -86,32 +118,73 @@ export const useUserStore = defineStore("user", {
         const response = await axios.get("/api/rbac/user-permissions");
         this.userPermissions = response.data;
       } catch (error) {
-        console.error("Fetch permissions error:", error);
+        console.error("獲取權限失敗:", error);
         this.userPermissions = [];
       }
     },
 
-    async logout() {
-      localStorage.removeItem("token");
-      this.user = null;
-      this.userPermissions = [];
+    // 用戶管理相關
+    async fetchUsers() {
+      this.usersLoading = true;
+      try {
+        const users = await getUsers();
+        this.users = users;
+      } catch (error) {
+        console.error("獲取用戶列表失敗:", error);
+        throw error;
+      } finally {
+        this.usersLoading = false;
+      }
     },
 
-    async fetchUser() {
+    async createUser(userData) {
       try {
-        const response = await axios.get("/api/auth/me");
-        this.user = response.data;
-
-        // 如果不是管理員才需要獲取具體權限
-        if (this.user.role !== "SUPER_ADMIN" && this.user.role !== "ADMIN") {
-          await this.fetchUserPermissions();
-        } else {
-          // 管理員直接賦予所有權限
-          this.userPermissions = ALL_PERMISSIONS;
-        }
+        const newUser = await createUser(userData);
+        await this.fetchUsers();
+        return newUser;
       } catch (error) {
-        console.error("Fetch user error:", error);
-        this.logout();
+        console.error("創建用戶失敗:", error);
+        throw error;
+      }
+    },
+
+    async updateUser(userId, userData) {
+      try {
+        await updateUser(userId, userData);
+        await this.fetchUsers();
+      } catch (error) {
+        console.error("更新用戶失敗:", error);
+        throw error;
+      }
+    },
+
+    async deleteUser(userId) {
+      try {
+        await deleteUser(userId);
+        await this.fetchUsers();
+      } catch (error) {
+        console.error("刪除用戶失敗:", error);
+        throw error;
+      }
+    },
+
+    async getUserRoles(userId) {
+      try {
+        return await getUserRoles(userId);
+      } catch (error) {
+        console.error("獲取用戶角色失敗:", error);
+        throw error;
+      }
+    },
+
+    async uploadUserAvatar(userId, file) {
+      try {
+        const response = await uploadAvatar(userId, file);
+        await this.fetchUsers(); // 重新獲取用戶列表以更新頭像
+        return response;
+      } catch (error) {
+        console.error("上傳頭像失敗:", error);
+        throw error;
       }
     },
   },

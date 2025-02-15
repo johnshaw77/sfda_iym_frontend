@@ -28,7 +28,7 @@ export const getUploadBaseUrl = () => {
 export const getAvatarUrl = (avatarPath) => {
   if (!avatarPath) return "";
   const baseUrl = getUploadBaseUrl();
-  return `${baseUrl}/uploads/avatars/${avatarPath}`;
+  return `${baseUrl}/${avatarPath}`;
 };
 
 /**
@@ -39,5 +39,6 @@ export const getAvatarUrl = (avatarPath) => {
 export const getFileUrl = (filePath) => {
   if (!filePath) return "";
   const baseUrl = getUploadBaseUrl();
+  //TODO: 修正路徑
   return `${baseUrl}/uploads/${filePath}`;
 };
