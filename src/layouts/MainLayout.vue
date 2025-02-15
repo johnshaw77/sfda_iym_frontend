@@ -15,7 +15,7 @@
       >
         <el-header
           v-if="showContentHeader"
-          class="bg-white border-b !h-10 flex items-center justify-between px-6"
+          class="content-header bg-white border-b !h-10 flex items-center justify-between px-6"
         >
           <h2 class="text-lg font-medium">{{ pageTitle }}</h2>
           <div class="flex items-center space-x-2">
@@ -30,7 +30,7 @@
           </div>
         </el-header>
 
-        <el-main class="!p-0 bg-gray-100">
+        <el-main class="!p-0 bg-gray-100 main-content">
           <router-view v-slot="{ Component }">
             <keep-alive :exclude="['Settings']">
               <component :is="Component" />
@@ -62,15 +62,7 @@ const showContentHeader = computed(() => {
 
 // 根據當前路由設置頁面標題和按鈕
 const pageTitle = computed(() => {
-  const titles = {
-    "/projects": "專案管理",
-    "/workflow": "工作流程",
-    "/workflow-templates": "工作流程範本管理",
-    "/files": "文件管理",
-    "/analysis": "數據分析",
-    "/settings": "系統設置",
-  };
-  return titles[route.path] || "";
+  return route.meta.title || "";
 });
 
 const showNewButton = computed(() => {
@@ -184,5 +176,19 @@ const handleNewAction = () => {
 
 .el-dropdown-item {
   @apply !px-4 !py-2 !text-sm flex items-center;
+}
+
+.content-header {
+  @apply fixed right-0 z-10;
+  width: calc(100% - 12rem); /* 48px * 3 = 12rem，對應左側導航欄寬度 */
+  transition: width 0.2s ease-in-out;
+}
+
+.collapsed .content-header {
+  width: calc(100% - 4rem); /* 16px * 4 = 4rem，對應收合後的左側導航欄寬度 */
+}
+
+.main-content {
+  padding-top: 2.5rem !important; /* 40px，對應 header 高度 */
 }
 </style>

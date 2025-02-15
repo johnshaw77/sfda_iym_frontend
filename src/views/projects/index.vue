@@ -5,7 +5,7 @@
     >
       <!-- 新增專案卡片 -->
       <div
-        class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200"
+        class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200 border-t-[3px] border-t-gray-300"
         @click="handleCreateProject"
       >
         <Plus :size="32" class="text-gray-400" />
@@ -16,7 +16,7 @@
       <div
         v-for="project in projects"
         :key="project.id"
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:rotate-[2deg] transform"
       >
         <div class="p-6">
           <div class="flex items-start justify-between">
@@ -293,7 +293,20 @@ onMounted(() => {
 
 /* 專案卡片狀態邊框 */
 .bg-white {
-  border-top: 3px solid transparent;
+  border-top: 3px solid var(--el-color-info);
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* 新增專案卡片 */
+.bg-white.border-dashed {
+  border-top-style: dashed;
+  border-top-color: var(--el-border-color);
+  transition: all 0.3s ease;
+}
+.bg-white.border-dashed:hover {
+  border-top: 2px dashed var(--el-color-primary);
 }
 
 /* 草稿狀態 */

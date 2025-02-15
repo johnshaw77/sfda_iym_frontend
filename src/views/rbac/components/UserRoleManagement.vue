@@ -14,13 +14,24 @@
       </el-input>
     </div>
 
-    <el-table :data="filteredUsers" style="width: 100%" v-loading="loading">
-      <el-table-column prop="username" label="用戶名" />
-      <el-table-column prop="email" label="郵箱" />
-      <el-table-column label="當前角色" min-width="300">
+    <el-table
+      :data="filteredUsers"
+      style="width: 100%"
+      v-loading="loading"
+      @sort-change="handleSortChange"
+    >
+      <el-table-column type="index" label="序號" width="80" align="center" />
+      <el-table-column prop="username" label="用戶名" sortable="custom" />
+      <el-table-column prop="email" label="郵箱" sortable="custom" />
+      <el-table-column
+        label="當前角色"
+        min-width="300"
+        sortable="custom"
+        :sort-method="sortByRolesCount"
+      >
         <template #default="{ row }">
           <el-tag
-            v-for="userRole in row.userRoles"
+            v-for="userRole in row.userRoles || []"
             :key="userRole.role.id"
             class="role-tag"
             :type="getRoleTagType(userRole.role.name)"
@@ -28,7 +39,7 @@
           >
             {{ userRole.role.name }}
           </el-tag>
-          <el-tag v-if="!row.userRoles.length" type="info" size="small">
+          <el-tag v-if="!(row.userRoles || []).length" type="info" size="small">
             暫無角色
           </el-tag>
         </template>
@@ -88,13 +99,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { Search, InfoFilled } from "@element-plus/icons-vue";
-import axios from "axios";
+import { useRbacStore } from "@/stores/rbac";
+import { getUsers } from "@/api/modules/user";
 import { useUserStore } from "@/stores/user";
 
+const rbacStore = useRbacStore();
 const userStore = useUserStore();
+
 const isSuperAdmin = computed(() => {
   return userStore.user?.role === "SUPER_ADMIN";
 });
@@ -104,46 +118,62 @@ const loading = ref(false);
 const searchQuery = ref("");
 const dialogVisible = ref(false);
 const selectedUser = ref(null);
-const availableRoles = ref([]);
+const availableRoles = computed(() => rbacStore.roles);
 
 const roleForm = ref({
   roles: [],
 });
 
+const sortConfig = ref({ prop: "", order: "" });
+
 // 過濾用戶列表
 const filteredUsers = computed(() => {
-  if (!searchQuery.value) return users.value;
+  // 先進行搜索過濾
+  let filtered = searchQuery.value
+    ? users.value.filter(
+        (user) =>
+          user.username
+            .toLowerCase()
+            .includes(searchQuery.value.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
+      )
+    : users.value;
 
-  const query = searchQuery.value.toLowerCase();
-  return users.value.filter(
-    (user) =>
-      user.username.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query)
-  );
+  // 進行排序
+  if (sortConfig.value.prop && sortConfig.value.order) {
+    filtered = [...filtered].sort((a, b) => {
+      const isAsc = sortConfig.value.order === "ascending";
+      if (sortConfig.value.prop === "roles") {
+        const aCount = (a.userRoles || []).length;
+        const bCount = (b.userRoles || []).length;
+        return isAsc ? aCount - bCount : bCount - aCount;
+      }
+      if (a[sortConfig.value.prop] < b[sortConfig.value.prop])
+        return isAsc ? -1 : 1;
+      if (a[sortConfig.value.prop] > b[sortConfig.value.prop])
+        return isAsc ? 1 : -1;
+      return 0;
+    });
+  }
+
+  return filtered;
 });
 
 // 獲取用戶列表
 const fetchUsers = async () => {
   try {
     loading.value = true;
-    const response = await axios.get("/api/users");
-    users.value = response.data;
+    const response = await getUsers();
+    // 確保每個用戶都有 userRoles 屬性
+    users.value = response.map((user) => ({
+      ...user,
+      userRoles: user.userRoles || [],
+    }));
   } catch (error) {
     ElMessage.error("獲取用戶列表失敗");
     console.error(error);
   } finally {
     loading.value = false;
-  }
-};
-
-// 獲取角色列表
-const fetchRoles = async () => {
-  try {
-    const response = await axios.get("/api/rbac/roles");
-    availableRoles.value = response.data;
-  } catch (error) {
-    ElMessage.error("獲取角色列表失敗");
-    console.error(error);
   }
 };
 
@@ -167,7 +197,7 @@ const getRoleTagType = (roleName) => {
 // 編輯用戶角色
 const handleEditUserRoles = (user) => {
   selectedUser.value = user;
-  roleForm.value.roles = user.userRoles.map((ur) => ur.role.id);
+  roleForm.value.roles = (user.userRoles || []).map((ur) => ur.role.id);
   dialogVisible.value = true;
 };
 
@@ -177,7 +207,9 @@ const handleSubmit = async () => {
 
   try {
     // 獲取用戶當前的角色ID列表
-    const currentRoleIds = selectedUser.value.userRoles.map((ur) => ur.role.id);
+    const currentRoleIds = (selectedUser.value.userRoles || []).map(
+      (ur) => ur.role.id
+    );
 
     // 要添加的角色
     const rolesToAdd = roleForm.value.roles.filter(
@@ -191,17 +223,12 @@ const handleSubmit = async () => {
 
     // 添加新角色
     for (const roleId of rolesToAdd) {
-      await axios.post("/api/rbac/user-roles", {
-        userId: selectedUser.value.id,
-        roleId,
-      });
+      await rbacStore.assignRoleToUser(selectedUser.value.id, roleId);
     }
 
     // 移除舊角色
     for (const roleId of rolesToRemove) {
-      await axios.delete(
-        `/api/rbac/user-roles/${selectedUser.value.id}/${roleId}`
-      );
+      await rbacStore.removeRoleFromUser(selectedUser.value.id, roleId);
     }
 
     ElMessage.success("角色分配成功");
@@ -213,9 +240,22 @@ const handleSubmit = async () => {
   }
 };
 
+// 處理排序變更
+const handleSortChange = ({ prop, order }) => {
+  sortConfig.value = { prop, order };
+};
+
+// 角色數量排序方法
+const sortByRolesCount = (a, b) => {
+  const aCount = (a.userRoles || []).length;
+  const bCount = (b.userRoles || []).length;
+  return aCount - bCount;
+};
+
 // 初始化
-fetchUsers();
-fetchRoles();
+onMounted(async () => {
+  await fetchUsers();
+});
 </script>
 
 <style scoped>

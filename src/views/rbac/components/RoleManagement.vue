@@ -7,9 +7,15 @@
       </el-button>
     </div>
 
-    <el-table :data="roles" style="width: 100%" v-loading="loading">
-      <el-table-column prop="name" label="角色名稱" />
-      <el-table-column prop="description" label="描述" />
+    <el-table
+      :data="roles"
+      style="width: 100%"
+      v-loading="loading"
+      @sort-change="handleSortChange"
+    >
+      <el-table-column type="index" label="序號" width="80" align="center" />
+      <el-table-column prop="name" label="角色名稱" sortable="custom" />
+      <el-table-column prop="description" label="描述" sortable="custom" />
       <el-table-column label="權限" min-width="300">
         <template #default="{ row }">
           <el-tag
@@ -18,7 +24,13 @@
             class="permission-tag"
             size="small"
           >
-            {{ permission.permission.name }}
+            <el-tooltip
+              :content="permission.permission.description"
+              placement="top"
+              effect="light"
+            >
+              <span>{{ permission.permission.name }}</span>
+            </el-tooltip>
           </el-tag>
         </template>
       </el-table-column>
@@ -31,6 +43,7 @@
               @click="handleEditRole(row)"
               :disabled="row.name === 'SUPER_ADMIN'"
             >
+              <Pencil :size="14" class="mr-1" />
               編輯
             </el-button>
             <el-button
@@ -39,6 +52,7 @@
               @click="handleDeleteRole(row)"
               :disabled="row.name === 'SUPER_ADMIN'"
             >
+              <Trash :size="14" class="mr-1" />
               刪除
             </el-button>
           </el-button-group>
@@ -59,7 +73,7 @@
         label-width="100px"
       >
         <el-form-item label="角色名稱" prop="name">
-          <el-input v-model="roleForm.name" />
+          <el-input v-model="roleForm.name" @input="handleNameInput" />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="roleForm.description" type="textarea" :rows="2" />
@@ -87,16 +101,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus } from "@element-plus/icons-vue";
-import axios from "axios";
+import { Plus, Pencil, Trash } from "lucide-vue-next";
+import { useRbacStore } from "@/stores/rbac";
 
-const roles = ref([]);
-const loading = ref(false);
+const rbacStore = useRbacStore();
+const sortConfig = ref({ prop: "", order: "" });
+
+const roles = computed(() => {
+  let sortedRoles = [...rbacStore.roles];
+  if (sortConfig.value.prop && sortConfig.value.order) {
+    sortedRoles.sort((a, b) => {
+      const isAsc = sortConfig.value.order === "ascending";
+      if (a[sortConfig.value.prop] < b[sortConfig.value.prop])
+        return isAsc ? -1 : 1;
+      if (a[sortConfig.value.prop] > b[sortConfig.value.prop])
+        return isAsc ? 1 : -1;
+      return 0;
+    });
+  }
+  return sortedRoles;
+});
+
+const loading = computed(() => rbacStore.loading);
+const availablePermissions = computed(() => rbacStore.permissions);
+
 const dialogVisible = ref(false);
 const isEdit = ref(false);
-const availablePermissions = ref([]);
 
 const roleFormRef = ref(null);
 const roleForm = ref({
@@ -109,6 +141,11 @@ const rules = {
   name: [
     { required: true, message: "請輸入角色名稱", trigger: "blur" },
     { min: 2, max: 50, message: "長度在 2 到 50 個字符", trigger: "blur" },
+    {
+      pattern: /^[A-Z][A-Z_]*$/,
+      message: "角色名稱只能包含英文字母和底線",
+      trigger: "blur",
+    },
   ],
   description: [
     { max: 200, message: "描述不能超過 200 個字符", trigger: "blur" },
@@ -123,29 +160,9 @@ const rules = {
   ],
 };
 
-// 獲取角色列表
-const fetchRoles = async () => {
-  try {
-    loading.value = true;
-    const response = await axios.get("/api/rbac/roles");
-    roles.value = response.data;
-  } catch (error) {
-    ElMessage.error("獲取角色列表失敗");
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 獲取權限列表
-const fetchPermissions = async () => {
-  try {
-    const response = await axios.get("/api/rbac/permissions");
-    availablePermissions.value = response.data;
-  } catch (error) {
-    ElMessage.error("獲取權限列表失敗");
-    console.error(error);
-  }
+// 處理排序變更
+const handleSortChange = ({ prop, order }) => {
+  sortConfig.value = { prop, order };
 };
 
 // 創建角色
@@ -180,14 +197,20 @@ const handleDeleteRole = async (role) => {
       type: "warning",
     });
 
-    await axios.delete(`/api/rbac/roles/${role.id}`);
+    await rbacStore.deleteRole(role.id);
     ElMessage.success("角色刪除成功");
-    await fetchRoles();
   } catch (error) {
     if (error !== "cancel") {
+      console.error("刪除角色失敗:", error);
       ElMessage.error("刪除角色失敗");
-      console.error(error);
     }
+  }
+};
+
+// 處理角色名稱輸入，自動轉換為大寫並將空格轉換為底線
+const handleNameInput = (value) => {
+  if (value) {
+    roleForm.value.name = value.toUpperCase().replace(/\s+/g, "_");
   }
 };
 
@@ -199,45 +222,35 @@ const handleSubmit = async () => {
     await roleFormRef.value.validate();
 
     if (isEdit.value) {
-      await axios.put(`/api/rbac/roles/${roleForm.value.id}`, {
+      await rbacStore.updateRole(roleForm.value.id, {
         name: roleForm.value.name,
         description: roleForm.value.description,
       });
 
       // 更新角色權限
       for (const permissionId of roleForm.value.permissions) {
-        await axios.post("/api/rbac/role-permissions", {
-          roleId: roleForm.value.id,
-          permissionId,
-        });
+        await rbacStore.assignPermissionToRole(roleForm.value.id, permissionId);
       }
     } else {
-      const response = await axios.post("/api/rbac/roles", {
+      // 創建新角色
+      const newRole = await rbacStore.createRole({
         name: roleForm.value.name,
         description: roleForm.value.description,
       });
 
       // 為新角色分配權限
       for (const permissionId of roleForm.value.permissions) {
-        await axios.post("/api/rbac/role-permissions", {
-          roleId: response.data.role.id,
-          permissionId,
-        });
+        await rbacStore.assignPermissionToRole(newRole.id, permissionId);
       }
     }
 
     ElMessage.success(isEdit.value ? "角色更新成功" : "角色創建成功");
     dialogVisible.value = false;
-    await fetchRoles();
   } catch (error) {
+    console.error("操作失敗:", error);
     ElMessage.error(isEdit.value ? "更新角色失敗" : "創建角色失敗");
-    console.error(error);
   }
 };
-
-onMounted(async () => {
-  await Promise.all([fetchRoles(), fetchPermissions()]);
-});
 </script>
 
 <style scoped>
@@ -252,6 +265,20 @@ onMounted(async () => {
 .permission-tag {
   margin-right: 5px;
   margin-bottom: 5px;
+  cursor: help;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.permission-tag:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.permission-tag:hover :deep(.el-tag) {
+  border-color: var(--el-color-primary);
 }
 
 .dialog-footer {

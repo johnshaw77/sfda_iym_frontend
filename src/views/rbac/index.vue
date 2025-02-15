@@ -1,55 +1,49 @@
 <template>
   <div class="rbac-management">
-    <el-card class="rbac-card">
-      <template #header>
-        <div class="card-header">
-          <h2>權限管理系統</h2>
-        </div>
-      </template>
-
-      <el-tabs v-model="activeTab" class="demo-tabs">
-        <el-tab-pane label="角色管理" name="roles">
-          <role-management />
-        </el-tab-pane>
-        <el-tab-pane label="權限列表" name="permissions">
-          <permission-list />
-        </el-tab-pane>
-        <el-tab-pane label="用戶角色" name="user-roles">
-          <user-role-management />
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
+    <el-tabs v-model="activeTab" class="demo-tabs" v-loading="loading">
+      <el-tab-pane label="角色管理" name="roles">
+        <role-management />
+      </el-tab-pane>
+      <el-tab-pane label="權限列表" name="permissions">
+        <permission-list />
+      </el-tab-pane>
+      <el-tab-pane label="用戶角色" name="user-roles">
+        <user-role-management />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, computed } from "vue";
 import RoleManagement from "./components/RoleManagement.vue";
 import PermissionList from "./components/PermissionList.vue";
 import UserRoleManagement from "./components/UserRoleManagement.vue";
+import { useRbacStore } from "@/stores/rbac";
 
 const activeTab = ref("roles");
+const rbacStore = useRbacStore();
+const loading = computed(() => rbacStore.loading);
+
+onMounted(async () => {
+  await rbacStore.initialize();
+});
 </script>
 
 <style scoped>
 .rbac-management {
-  padding: 20px;
+  @apply h-full w-full;
 }
 
-.rbac-card {
-  margin: 0 auto;
-  max-width: 1200px;
+:deep(.el-tabs) {
+  @apply h-full p-2 bg-white;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+:deep(.el-tabs__content) {
+  @apply h-[calc(100%-40px)] overflow-auto;
 }
 
-.card-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--el-text-color-primary);
+:deep(.el-tab-pane) {
+  @apply h-full;
 }
 </style>

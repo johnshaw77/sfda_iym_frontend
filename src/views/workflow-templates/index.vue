@@ -134,22 +134,28 @@
 
           <!-- 範本資訊 -->
           <div class="mt-4 space-y-2">
-            <div class="flex items-center text-sm text-gray-500">
-              <Tag :size="16" class="mr-2" />
-              <span>版本 {{ template.version }}</span>
-            </div>
-            <div class="flex items-center text-sm text-gray-500">
-              <User :size="16" class="mr-2" />
-              <span>{{ template.creator?.username }}</span>
+            <div
+              class="flex items-center justify-between text-sm text-gray-500"
+            >
+              <div class="flex items-center">
+                <Tag :size="16" class="mr-2" />
+                <span class="text-xs">版本 {{ template.version }}</span>
+              </div>
+              <div class="flex items-center">
+                <User :size="16" class="mr-2" />
+                <span class="text-xs">{{ template.creator?.username }}</span>
+              </div>
             </div>
             <div class="flex items-center text-sm text-gray-500">
               <Calendar :size="16" class="mr-2" />
-              <span>更新於 {{ formatDate(template.updatedAt) }}</span>
+              <span class="text-xs"
+                >更新於 {{ formatDate(template.updatedAt) }}</span
+              >
             </div>
           </div>
 
           <!-- 底部按鈕 -->
-          <div class="mt-6 flex items-center justify-end space-x-2">
+          <div class="mt-1 flex items-center justify-end space-x-2">
             <el-button
               type="primary"
               link

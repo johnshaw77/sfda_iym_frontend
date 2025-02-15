@@ -253,7 +253,7 @@ const handleUpload = async () => {
     userInfo.value = {
       ...userInfo.value,
       ...user,
-      avatar: avatarUrl, //avatar: user.avatar ? `${avatarUrl}${user.avatar}` : "",
+      avatar: avatarUrl,
     };
 
     // 清理預覽 URL

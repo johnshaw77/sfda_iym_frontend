@@ -1,9 +1,20 @@
 <template>
   <div class="permission-list">
-    <el-table :data="permissions" style="width: 100%" v-loading="loading">
-      <el-table-column prop="name" label="權限名稱" />
-      <el-table-column prop="description" label="描述" />
-      <el-table-column label="使用該權限的角色" min-width="300">
+    <el-table
+      :data="permissions"
+      style="width: 100%"
+      v-loading="loading"
+      @sort-change="handleSortChange"
+    >
+      <el-table-column type="index" label="序號" width="80" align="center" />
+      <el-table-column prop="name" label="權限名稱" sortable="custom" />
+      <el-table-column prop="description" label="描述" sortable="custom" />
+      <el-table-column
+        label="使用該權限的角色"
+        min-width="300"
+        sortable="custom"
+        :sort-method="sortByRolesCount"
+      >
         <template #default="{ row }">
           <el-tag
             v-for="role in row.roles"
@@ -24,43 +35,59 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { ElMessage } from "element-plus";
-import axios from "axios";
+import { useRbacStore } from "@/stores/rbac";
 
-const permissions = ref([]);
-const loading = ref(false);
+const rbacStore = useRbacStore();
+const sortConfig = ref({ prop: "", order: "" });
 
-// 獲取權限列表
-const fetchPermissions = async () => {
-  try {
-    loading.value = true;
-    const [permissionsResponse, rolesResponse] = await Promise.all([
-      axios.get("/api/rbac/permissions"),
-      axios.get("/api/rbac/roles"),
-    ]);
+const loading = computed(() => rbacStore.loading);
 
-    // 處理權限和角色的關聯關係
-    const permissionsWithRoles = permissionsResponse.data.map((permission) => {
-      const roles = rolesResponse.data.filter((role) =>
-        role.rolePermissions.some((rp) => rp.permission.id === permission.id)
-      );
-      return {
-        ...permission,
-        roles,
-      };
+const permissions = computed(() => {
+  const allPermissions = rbacStore.permissions;
+  const allRoles = rbacStore.roles;
+
+  // 先處理權限和角色的關聯
+  let processedPermissions = allPermissions.map((permission) => {
+    const roles = allRoles.filter((role) =>
+      role.rolePermissions.some((rp) => rp.permission.id === permission.id)
+    );
+    return {
+      ...permission,
+      roles,
+    };
+  });
+
+  // 處理排序
+  if (sortConfig.value.prop && sortConfig.value.order) {
+    processedPermissions.sort((a, b) => {
+      const isAsc = sortConfig.value.order === "ascending";
+      if (sortConfig.value.prop === "roles") {
+        return isAsc
+          ? a.roles.length - b.roles.length
+          : b.roles.length - a.roles.length;
+      }
+      if (a[sortConfig.value.prop] < b[sortConfig.value.prop])
+        return isAsc ? -1 : 1;
+      if (a[sortConfig.value.prop] > b[sortConfig.value.prop])
+        return isAsc ? 1 : -1;
+      return 0;
     });
-
-    permissions.value = permissionsWithRoles;
-  } catch (error) {
-    ElMessage.error("獲取權限列表失敗");
-    console.error(error);
-  } finally {
-    loading.value = false;
   }
+
+  return processedPermissions;
+});
+
+// 處理排序變更
+const handleSortChange = ({ prop, order }) => {
+  sortConfig.value = { prop, order };
 };
 
-onMounted(fetchPermissions);
+// 角色數量排序方法
+const sortByRolesCount = (a, b) => {
+  return a.roles.length - b.roles.length;
+};
 </script>
 
 <style scoped>

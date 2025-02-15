@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
+import { createPinia } from "pinia";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
 import "./style.css";
@@ -145,6 +146,45 @@ const routes = [
     },
   },
   {
+    path: "/rbac",
+    name: "RBAC",
+    component: () => import("@/views/rbac/index.vue"),
+    meta: {
+      title: "權限管理",
+      permissions: ["MANAGE_ROLES", "VIEW_ROLES", "VIEW_PERMISSIONS"],
+    },
+    children: [
+      {
+        path: "roles",
+        name: "RoleManagement",
+        component: () => import("@/views/rbac/components/RoleManagement.vue"),
+        meta: {
+          title: "角色管理",
+          permissions: ["MANAGE_ROLES", "VIEW_ROLES"],
+        },
+      },
+      {
+        path: "permissions",
+        name: "PermissionList",
+        component: () => import("@/views/rbac/components/PermissionList.vue"),
+        meta: {
+          title: "權限列表",
+          permissions: ["VIEW_PERMISSIONS"],
+        },
+      },
+      {
+        path: "user-roles",
+        name: "UserRoleManagement",
+        component: () =>
+          import("@/views/rbac/components/UserRoleManagement.vue"),
+        meta: {
+          title: "用戶角色",
+          permissions: ["ASSIGN_ROLES", "VIEW_ROLES"],
+        },
+      },
+    ],
+  },
+  {
     path: "/api-test",
     name: "ApiTest",
     component: () => import("./views/api-test/index.vue"),
@@ -203,11 +243,18 @@ router.afterEach(() => {
   NProgress.done();
 });
 
+// 創建應用實例
 const app = createApp(App);
+
+// 創建 Pinia 實例
+const pinia = createPinia();
+
+// 使用插件
 app.use(ElementPlus, {
   locale: zhTw,
 });
 app.use(router);
+app.use(pinia); // 使用 Pinia
 
 // 註冊 Lucide 圖標
 const icons = {
@@ -237,4 +284,5 @@ Object.entries(icons).forEach(([name, component]) => {
   app.component(name, component);
 });
 
+// 掛載應用
 app.mount("#app");

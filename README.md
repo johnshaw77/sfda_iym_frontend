@@ -6,14 +6,18 @@ SFDA IYM（Improve Your Manufacturing）是一個專注於製造業良率提升�
 
 ## 技術棧
 
-- **核心框架：** Vue 3 + Vite
-- **UI 框架：** Element Plus
-- **工作流程引擎：** Vue Flow
-- **樣式框架：** Tailwind CSS
-- **圖標：** Lucide Icons
-- **HTTP 客戶端：** Axios
-- **路由：** Vue Router
-- **進度條：** NProgress
+- **核心框架：** Vue 3.4.15 + Vite 5.1.0
+- **狀態管理：** Pinia 3.0.1
+- **UI 框架：** Element Plus 2.5.3
+- **工作流程引擎：** Vue Flow 1.42.1
+- **樣式框架：** Tailwind CSS 3.4.17
+- **圖標：** Lucide Icons 0.363.0
+- **HTTP 客戶端：** Axios 1.7.9
+- **路由：** Vue Router 4.5.0
+- **進度條：** NProgress 0.2.0
+- **文件處理：** 
+  - PDF 預覽：PDF.js 4.10.38
+  - PPT 生成：pptxgenjs 3.12.0
 
 ## 功能特點
 
@@ -22,6 +26,7 @@ SFDA IYM（Improve Your Manufacturing）是一個專注於製造業良率提升�
 - 📁 專案管理
 - 📂 文件管理
 - 📈 數據分析
+- 🔐 RBAC 權限管理
 - ⚙️ 系統設置
 
 ## 開始使用
@@ -88,6 +93,14 @@ frontend/
   - 資料輸出節點
 - 節點連線管理
 - 範本版本控制
+
+### RBAC 權限管理
+
+- 用戶角色管理
+- 權限分配與控制
+- 動態路由權限
+- 操作權限控制
+- 數據權限管理
 
 ### 專案管理
 
@@ -178,6 +191,12 @@ VITE_APP_DESCRIPTION=Improve Your Manufacturing
    A: 在 `nodeTypes.js` 中定義新的節點類型，並在 `CustomNode.vue` 中添加對應的渲染邏輯。
 
 ## 更新日誌
+
+### v1.2.0 (2024-02-15)
+- 新增 RBAC 權限管理系統
+- 升級核心依賴版本
+- 優化工作流程設計器性能
+- 改進用戶介面體驗
 
 ### v1.1.0 (2024-02-13)
 - 新增 API 呼叫節點類型

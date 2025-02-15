@@ -67,7 +67,7 @@ export function updateAvatar(data) {
  * @param {number} params.limit - 每頁數量
  * @returns {Promise<{total: number, users: Array}>} 返回用戶列表和總數
  */
-export function getUserList(params) {
+export function getUsers(params) {
   return request({
     url: "/users",
     method: "get",

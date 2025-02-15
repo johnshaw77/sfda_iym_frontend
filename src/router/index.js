@@ -1,3 +1,10 @@
+/**
+ * @fileoverview 路由配置
+ * @version 1.0.0
+ * @since 2025-02-14
+ * @description 先保存，後續再整合到 main.js 中
+ */
+
 import { createRouter, createWebHistory } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { ElMessage } from "element-plus";
@@ -60,6 +67,38 @@ const routes = [
           title: "權限管理",
           permissions: ["MANAGE_ROLES", "VIEW_ROLES", "VIEW_PERMISSIONS"],
         },
+        children: [
+          {
+            path: "roles",
+            name: "RoleManagement",
+            component: () =>
+              import("@/views/rbac/components/RoleManagement.vue"),
+            meta: {
+              title: "角色管理",
+              permissions: ["MANAGE_ROLES", "VIEW_ROLES"],
+            },
+          },
+          {
+            path: "permissions",
+            name: "PermissionList",
+            component: () =>
+              import("@/views/rbac/components/PermissionList.vue"),
+            meta: {
+              title: "權限列表",
+              permissions: ["VIEW_PERMISSIONS"],
+            },
+          },
+          {
+            path: "user-roles",
+            name: "UserRoleManagement",
+            component: () =>
+              import("@/views/rbac/components/UserRoleManagement.vue"),
+            meta: {
+              title: "用戶角色",
+              permissions: ["ASSIGN_ROLES", "VIEW_ROLES"],
+            },
+          },
+        ],
       },
     ],
   },
