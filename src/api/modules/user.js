@@ -113,3 +113,47 @@ export function deleteUser(id) {
     method: "delete",
   });
 }
+
+/**
+ * 獲取所有用戶
+ */
+export const getAllUsers = () => request.get("/users");
+
+/**
+ * 創建用戶
+ * @param {Object} data - 用戶數據
+ * @param {string} data.username - 用戶名
+ * @param {string} data.email - 郵箱
+ * @param {string} data.password - 密碼
+ * @param {string} data.status - 狀態
+ */
+export const createUser = (data) => request.post("/users", data);
+
+/**
+ * 更新用戶
+ * @param {string} id - 用戶ID
+ * @param {Object} data - 用戶數據
+ */
+export const updateUser = (id, data) => request.put(`/users/${id}`, data);
+
+/**
+ * 獲取用戶的角色
+ * @param {string} userId - 用戶ID
+ */
+export const getUserRoles = (userId) => request.get(`/users/${userId}/roles`);
+
+/**
+ * 為用戶分配角色
+ * @param {Object} data - 分配數據
+ * @param {string} data.userId - 用戶ID
+ * @param {string} data.roleId - 角色ID
+ */
+export const assignRoleToUser = (data) => request.post("/user-roles", data);
+
+/**
+ * 移除用戶的角色
+ * @param {string} userId - 用戶ID
+ * @param {string} roleId - 角色ID
+ */
+export const removeRoleFromUser = (userId, roleId) =>
+  request.delete(`/user-roles/${userId}/${roleId}`);

@@ -1,27 +1,31 @@
 <template>
   <div class="rbac-management">
     <el-tabs v-model="activeTab" class="demo-tabs" v-loading="loading">
+      <el-tab-pane label="用戶管理" name="users">
+        <user-management />
+      </el-tab-pane>
       <el-tab-pane label="角色管理" name="roles">
         <role-management />
       </el-tab-pane>
       <el-tab-pane label="權限列表" name="permissions">
         <permission-list />
       </el-tab-pane>
-      <el-tab-pane label="用戶角色" name="user-roles">
+      <!-- <el-tab-pane label="用戶角色" name="user-roles">
         <user-role-management />
-      </el-tab-pane>
+      </el-tab-pane> -->
     </el-tabs>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import UserManagement from "./components/UserManagement.vue";
 import RoleManagement from "./components/RoleManagement.vue";
 import PermissionList from "./components/PermissionList.vue";
 import UserRoleManagement from "./components/UserRoleManagement.vue";
 import { useRbacStore } from "@/stores/rbac";
 
-const activeTab = ref("roles");
+const activeTab = ref("users");
 const rbacStore = useRbacStore();
 const loading = computed(() => rbacStore.loading);
 

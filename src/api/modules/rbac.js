@@ -32,6 +32,30 @@ export const deleteRole = (id) => request.delete(`/rbac/roles/${id}`);
 export const getPermissions = () => request.get("/rbac/permissions");
 
 /**
+ * 創建權限
+ * @param {Object} data - 權限數據
+ * @param {string} data.name - 權限名稱
+ * @param {string} data.description - 權限描述
+ */
+export const createPermission = (data) =>
+  request.post("/rbac/permissions", data);
+
+/**
+ * 更新權限
+ * @param {string} id - 權限ID
+ * @param {Object} data - 權限數據
+ */
+export const updatePermission = (id, data) =>
+  request.put(`/rbac/permissions/${id}`, data);
+
+/**
+ * 刪除權限
+ * @param {string} id - 權限ID
+ */
+export const deletePermission = (id) =>
+  request.delete(`/rbac/permissions/${id}`);
+
+/**
  * 為角色分配權限
  * @param {Object} data - 分配數據
  * @param {string} data.roleId - 角色ID

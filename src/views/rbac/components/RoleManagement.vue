@@ -73,7 +73,11 @@
         label-width="100px"
       >
         <el-form-item label="角色名稱" prop="name">
-          <el-input v-model="roleForm.name" @input="handleNameInput" />
+          <el-input
+            v-model="roleForm.name"
+            @input="handleNameInput"
+            @keydown="handleNameKeydown"
+          />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="roleForm.description" type="textarea" :rows="2" />
@@ -105,6 +109,12 @@ import { ref, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus, Pencil, Trash } from "lucide-vue-next";
 import { useRbacStore } from "@/stores/rbac";
+import {
+  formatName,
+  isValidKeyInput,
+  nameValidationRules,
+  descriptionValidationRules,
+} from "@/utils/validators";
 
 const rbacStore = useRbacStore();
 const sortConfig = ref({ prop: "", order: "" });
@@ -138,18 +148,8 @@ const roleForm = ref({
 });
 
 const rules = {
-  name: [
-    { required: true, message: "請輸入角色名稱", trigger: "blur" },
-    { min: 2, max: 50, message: "長度在 2 到 50 個字符", trigger: "blur" },
-    {
-      pattern: /^[A-Z][A-Z_]*$/,
-      message: "角色名稱只能包含英文字母和底線",
-      trigger: "blur",
-    },
-  ],
-  description: [
-    { max: 200, message: "描述不能超過 200 個字符", trigger: "blur" },
-  ],
+  name: nameValidationRules,
+  description: descriptionValidationRules,
   permissions: [
     {
       type: "array",
@@ -210,7 +210,14 @@ const handleDeleteRole = async (role) => {
 // 處理角色名稱輸入，自動轉換為大寫並將空格轉換為底線
 const handleNameInput = (value) => {
   if (value) {
-    roleForm.value.name = value.toUpperCase().replace(/\s+/g, "_");
+    roleForm.value.name = formatName(value);
+  }
+};
+
+// 處理鍵盤輸入，防止輸入非法字符
+const handleNameKeydown = (event) => {
+  if (!isValidKeyInput(event)) {
+    event.preventDefault();
   }
 };
 

@@ -65,9 +65,24 @@ const routes = [
         component: () => import("@/views/rbac/index.vue"),
         meta: {
           title: "權限管理",
-          permissions: ["MANAGE_ROLES", "VIEW_ROLES", "VIEW_PERMISSIONS"],
+          permissions: [
+            "MANAGE_ROLES",
+            "VIEW_ROLES",
+            "VIEW_PERMISSIONS",
+            "MANAGE_USERS",
+          ],
         },
         children: [
+          {
+            path: "users",
+            name: "UserManagement",
+            component: () =>
+              import("@/views/rbac/components/UserManagement.vue"),
+            meta: {
+              title: "用戶管理",
+              permissions: ["MANAGE_USERS"],
+            },
+          },
           {
             path: "roles",
             name: "RoleManagement",
