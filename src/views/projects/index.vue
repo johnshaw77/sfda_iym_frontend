@@ -61,10 +61,22 @@
                 <User :size="16" class="mr-2" />
                 <span>{{ project.creator.username }}</span>
               </div>
+              <!-- 添加專案號碼 -->
+              <div class="flex items-center gap-2 mt-2">
+                <div
+                  v-if="isAdmin"
+                  class="text-xs text-blue-500 rounded-sm bg-slate-100 p-1"
+                >
+                  {{ project.systemCode }}
+                </div>
+                <span class="text-xs font-semibold text-gray-500">{{
+                  project.projectNumber
+                }}</span>
+              </div>
             </div>
 
             <el-divider />
-            <div class="mt-4 flex items-center justify-between">
+            <div class="mt-2 flex items-center justify-between">
               <el-tag :type="getStatusType(project.status)" size="small">
                 {{ getStatusText(project.status) }}
               </el-tag>
@@ -166,6 +178,7 @@ import {
   deleteProject,
 } from "@/api/modules/project";
 import { Teleport } from "vue";
+import { useUserStore } from "@/stores/user";
 
 // 狀態
 const loading = ref(false);
@@ -192,6 +205,15 @@ const rules = {
 // 控制 Teleport 內容顯示
 const showHeaderContent = ref(true);
 const filterStatus = ref("");
+
+// 用戶狀態
+const userStore = useUserStore();
+
+// 檢查是否為管理員
+const isAdmin = computed(() => {
+  const userRole = userStore.user?.role;
+  return userRole === "ADMIN" || userRole === "SUPERADMIN";
+});
 
 // KeepAlive 生命週期鉤子
 onActivated(() => {

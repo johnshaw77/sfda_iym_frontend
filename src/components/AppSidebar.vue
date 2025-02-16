@@ -40,10 +40,30 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { useUserStore } from "@/stores/user";
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const isCollapse = ref(false);
+
+// 檢查用戶是否有權限訪問該選單項目
+const canAccessMenuItem = (route) => {
+  // 檢查是否需要管理員權限
+  if (route.meta?.requiresAdmin) {
+    const userRole = userStore.user?.role;
+    if (userRole !== "ADMIN" && userRole !== "SUPERADMIN") {
+      return false;
+    }
+  }
+
+  // 檢查是否需要特定權限
+  if (route.meta?.permissions) {
+    return userStore.hasAnyPermission(route.meta.permissions);
+  }
+
+  return true;
+};
 
 // 從路由配置生成選單項目
 const menuItems = computed(() => {
@@ -53,7 +73,8 @@ const menuItems = computed(() => {
         !route.redirect &&
         route.name &&
         !route.meta?.guest &&
-        !route.meta?.hidden
+        !route.meta?.hidden &&
+        canAccessMenuItem(route)
     )
     .map((route) => ({
       path: route.path,

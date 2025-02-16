@@ -94,5 +94,18 @@ export function getCurrentUser() {
  * @returns {Promise<string[]>} 返回權限列表
  */
 export function getUserPermissions() {
-  return request.get("/auth/permissions");
+  return request.get("/rbac/permissions");
+}
+
+/**
+ * 上傳用戶頭像
+ * @param {FormData} formData - 包含頭像文件的 FormData 對象
+ * @returns {Promise<Object>} 返回更新後的用戶資料
+ */
+export function updateAvatar(formData) {
+  return request.put("/auth/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 }

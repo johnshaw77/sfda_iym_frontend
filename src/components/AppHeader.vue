@@ -11,6 +11,28 @@
 
       <!-- 右側工具列 -->
       <div class="flex items-center space-x-4">
+        <!-- 暗黑模式切換 -->
+        <el-tooltip
+          :content="isDark ? '切換亮色模式' : '切換暗色模式'"
+          placement="bottom"
+        >
+          <div
+            class="cursor-pointer text-gray-600 hover:text-blue-500"
+            @click="toggleDarkMode"
+          >
+            <Sun v-if="isDark" :size="18" />
+            <Moon v-else :size="18" />
+          </div>
+        </el-tooltip>
+
+        <!-- Bug 回報圖示 -->
+        <el-tooltip content="回報問題" placement="bottom">
+          <Bug
+            :size="18"
+            class="text-gray-600 hover:text-blue-500 cursor-pointer"
+          />
+        </el-tooltip>
+
         <!-- 通知圖標 -->
         <el-badge :value="3" :max="99" class="cursor-pointer">
           <el-tooltip content="通知" placement="bottom">
@@ -154,6 +176,9 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
+import { updateAvatar } from "@/api/modules/auth";
+import { ElMessage } from "element-plus";
+import { Bug, Sun, Moon } from "lucide-vue-next";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -170,6 +195,20 @@ const uploadRef = ref(null);
 const selectedFile = ref(null);
 const previewUrl = ref("");
 const uploading = ref(false);
+
+// 暗黑模式相關
+const isDark = ref(localStorage.getItem("theme") === "dark");
+
+const toggleDarkMode = () => {
+  isDark.value = !isDark.value;
+  if (isDark.value) {
+    document.documentElement.classList.add("dark");
+    localStorage.setItem("theme", "dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+    localStorage.setItem("theme", "light");
+  }
+};
 
 // 獲取用戶資訊
 const fetchUserInfo = async () => {
@@ -283,7 +322,20 @@ const handleCommand = async (command) => {
   }
 };
 
+// 初始化主題
 onMounted(() => {
+  if (
+    localStorage.getItem("theme") === "dark" ||
+    (!localStorage.getItem("theme") &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches)
+  ) {
+    document.documentElement.classList.add("dark");
+    isDark.value = true;
+  } else {
+    document.documentElement.classList.remove("dark");
+    isDark.value = false;
+  }
+
   if (userStore.isAuthenticated) {
     fetchUserInfo();
   }

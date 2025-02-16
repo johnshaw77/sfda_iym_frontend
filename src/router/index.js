@@ -18,6 +18,7 @@ import {
   WalletCards,
   KeyRound,
   Cog,
+  Home,
 } from "lucide-vue-next";
 
 // 路由配置
@@ -36,9 +37,21 @@ const routes = [
   },
   {
     path: "/",
-    redirect: "/projects",
+    redirect: "/home",
     meta: {
       requiresAuth: true,
+    },
+  },
+  {
+    path: "/home",
+    name: "Home",
+    component: () => import("@/views/home/index.vue"),
+    meta: {
+      keepAlive: true,
+      requiresAuth: true,
+      title: "首頁",
+      icon: Home,
+      showContentHeader: false,
     },
   },
   {
@@ -118,6 +131,7 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
+      requiresAdmin: true,
       title: "系統設置",
       icon: Settings,
     },
@@ -220,6 +234,15 @@ router.beforeEach(async (to, from, next) => {
         query: { redirect: to.fullPath },
       });
     } else {
+      // 檢查管理員權限
+      if (to.meta.requiresAdmin) {
+        const userRole = userStore.user?.role;
+        if (userRole !== "ADMIN" && userRole !== "SUPERADMIN") {
+          ElMessage.error("需要管理員權限");
+          next(from.path);
+          return;
+        }
+      }
       // 檢查權限
       if (to.meta.permissions) {
         const hasPermission = userStore.hasAnyPermission(to.meta.permissions);

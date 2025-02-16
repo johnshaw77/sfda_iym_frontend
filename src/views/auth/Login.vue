@@ -16,14 +16,24 @@
       <p class="text-gray-500 text-sm mb-8">歡迎回來！請輸入您的帳號密碼</p>
 
       <!-- 測試登入按鈕 -->
-      <div class="mb-4">
+      <div class="mb-2">
         <el-button
           type="info"
           size="small"
           class="w-full"
           @click="handleTestLogin"
         >
-          測試帳號登入
+          ADMIN 測試帳號登入
+        </el-button>
+      </div>
+      <div class="mb-4">
+        <el-button
+          type="success"
+          size="small"
+          class="w-full"
+          @click="handleReaderLogin"
+        >
+          一般用戶測試帳號登入
         </el-button>
       </div>
 
@@ -188,6 +198,12 @@ const handleRegister = () => {
 const handleTestLogin = () => {
   formData.email = "john_hsiao@example.com";
   formData.password = "888888";
+};
+
+// 處理一般用戶測試登入
+const handleReaderLogin = () => {
+  formData.email = "reader001@example.com";
+  formData.password = "Reader@123";
 };
 </script>
 

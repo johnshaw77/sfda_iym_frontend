@@ -75,10 +75,19 @@ export const useUserStore = defineStore("user", {
         localStorage.setItem("token", token);
         this.user = user;
 
-        if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN") {
-          await this.fetchUserPermissions();
-        } else {
+        // 根據用戶角色設置權限
+        if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
           this.userPermissions = ALL_PERMISSIONS;
+        } else if (user.role === "POWERUSER") {
+          this.userPermissions = [
+            "VIEW_PROJECTS",
+            "CREATE_PROJECTS",
+            "EDIT_PROJECTS",
+          ];
+        } else if (user.role === "READER") {
+          this.userPermissions = ["VIEW_PROJECTS"];
+        } else {
+          this.userPermissions = [];
         }
 
         return true;
@@ -106,14 +115,23 @@ export const useUserStore = defineStore("user", {
         const userData = await getCurrentUser();
         this.user = userData;
 
-        if (this.user.role !== "SUPER_ADMIN" && this.user.role !== "ADMIN") {
-          await this.fetchUserPermissions();
-        } else {
+        // 根據用戶角色設置權限
+        if (userData.role === "ADMIN" || userData.role === "SUPER_ADMIN") {
           this.userPermissions = ALL_PERMISSIONS;
+        } else if (userData.role === "POWERUSER") {
+          this.userPermissions = [
+            "VIEW_PROJECTS",
+            "CREATE_PROJECTS",
+            "EDIT_PROJECTS",
+          ];
+        } else if (userData.role === "READER") {
+          this.userPermissions = ["VIEW_PROJECTS"];
+        } else {
+          this.userPermissions = [];
         }
       } catch (error) {
         console.error("獲取用戶信息失敗:", error);
-        throw error; // 直接拋出錯誤，讓調用者處理
+        throw error;
       }
     },
 
