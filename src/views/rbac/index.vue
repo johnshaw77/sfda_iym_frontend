@@ -14,11 +14,13 @@
         <user-role-management />
       </el-tab-pane> -->
     </el-tabs>
+    <!-- 使用 Teleport 將按鈕傳送到主佈局 -->
+    <Teleport to="#header-actions"> </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, Teleport } from "vue";
 import UserManagement from "./components/UserManagement.vue";
 import RoleManagement from "./components/RoleManagement.vue";
 import PermissionList from "./components/PermissionList.vue";

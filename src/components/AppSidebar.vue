@@ -25,8 +25,8 @@
     </el-menu>
 
     <!-- 版本信息 -->
-    <div v-show="!isCollapse" class="version-info">
-      <span class="version-text">v{{ version }}</span>
+    <div v-show="!isCollapse" class="version-info flex justify-center">
+      <img src="/flexium_logo.png" class="h-4" :alt="version" />
     </div>
 
     <!-- 折疊按鈕 -->
@@ -40,9 +40,7 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
-import pkg from "../../package.json";
 
-const version = pkg.version;
 const route = useRoute();
 const router = useRouter();
 const isCollapse = ref(false);

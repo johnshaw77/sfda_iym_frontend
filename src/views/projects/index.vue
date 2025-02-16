@@ -1,74 +1,81 @@
 <template>
-  <div class="p-2">
-    <div
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-    >
-      <!-- 新增專案卡片 -->
+  <div>
+    <!-- 專案列表內容 -->
+    <div class="bg-white !border-none p-2">
       <div
-        class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200 border-t-[3px] border-t-gray-300"
-        @click="handleCreateProject"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"
       >
-        <Plus :size="32" class="text-gray-400" />
-        <span class="mt-4 text-gray-600">新增專案</span>
-      </div>
+        <!-- 新增專案卡片 -->
+        <div
+          class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200 border-t-[3px] border-t-gray-300"
+          @click="handleCreateProject"
+        >
+          <Plus :size="32" class="text-gray-400" />
+          <span class="mt-4 text-gray-600">新增專案</span>
+        </div>
 
-      <!-- 專案卡片列表 -->
-      <div
-        v-for="project in projects"
-        :key="project.id"
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:rotate-[2deg] transform"
-      >
-        <div class="p-6">
-          <div class="flex items-start justify-between">
-            <div>
-              <h3 class="text-lg font-semibold text-gray-800">
-                {{ project.name }}
-              </h3>
-              <p class="mt-2 text-sm text-gray-600 line-clamp-2">
-                {{ project.description }}
-              </p>
+        <!-- 專案卡片列表 -->
+        <div
+          v-for="project in filteredProjects"
+          :key="project.id"
+          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer"
+        >
+          <div class="p-6">
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-800">
+                  {{ project.name }}
+                </h3>
+                <p class="mt-2 text-sm text-gray-600 line-clamp-2">
+                  {{ project.description }}
+                </p>
+              </div>
+              <el-dropdown trigger="click">
+                <MoreVertical
+                  :size="20"
+                  class="text-gray-400 cursor-pointer hover:text-gray-600"
+                />
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="handleEditProject(project)"
+                      >編輯</el-dropdown-item
+                    >
+                    <el-dropdown-item
+                      divided
+                      @click="handleDeleteProject(project)"
+                      class="text-red-500"
+                    >
+                      刪除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
-            <el-dropdown trigger="click">
-              <MoreVertical
-                :size="20"
-                class="text-gray-400 cursor-pointer hover:text-gray-600"
-              />
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="handleEditProject(project)"
-                    >編輯</el-dropdown-item
-                  >
-                  <el-dropdown-item
-                    divided
-                    @click="handleDeleteProject(project)"
-                    class="text-red-500"
-                  >
-                    刪除
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
 
-          <div class="mt-4">
-            <div class="flex items-center text-sm text-gray-500">
-              <Calendar :size="16" class="mr-2" />
-              <span>更新於 {{ formatDate(project.updatedAt) }}</span>
+            <div class="mt-4">
+              <div class="flex items-center text-sm text-gray-500">
+                <Calendar :size="16" class="mr-2" />
+                <span>更新於 {{ formatDate(project.updatedAt) }}</span>
+              </div>
+              <div class="mt-2 flex items-center text-sm text-gray-500">
+                <User :size="16" class="mr-2" />
+                <span>{{ project.creator.username }}</span>
+              </div>
             </div>
-            <div class="mt-2 flex items-center text-sm text-gray-500">
-              <User :size="16" class="mr-2" />
-              <span>{{ project.creator.username }}</span>
-            </div>
-          </div>
 
-          <el-divider />
-          <div class="mt-4 flex items-center justify-between">
-            <el-tag :type="getStatusType(project.status)" size="small">
-              {{ getStatusText(project.status) }}
-            </el-tag>
-            <el-button type="primary" link @click="handleViewProject(project)">
-              開啟專案
-            </el-button>
+            <el-divider />
+            <div class="mt-4 flex items-center justify-between">
+              <el-tag :type="getStatusType(project.status)" size="small">
+                {{ getStatusText(project.status) }}
+              </el-tag>
+              <el-button
+                type="primary"
+                link
+                @click="handleViewProject(project)"
+              >
+                開啟專案
+              </el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -111,11 +118,45 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 使用 Teleport 將內容傳送到主佈局 -->
+    <Teleport to="#header-actions" v-if="showHeaderContent">
+      <div class="flex items-center space-x-4">
+        <!-- 狀態文字 -->
+        <span class="text-gray-600 text-sm">
+          共 {{ projects.length }} 個專案
+        </span>
+
+        <!-- 篩選下拉選單 -->
+        <el-select
+          v-model="filterStatus"
+          placeholder="篩選狀態"
+          clearable
+          size="small"
+          class="!w-24"
+        >
+          <el-option label="草稿" value="draft" />
+          <el-option label="進行中" value="active" />
+          <el-option label="已完成" value="completed" />
+          <el-option label="已取消" value="cancelled" />
+        </el-select>
+
+        <!-- 新增按鈕 -->
+        <el-button
+          type="primary"
+          class="flex items-center"
+          @click="handleCreateProject"
+        >
+          <Plus class="mr-1" :size="16" />
+          新增專案
+        </el-button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onActivated, onDeactivated, computed } from "vue";
 import { Plus, MoreVertical, Calendar, User } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -124,6 +165,7 @@ import {
   updateProject,
   deleteProject,
 } from "@/api/modules/project";
+import { Teleport } from "vue";
 
 // 狀態
 const loading = ref(false);
@@ -146,6 +188,19 @@ const rules = {
   description: [{ required: true, message: "請輸入專案描述", trigger: "blur" }],
   status: [{ required: true, message: "請選擇專案狀態", trigger: "change" }],
 };
+
+// 控制 Teleport 內容顯示
+const showHeaderContent = ref(true);
+const filterStatus = ref("");
+
+// KeepAlive 生命週期鉤子
+onActivated(() => {
+  showHeaderContent.value = true;
+});
+
+onDeactivated(() => {
+  showHeaderContent.value = false;
+});
 
 // 獲取專案列表
 const fetchProjects = async () => {
@@ -278,6 +333,14 @@ const handleSubmit = async () => {
   }
 };
 
+// 根據狀態篩選專案
+const filteredProjects = computed(() => {
+  if (!filterStatus.value) return projects.value;
+  return projects.value.filter(
+    (project) => project.status === filterStatus.value
+  );
+});
+
 onMounted(() => {
   fetchProjects();
 });
@@ -327,5 +390,25 @@ onMounted(() => {
 /* 已取消狀態 */
 .bg-white:has(.el-tag--danger) {
   border-top-color: var(--el-color-danger);
+}
+
+/* 專案卡片動畫效果 */
+.transform {
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 移除原有的旋轉效果，改用放大效果 */
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+/* 確保卡片懸停時顯示在其他卡片上方 */
+.bg-white {
+  position: relative;
+  border-top: 3px solid var(--el-color-info);
 }
 </style>
