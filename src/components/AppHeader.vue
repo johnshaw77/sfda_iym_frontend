@@ -5,7 +5,7 @@
     <div class="flex justify-between items-center h-full px-4">
       <!-- Logo 區域 -->
       <div class="flex items-center space-x-0">
-        <img src="/logo.png" class="w-10 h-10" />
+        <img src="/logo_flowchart.svg" class="w-6 h-6 mr-2" />
         <h1 class="text-xl font-semibold text-gray-800">IYM 良率分析平台</h1>
       </div>
 
@@ -48,7 +48,7 @@
               </div>
             </div>
           </div>
-
+          <!-- 用戶下拉選單 -->
           <template #dropdown>
             <el-dropdown-menu>
               <div class="px-4 py-2">
@@ -151,12 +151,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import { Bell, Settings, User, Shield, LogOut, Upload } from "lucide-vue-next";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { getCurrentUser, updateAvatar } from "@/api";
-import { getAvatarUrl } from "@/utils/url";
 import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
@@ -182,8 +178,7 @@ const fetchUserInfo = async () => {
     userInfo.value = userStore.user;
   } catch (error) {
     console.error("獲取用戶資訊失敗:", error);
-    ElMessage.error("獲取用戶資訊失敗，請重新登入");
-    router.push("/login");
+    ElMessage.error("獲取用戶資訊失敗，請重新整理頁面");
   }
 };
 
@@ -229,8 +224,6 @@ const handleUpload = async () => {
       ...user,
     };
 
-    console.log(userInfo.value);
-
     // 清理預覽 URL
     if (previewUrl.value) {
       URL.revokeObjectURL(previewUrl.value);
@@ -262,7 +255,7 @@ const handleCancel = () => {
   }
 };
 
-// 處理下拉選單命令
+// 處理下拉選單命令(!TODO: 未實作)
 const handleCommand = async (command) => {
   switch (command) {
     case "profile":

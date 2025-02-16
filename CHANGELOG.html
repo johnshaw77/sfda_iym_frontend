@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFDA IYM 更新日誌</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .version {
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .version-header {
+            color: #1976D2;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .version-number {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .version-date {
+            color: #666;
+        }
+        .change-type {
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .change-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .change-item {
+            margin: 5px 0;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+        .tag-feature { background: #E3F2FD; color: #1976D2; }
+        .tag-fix { background: #FFEBEE; color: #D32F2F; }
+        .tag-improvement { background: #E8F5E9; color: #388E3C; }
+    </style>
+</head>
+<body>
+    <h1>SFDA IYM 更新日誌</h1>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">v1.4.0</span>
+            <span class="version-date">2024-03-25</span>
+        </div>
+        
+        <div class="change-type">🔐 認證系統優化</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                優化「記住我」功能的實現機制
+            </li>
+            <li class="change-item">
+                <span class="tag tag-fix">修復</span>
+                修正登出路由的認證要求
+            </li>
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                改進 token 過期處理邏輯
+            </li>
+        </ul>
+
+        <div class="change-type">🛠️ 路由系統更新</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                優化路由守衛的用戶狀態恢復邏輯
+            </li>
+            <li class="change-item">
+                <span class="tag tag-feature">新增</span>
+                添加更細緻的路由權限控制
+            </li>
+        </ul>
+
+        <div class="change-type">🔄 狀態管理優化</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                優化用戶狀態管理機制
+            </li>
+            <li class="change-item">
+                <span class="tag tag-fix">修復</span>
+                修正用戶信息自動恢復的問題
+            </li>
+        </ul>
+    </div>
+
+    <div class="version">
+        <div class="version-header">
+            <span class="version-number">v1.3.1</span>
+            <span class="version-date">2024-03-22</span>
+        </div>
+        
+        <div class="change-type">👤 用戶管理優化</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                優化頭像上傳功能
+            </li>
+            <li class="change-item">
+                <span class="tag tag-improvement">改進</span>
+                改進用戶介面體驗
+            </li>
+        </ul>
+
+        <div class="change-type">🐛 問題修復</div>
+        <ul class="change-list">
+            <li class="change-item">
+                <span class="tag tag-fix">修復</span>
+                修正頭像上傳後的刷新邏輯
+            </li>
+            <li class="change-item">
+                <span class="tag tag-fix">修復</span>
+                優化文件類型驗證機制
+            </li>
+        </ul>
+    </div>
+</body>
+</html> 

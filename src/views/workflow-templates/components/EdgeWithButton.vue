@@ -147,10 +147,11 @@ import {
   getBezierPath,
   useVueFlow,
 } from "@vue-flow/core";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { toRaw } from "vue";
-import { X, Edit, Play, Pause, MoveVertical } from "lucide-vue-next";
+import { Play, Pause, MoveVertical } from "lucide-vue-next";
 import { ElMessageBox, ElMessage } from "element-plus";
+import { useRouter } from "vue-router";
 
 const props = defineProps({
   id: {

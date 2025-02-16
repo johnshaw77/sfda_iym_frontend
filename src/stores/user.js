@@ -113,7 +113,7 @@ export const useUserStore = defineStore("user", {
         }
       } catch (error) {
         console.error("獲取用戶信息失敗:", error);
-        this.handleLogout();
+        throw error; // 直接拋出錯誤，讓調用者處理
       }
     },
 

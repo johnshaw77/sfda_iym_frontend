@@ -29,9 +29,8 @@ const service = axios.create({
 // 請求攔截器
 service.interceptors.request.use(
   (config) => {
-    // 從 userStore 獲取 token
-    const userStore = useUserStore();
-    const token = userStore.token;
+    // 直接從 localStorage 獲取 token
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -57,35 +56,22 @@ service.interceptors.response.use(
   async (error) => {
     console.error("響應錯誤:", error);
 
-    // 根據錯誤類型設置不同的顯示時間
-    let duration = 3000; // 預設 3 秒
-
-    // 401 未授權錯誤（如登入失敗）設置為 30 秒
-    if (error.response?.status === 401) {
-      duration = 30000;
-    }
-    // 404 找不到資源，設置為 5 秒
-    else if (error.response?.status === 404) {
-      duration = 5000;
-    }
-    // 500 伺服器錯誤，設置為 8 秒
-    else if (error.response?.status >= 500) {
-      duration = 8000;
-    }
-
     // 處理錯誤響應
     const message = error.response?.data?.message || "請求失敗";
     ElMessage.error({
       message,
-      duration, // 使用根據錯誤類型設置的顯示時間
+      duration: 3000,
       showClose: true,
     });
 
-    // 處理 401 未授權錯誤
-    if (error.response?.status === 401) {
+    // 只有在非 /auth 相關的請求發生 401 時才自動登出
+    if (error.response?.status === 401 && !error.config.url.includes("/auth")) {
       const userStore = useUserStore();
-      await userStore.handleLogout();
-      // 使用 Vue Router 進行導航
+      // 清除 token 和用戶信息
+      localStorage.removeItem("token");
+      userStore.$reset();
+
+      // 只在非登入頁時重定向
       if (router.currentRoute.value.path !== "/login") {
         router.push({
           path: "/login",

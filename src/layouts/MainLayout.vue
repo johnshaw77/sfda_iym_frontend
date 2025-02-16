@@ -18,16 +18,7 @@
           class="content-header bg-white border-b !h-10 flex items-center justify-between px-6"
         >
           <h2 class="text-lg font-medium">{{ pageTitle }}</h2>
-          <div class="flex items-center space-x-2">
-            <el-button
-              type="primary"
-              v-if="showNewButton"
-              @click="handleNewAction"
-            >
-              <component :is="newButtonIcon" class="mr-2" :size="16" />
-              {{ newButtonText }}
-            </el-button>
-          </div>
+          <div id="header-actions" class="flex items-center space-x-2"></div>
         </el-header>
 
         <el-main class="!p-0 bg-gray-100 main-content">
@@ -43,11 +34,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Plus, Upload, LineChart } from "lucide-vue-next";
-import AppSidebar from "../components/AppSidebar.vue";
-import AppHeader from "../components/AppHeader.vue";
+import AppSidebar from "@/components/AppSidebar.vue";
+import AppHeader from "@/components/AppHeader.vue";
+import { Settings } from "lucide-vue-next";
 
 const route = useRoute();
 const router = useRouter();
@@ -60,52 +51,10 @@ const showContentHeader = computed(() => {
   return route.meta.showContentHeader !== false;
 });
 
-// 根據當前路由設置頁面標題和按鈕
+// 根據當前路由設置頁面標題
 const pageTitle = computed(() => {
   return route.meta.title || "";
 });
-
-const showNewButton = computed(() => {
-  return ["/workflow", "/files", "/analysis"].includes(route.path);
-});
-
-const newButtonText = computed(() => {
-  const texts = {
-    "/workflow": "新建工作流",
-    "/files": "上傳文件",
-    "/analysis": "新建分析",
-  };
-  return texts[route.path] || "";
-});
-
-const newButtonIcon = computed(() => {
-  const icons = {
-    "/workflow": Plus,
-    "/files": Upload,
-    "/analysis": LineChart,
-  };
-  return icons[route.path] || Plus;
-});
-
-const handleNewAction = () => {
-  // 根據不同頁面觸發不同的操作
-  const actions = {
-    "/workflow": () => {
-      // TODO: 處理新建工作流
-    },
-    "/files": () => {
-      // TODO: 處理文件上傳
-    },
-    "/analysis": () => {
-      // TODO: 處理新建分析
-    },
-  };
-
-  const action = actions[route.path];
-  if (action) {
-    action();
-  }
-};
 </script>
 
 <style>

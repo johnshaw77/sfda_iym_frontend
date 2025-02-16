@@ -7,94 +7,136 @@
         </div>
       </template>
 
-      <!-- 用戶列表測試 -->
-      <div class="test-section">
-        <div class="section-header">
-          <h4>用戶列表 API 測試</h4>
-          <el-button
-            type="primary"
-            @click="handleFetchUsers"
-            :loading="loading"
-          >
-            獲取用戶列表
-          </el-button>
-        </div>
+      <el-tabs v-model="activeTab" class="demo-tabs">
+        <!-- 用戶列表測試 Tab -->
+        <el-tab-pane label="用戶列表測試" name="users">
+          <div class="test-section">
+            <div class="section-header">
+              <el-button
+                type="primary"
+                @click="handleFetchUsers"
+                :loading="loading"
+              >
+                獲取用戶列表
+              </el-button>
+            </div>
 
-        <!-- 用戶列表顯示 -->
-        <el-table
-          v-if="userList.length > 0"
-          :data="userList"
-          style="width: 100%"
-          border
-          stripe
-        >
-          <el-table-column prop="name" label="姓名" />
-          <el-table-column prop="email" label="電子郵件" />
-          <el-table-column prop="role" label="角色" />
-          <el-table-column label="頭像" width="100">
-            <template #default="{ row }">
-              <el-avatar :src="row.avatar" :size="40">
-                {{ row.nickname.charAt(0) }}
-              </el-avatar>
-            </template>
-          </el-table-column>
-          <el-table-column prop="status" label="狀態">
-            <template #default="{ row }">
-              <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-                {{ row.status === "active" ? "啟用" : "停用" }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
+            <!-- 用戶列表顯示 -->
+            <el-table
+              v-if="userList.length > 0"
+              :data="userList"
+              style="width: 100%"
+              border
+              stripe
+            >
+              <el-table-column prop="name" label="姓名" />
+              <el-table-column prop="email" label="電子郵件" />
+              <el-table-column prop="role" label="角色" />
+              <el-table-column label="頭像" width="100">
+                <template #default="{ row }">
+                  <el-avatar :src="row.avatar" :size="40">
+                    {{ row.nickname.charAt(0) }}
+                  </el-avatar>
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" label="狀態">
+                <template #default="{ row }">
+                  <el-tag :type="row.status === 'active' ? 'success' : 'info'">
+                    {{ row.status === "active" ? "啟用" : "停用" }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </el-tab-pane>
 
-        <!-- API 響應數據 -->
+        <!-- 檔案上傳測試 Tab -->
+        <el-tab-pane label="檔案上傳測試" name="upload">
+          <div class="test-section">
+            <el-upload
+              class="upload-demo"
+              drag
+              action="http://localhost:3001/api/file/upload"
+              :on-success="handleUploadSuccess"
+              :on-error="handleUploadError"
+              :before-upload="handleBeforeUpload"
+            >
+              <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+              <div class="el-upload__text">
+                拖曳檔案到此處或 <em>點擊上傳</em>
+              </div>
+            </el-upload>
 
-        <!-- <div v-if="userApiResult" class="mt-4">
-          <el-alert
-            :title="userApiResult.success ? 'API 請求成功' : 'API 請求失敗'"
-            :type="userApiResult.success ? 'success' : 'error'"
-            :description="userApiResult.message"
-            show-icon
-          />
-          <pre v-if="userApiResult.data" class="response-data">{{
-            JSON.stringify(userApiResult.data, null, 2)
-          }}</pre>
-        </div> -->
-      </div>
+            <!-- 上傳結果顯示 -->
+            <div v-if="uploadResult" class="mt-4">
+              <el-alert
+                :title="uploadResult.success ? '上傳成功' : '上傳失敗'"
+                :type="uploadResult.success ? 'success' : 'error'"
+                :description="uploadResult.message"
+                show-icon
+              />
+              <pre class="response-data" v-if="uploadResult.data">{{
+                JSON.stringify(uploadResult.data, null, 2)
+              }}</pre>
+            </div>
+          </div>
+        </el-tab-pane>
 
-      <!-- 檔案上傳測試 -->
-      <div class="test-section">
-        <h4>檔案上傳測試</h4>
-        <el-upload
-          class="upload-demo"
-          drag
-          action="http://localhost:3001/api/file/upload"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
-          :before-upload="handleBeforeUpload"
-        >
-          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-          <div class="el-upload__text">拖曳檔案到此處或 <em>點擊上傳</em></div>
-        </el-upload>
-      </div>
+        <!-- 外部 API 測試 Tab -->
+        <el-tab-pane label="外部 API 測試" name="external">
+          <div class="test-section">
+            <div class="section-header">
+              <div class="api-input-group">
+                <el-input
+                  v-model="externalApiEndpoint"
+                  placeholder="輸入 API 端點（例如：/methods）"
+                  clearable
+                  class="endpoint-input"
+                >
+                  <template #prepend>/external/test</template>
+                </el-input>
+                <el-button
+                  type="primary"
+                  @click="handleTestExternalApi"
+                  :loading="externalApiLoading"
+                >
+                  測試外部 API 連接
+                </el-button>
+              </div>
+            </div>
 
-      <!-- 上傳結果顯示 -->
-      <div class="test-section" v-if="uploadResult">
-        <h4>上傳結果</h4>
-        <el-alert
-          :title="uploadResult.success ? '上傳成功' : '上傳失敗'"
-          :type="uploadResult.success ? 'success' : 'error'"
-          :description="uploadResult.message"
-          show-icon
-        />
-        <pre class="response-data" v-if="uploadResult.data">{{
-          JSON.stringify(uploadResult.data, null, 2)
-        }}</pre>
-      </div>
+            <!-- 外部 API 測試結果 -->
+            <div v-if="externalApiResult" class="mt-4">
+              <el-alert
+                :title="externalApiResult.message"
+                :type="externalApiResult.success ? 'success' : 'error'"
+                :description="externalApiResult.error"
+                show-icon
+                class="mb-4"
+              />
+
+              <div v-if="externalApiResult.data">
+                <h4>響應數據：</h4>
+                <el-input
+                  type="textarea"
+                  v-model="formattedExternalResponse"
+                  :rows="10"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
 
       <!-- API 請求日誌 -->
       <div class="test-section">
-        <h4>API 請求日誌</h4>
+        <div class="section-header">
+          <h4>API 請求日誌</h4>
+          <el-button type="info" plain size="small" @click="clearLogs">
+            清除日誌
+          </el-button>
+        </div>
         <el-timeline>
           <el-timeline-item
             v-for="(log, index) in requestLogs"
@@ -114,12 +156,18 @@
 import { ref } from "vue";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { request } from "@/api/request";
+import { testExternalApi } from "@/api/modules/external";
 
+const activeTab = ref("users");
 const uploadResult = ref(null);
 const requestLogs = ref([]);
 const userList = ref([]);
 const userApiResult = ref(null);
 const loading = ref(false);
+const externalApiLoading = ref(false);
+const externalApiResult = ref(null);
+const formattedExternalResponse = ref("");
+const externalApiEndpoint = ref("");
 
 // 添加日誌
 const addLog = (message, success = true) => {
@@ -130,17 +178,21 @@ const addLog = (message, success = true) => {
   });
 };
 
+// 清除日誌
+const clearLogs = () => {
+  requestLogs.value = [];
+};
+
 // 獲取用戶列表
 const handleFetchUsers = async () => {
   loading.value = true;
-  userApiResult.value = null; // 重置之前的結果
+  userApiResult.value = null;
   addLog("開始獲取用戶列表");
 
   try {
     const response = await request.get("/user/list");
     console.log("API響應：", response);
 
-    // 正確解析響應數據
     if (response.code === 200) {
       console.log("Mock 響應數據：", response.data);
       userList.value = response.data;
@@ -164,7 +216,7 @@ const handleFetchUsers = async () => {
   } finally {
     setTimeout(() => {
       loading.value = false;
-    }, 100); // 給一個小延遲，確保 UI 更新順序正確
+    }, 100);
   }
 };
 
@@ -193,13 +245,34 @@ const handleUploadError = (error) => {
   };
   addLog(`檔案上傳失敗：${error.message || "未知錯誤"}`, false);
 };
+
+// 測試外部 API
+const handleTestExternalApi = async () => {
+  externalApiLoading.value = true;
+  addLog(`開始測試外部 API 連接：${externalApiEndpoint.value || "/"}`);
+
+  try {
+    const response = await testExternalApi(externalApiEndpoint.value);
+    externalApiResult.value = response;
+    formattedExternalResponse.value = JSON.stringify(response.data, null, 2);
+    addLog("外部 API 測試成功");
+  } catch (error) {
+    console.error("外部 API 測試失敗:", error);
+    externalApiResult.value = {
+      success: false,
+      message: "測試失敗",
+      error: error.message,
+    };
+    addLog(`外部 API 測試失敗：${error.message}`, false);
+  } finally {
+    externalApiLoading.value = false;
+  }
+};
 </script>
 
 <style scoped>
 .api-test-container {
   padding: 20px;
-  max-width: 800px;
-  margin: 0 auto;
 }
 
 .test-card {
@@ -246,5 +319,32 @@ const handleUploadError = (error) => {
 
 .mt-4 {
   margin-top: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.demo-tabs {
+  margin-bottom: 20px;
+}
+
+.el-tab-pane {
+  padding: 20px 0;
+}
+
+.api-input-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.endpoint-input {
+  flex: 1;
+}
+
+.el-input-group__prepend {
+  color: var(--el-text-color-secondary);
+  background-color: var(--el-fill-color-light);
 }
 </style>

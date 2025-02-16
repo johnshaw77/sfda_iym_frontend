@@ -4,7 +4,7 @@
       <!-- Logo -->
       <div class="mb-8">
         <div class="flex items-center justify-center space-x-2">
-          <div class="w-2 h-2 rounded-full bg-[#1976D2]"></div>
+          <img src="/logo_flowchart.svg" alt="logo" class="w-8 h-8" />
           <span class="text-2xl text-center text-gray-600"
             >IYM良率分析系統</span
           >
