@@ -1,13 +1,26 @@
 <template>
   <div class="permission-list">
     <div class="header-actions">
-      <el-button type="primary" @click="handleAdd">
-        <el-icon><Plus /></el-icon>新增權限
-      </el-button>
+      <div class="flex items-center gap-2">
+        <!-- 重整按鈕 -->
+        <el-button
+          type="default"
+          class="flex items-center"
+          :loading="loading"
+          @click="handleRefresh"
+        >
+          <el-icon><RefreshCw class="mr-1" :size="16" /></el-icon>
+          重整
+        </el-button>
+
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>新增權限
+        </el-button>
+      </div>
     </div>
 
     <el-table
-      :data="permissions"
+      :data="loading ? Array(5).fill({}) : permissions"
       style="width: 100%"
       v-loading="loading"
       @sort-change="handleSortChange"
@@ -122,7 +135,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Edit, Delete } from "@element-plus/icons-vue";
+import { Plus, Edit, Delete, RefreshCw } from "lucide-vue-next";
 import { useRbacStore } from "@/stores/rbac";
 import {
   createPermission,
@@ -288,11 +301,24 @@ const handleNameKeydown = (event) => {
     event.preventDefault();
   }
 };
+
+// 處理重整
+const handleRefresh = async () => {
+  loading.value = true;
+  try {
+    await rbacStore.fetchPermissions();
+    ElMessage.success("資料已更新");
+  } catch (error) {
+    ElMessage.error("更新失敗");
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
 
 <style scoped>
 .permission-list {
-  padding: 20px 0;
+  padding: 5px 0;
 }
 
 .header-actions {

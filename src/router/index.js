@@ -73,7 +73,7 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
-      requiresAdmin: true,
+      //requiresAdmin: true,
       title: "工作流程範本",
       icon: "Workflow",
       showContentHeader: true,

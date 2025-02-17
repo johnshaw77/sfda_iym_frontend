@@ -1,11 +1,11 @@
 <template>
   <div class="h-full flex">
-    <!-- 左側：節點類型列表 -->
+    <!-- 左側：節點定義列表 -->
     <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
       <!-- 頂部操作區 -->
       <div class="p-2.5 bg-slate-50 border-b border-gray-200">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-medium text-gray-900">節點類型</h2>
+          <h2 class="text-lg font-medium text-gray-900">節點定義</h2>
           <el-button type="primary" size="small" @click="handleCreateNode">
             <Plus class="mr-1" :size="14" />
             新增
@@ -13,7 +13,7 @@
         </div>
         <el-input
           v-model="searchQuery"
-          placeholder="搜尋節點類型"
+          placeholder="搜尋節點定義"
           clearable
           class="!w-full"
         >
@@ -36,7 +36,7 @@
         </div>
       </Teleport>
 
-      <!-- 節點類型列表 -->
+      <!-- 節點定義列表 -->
       <div class="flex-1 overflow-y-auto">
         <el-menu
           :default-active="activeNode?.id"
@@ -181,7 +181,7 @@
       <div v-else class="flex-1 flex items-center justify-center text-gray-400">
         <div class="text-center flex flex-col items-center justify-center">
           <Component :size="48" class="mb-2" />
-          <p class="text-sm">請選擇或新增節點類型</p>
+          <p class="text-sm">請選擇或新增節點定義</p>
         </div>
       </div>
     </div>
@@ -197,10 +197,10 @@
       <div class="flex-1 overflow-y-auto p-4">
         <el-form label-position="top">
           <!-- 基本資訊 -->
-          <el-form-item label="節點類型鍵值" required>
+          <el-form-item label="節點定義鍵值" required>
             <el-input
               v-model="activeNode.typeKey"
-              placeholder="請輸入唯一的節點類型鍵值（5-15字元）"
+              placeholder="請輸入唯一的節點定義鍵值（5-15字元）"
               @input="handleNodeDefinitionKeyInput"
               minlength="5"
               maxlength="15"
@@ -302,14 +302,14 @@
     <!-- 新增/編輯節點對話框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '編輯節點類型' : '新增節點類型'"
+      :title="isEdit ? '編輯節點定義' : '新增節點定義'"
       width="500px"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="類型鍵值" prop="typeKey">
           <el-input
             v-model="form.typeKey"
-            placeholder="請輸入唯一的節點類型鍵值（5-15字元）"
+            placeholder="請輸入唯一的節點定義鍵值（5-15字元）"
             @input="(value) => handleNodeDefinitionKeyInput(value, form)"
             minlength="5"
             maxlength="15"
@@ -638,7 +638,7 @@ const loadNodeDefinitions = async () => {
   }
 };
 
-// 根據節點類型獲取對應的圖標
+// 根據節點定義獲取對應的圖標
 const getNodeIcon = (category, typeKey) => {
   switch (category) {
     case "business-input":

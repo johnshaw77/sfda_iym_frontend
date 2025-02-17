@@ -199,7 +199,7 @@ defineExpose({
 }
 
 .version-info {
-  @apply fixed left-0 bottom-0 w-48 py-2 px-4 text-xs text-gray-400 border-t border-slate-200 bg-white text-center;
+  @apply fixed left-0 bottom-0 w-48 py-2 px-4 text-xs text-gray-400 border-t border-slate-200 border-r  bg-white text-center;
   transition: all 0.2s ease-in-out;
 }
 

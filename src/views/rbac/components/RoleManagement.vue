@@ -1,61 +1,124 @@
 <template>
   <div class="role-management">
     <div class="action-bar">
-      <el-button type="primary" @click="handleCreateRole">
-        <el-icon><Plus /></el-icon>
-        創建角色
-      </el-button>
+      <div class="flex items-center gap-2">
+        <!-- 重整按鈕 -->
+        <el-button
+          type="default"
+          class="flex items-center"
+          :loading="loading"
+          @click="handleRefresh"
+        >
+          <el-icon><RefreshCw class="mr-1" :size="16" /></el-icon>
+          重整
+        </el-button>
+
+        <el-button type="primary" @click="handleCreateRole">
+          <el-icon><Plus /></el-icon>
+          新增角色
+        </el-button>
+      </div>
     </div>
 
     <el-table
-      :data="roles"
+      :data="loading ? Array(5).fill({}) : roles"
       style="width: 100%"
-      v-loading="loading"
       @sort-change="handleSortChange"
     >
-      <el-table-column type="index" label="序號" width="80" align="center" />
-      <el-table-column prop="name" label="角色名稱" sortable="custom" />
-      <el-table-column prop="description" label="描述" sortable="custom" />
-      <el-table-column label="權限" min-width="300">
-        <template #default="{ row }">
-          <el-tag
-            v-for="permission in row.rolePermissions"
-            :key="permission.permission.id"
-            class="permission-tag"
-            size="small"
-          >
-            <el-tooltip
-              :content="permission.permission.description"
-              placement="top"
-              effect="light"
-            >
-              <span>{{ permission.permission.name }}</span>
-            </el-tooltip>
-          </el-tag>
+      <el-table-column type="index" label="序號" width="80" align="center">
+        <template #default="scope">
+          <template v-if="loading">
+            <el-skeleton-item variant="text" style="width: 100%" />
+          </template>
+          <template v-else>
+            {{ scope.$index + 1 }}
+          </template>
         </template>
       </el-table-column>
+
+      <el-table-column prop="name" label="角色名稱" sortable="custom">
+        <template #default="{ row }">
+          <template v-if="loading">
+            <el-skeleton-item variant="text" style="width: 80%" />
+          </template>
+          <template v-else>
+            {{ row.name }}
+          </template>
+        </template>
+      </el-table-column>
+
+      <el-table-column prop="description" label="描述" sortable="custom">
+        <template #default="{ row }">
+          <template v-if="loading">
+            <el-skeleton-item variant="text" style="width: 90%" />
+          </template>
+          <template v-else>
+            {{ row.description }}
+          </template>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="權限" min-width="300">
+        <template #default="{ row }">
+          <template v-if="loading">
+            <div class="flex flex-wrap gap-2">
+              <el-skeleton-item
+                v-for="n in 4"
+                :key="n"
+                variant="text"
+                style="width: 80px"
+              />
+            </div>
+          </template>
+          <template v-else>
+            <el-tag
+              v-for="permission in row.rolePermissions"
+              :key="permission.permission.id"
+              class="permission-tag"
+              size="small"
+            >
+              <el-tooltip
+                :content="permission.permission.description"
+                placement="top"
+                effect="light"
+              >
+                <span>{{ permission.permission.name }}</span>
+              </el-tooltip>
+            </el-tag>
+          </template>
+        </template>
+      </el-table-column>
+
       <el-table-column label="操作" width="200">
         <template #default="{ row }">
-          <el-button-group>
-            <el-button
-              type="primary"
-              size="small"
-              @click="handleEditRole(row)"
-              :disabled="row.name === 'SUPER_ADMIN'"
-            >
-              <Pencil :size="14" class="mr-1" />
-              編輯
-            </el-button>
-            <el-button
-              type="danger"
-              size="small"
-              @click="handleDeleteRole(row)"
-              :disabled="row.name === 'SUPER_ADMIN'"
-            >
-              <Trash :size="14" class="mr-1" />
-              刪除
-            </el-button>
-          </el-button-group>
+          <template v-if="loading">
+            <div class="flex gap-2">
+              <el-skeleton-item variant="button" style="width: 60px" />
+              <el-skeleton-item variant="button" style="width: 60px" />
+            </div>
+          </template>
+          <template v-else>
+            <el-button-group>
+              <el-button
+                type="primary"
+                size="small"
+                @click="handleEditRole(row)"
+                :disabled="row.name === 'SUPER_ADMIN'"
+              >
+                <Pencil :size="14" class="mr-1" />
+                編輯
+              </el-button>
+              <el-button
+                type="danger"
+                size="small"
+                @click="handleDeleteRole(row)"
+                :disabled="row.name === 'SUPER_ADMIN'"
+              >
+                <Trash :size="14" class="mr-1" />
+                刪除
+              </el-button>
+            </el-button-group>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -63,7 +126,7 @@
     <!-- 角色編輯對話框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '編輯角色' : '創建角色'"
+      :title="isEdit ? '編輯角色' : '新增角色'"
       width="600px"
     >
       <el-form
@@ -107,7 +170,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Pencil, Trash } from "lucide-vue-next";
+import { Plus, Pencil, Trash, RefreshCw } from "lucide-vue-next";
 import { useRbacStore } from "@/stores/rbac";
 import {
   formatName,
@@ -258,11 +321,24 @@ const handleSubmit = async () => {
     ElMessage.error(isEdit.value ? "更新角色失敗" : "創建角色失敗");
   }
 };
+
+// 處理重整
+const handleRefresh = async () => {
+  loading.value = true;
+  try {
+    await rbacStore.initialize();
+    ElMessage.success("資料已更新");
+  } catch (error) {
+    ElMessage.error("更新失敗");
+  } finally {
+    loading.value = false;
+  }
+};
 </script>
 
 <style scoped>
 .role-management {
-  padding: 20px 0;
+  padding: 5px 0;
 }
 
 .action-bar {

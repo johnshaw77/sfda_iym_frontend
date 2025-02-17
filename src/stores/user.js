@@ -217,8 +217,8 @@ export const useUserStore = defineStore("user", () => {
   const fetchUsers = async () => {
     usersLoading.value = true;
     try {
-      const users = await getUsers();
-      users.value = users;
+      const response = await getUsers();
+      users.value = response;
     } catch (error) {
       console.error("獲取用戶列表失敗:", error);
       throw error;

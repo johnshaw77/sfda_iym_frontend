@@ -15,134 +15,218 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
+
+        <!-- 重整按鈕 -->
+        <el-button
+          type="default"
+          class="flex items-center"
+          :loading="loading"
+          @click="handleRefresh"
+        >
+          <el-icon><RefreshCw class="mr-1" :size="16" /></el-icon>
+          重整
+        </el-button>
+
         <el-button type="primary" @click="handleAddUser">
           <el-icon><Plus /></el-icon>新增用戶
         </el-button>
       </div>
 
       <el-table
-        :data="filteredUsers"
+        :data="loading ? Array(5).fill({}) : filteredUsers"
         style="width: 100%"
-        v-loading="loading"
-        @row-click="handleUserSelect"
         :highlight-current-row="true"
+        @row-click="handleUserSelect"
       >
-        <el-table-column type="index" label="序號" width="80" align="center" />
+        <el-table-column type="index" label="序號" width="80" align="center">
+          <template #default="scope">
+            <template v-if="loading">
+              <el-skeleton-item variant="text" style="width: 100%" />
+            </template>
+            <template v-else>
+              {{ scope.$index + 1 }}
+            </template>
+          </template>
+        </el-table-column>
+
         <el-table-column label="頭像" width="100" align="center">
           <template #default="{ row }">
-            <div class="avatar-container" @click.stop="handleAvatarClick(row)">
-              <el-avatar :size="40" :src="row.avatar" :alt="row.username">
-                {{ row.username.charAt(0).toUpperCase() }}
-              </el-avatar>
-              <div class="avatar-overlay">
-                <el-icon><Upload /></el-icon>
+            <template v-if="loading">
+              <el-skeleton-item
+                variant="circle"
+                style="width: 40px; height: 40px"
+              />
+            </template>
+            <template v-else>
+              <div
+                class="avatar-container"
+                @click.stop="handleAvatarClick(row)"
+              >
+                <el-avatar :size="40" :src="row.avatar" :alt="row.username">
+                  {{ row.username?.charAt(0).toUpperCase() }}
+                </el-avatar>
+                <div class="avatar-overlay">
+                  <el-icon><Upload /></el-icon>
+                </div>
               </div>
-            </div>
-            <input
-              type="file"
-              :ref="(el) => (avatarInputRefs[row.id] = el)"
-              class="hidden-file-input"
-              accept="image/*"
-              @change="(event) => handleAvatarChange(event, row)"
-            />
+              <input
+                type="file"
+                :ref="(el) => (avatarInputRefs[row.id] = el)"
+                class="hidden-file-input"
+                accept="image/*"
+                @change="(event) => handleAvatarChange(event, row)"
+              />
+            </template>
           </template>
         </el-table-column>
-        <el-table-column prop="username" label="用戶名" sortable />
-        <el-table-column prop="email" label="郵箱" sortable />
+
+        <el-table-column prop="username" label="用戶名" sortable>
+          <template #default="{ row }">
+            <template v-if="loading">
+              <el-skeleton-item variant="text" style="width: 80%" />
+            </template>
+            <template v-else>
+              {{ row.username }}
+            </template>
+          </template>
+        </el-table-column>
+
+        <el-table-column prop="email" label="郵箱" sortable>
+          <template #default="{ row }">
+            <template v-if="loading">
+              <el-skeleton-item variant="text" style="width: 90%" />
+            </template>
+            <template v-else>
+              {{ row.email }}
+            </template>
+          </template>
+        </el-table-column>
+
         <el-table-column prop="status" label="狀態" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
-              {{ row.status === "active" ? "啟用" : "停用" }}
-            </el-tag>
+            <template v-if="loading">
+              <el-skeleton-item variant="text" style="width: 60px" />
+            </template>
+            <template v-else>
+              <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
+                {{ row.status === "active" ? "啟用" : "停用" }}
+              </el-tag>
+            </template>
           </template>
         </el-table-column>
+
         <el-table-column label="已分配角色" min-width="200">
           <template #default="{ row }">
-            <div
-              class="role-display"
-              @dblclick="handleRoleEditStart(row)"
-              v-if="!row.isEditingRoles"
-            >
-              <template v-if="row.userRoles && row.userRoles.length">
-                <el-tag
-                  v-for="roleId in row.userRoles"
-                  :key="roleId"
-                  class="role-tag"
-                  size="small"
-                  :type="getRoleTagType(getRoleName(roleId))"
-                >
-                  {{ getRoleName(roleId) }}
-                </el-tag>
-              </template>
-              <span v-else class="no-roles">未分配角色</span>
-            </div>
-            <div
-              v-else
-              class="role-edit-container"
-              tabindex="0"
-              @blur="handleRoleEditBlur($event, row)"
-              @mousedown.stop="handleContainerMouseDown"
-            >
-              <el-select
-                v-model="row.tempRoles"
-                multiple
-                tag-effect="plain"
-                :loading="row.rolesLoading"
-                placeholder="選擇角色"
-                class="role-select"
-              >
-                <el-option
-                  v-for="role in allRoles"
-                  :key="role.id"
-                  :label="role.name"
-                  :value="role.id"
-                >
-                  <span>{{ role.name }}</span>
-                  <el-tooltip
-                    :content="role.description"
-                    placement="right"
-                    effect="light"
-                  >
-                    <el-icon class="role-info-icon"><InfoFilled /></el-icon>
-                  </el-tooltip>
-                </el-option>
-              </el-select>
-              <div class="role-edit-actions">
-                <el-button
-                  type="primary"
-                  size="small"
-                  :loading="row.rolesLoading"
-                  @click="handleRoleUpdate(row)"
-                >
-                  更新
-                </el-button>
-                <el-button size="small" @click="handleRoleEditCancel(row)">
-                  取消
-                </el-button>
+            <template v-if="loading">
+              <div class="flex gap-2">
+                <el-skeleton-item variant="text" style="width: 60px" />
+                <el-skeleton-item variant="text" style="width: 60px" />
               </div>
-            </div>
+            </template>
+            <template v-else>
+              <template v-if="!row.isEditingRoles">
+                <el-tooltip
+                  content="點擊兩下可編輯角色"
+                  placement="top"
+                  effect="light"
+                  :show-after="500"
+                >
+                  <div
+                    class="role-display"
+                    @dblclick="handleRoleEditStart(row)"
+                  >
+                    <template v-if="row.userRoles && row.userRoles.length">
+                      <el-tag
+                        v-for="userRole in row.userRoles"
+                        :key="userRole.roleId"
+                        class="role-tag"
+                        size="small"
+                        :type="getRoleTagType(userRole.role.name)"
+                      >
+                        {{ userRole.role.name }}
+                      </el-tag>
+                    </template>
+                    <span v-else class="no-roles">未分配角色</span>
+                  </div>
+                </el-tooltip>
+              </template>
+              <div
+                v-else
+                class="role-edit-container"
+                tabindex="0"
+                @blur="handleRoleEditBlur($event, row)"
+                @mousedown.stop="handleContainerMouseDown"
+              >
+                <el-select
+                  v-model="row.tempRoles"
+                  multiple
+                  tag-effect="plain"
+                  :loading="row.rolesLoading"
+                  placeholder="選擇角色"
+                  class="role-select"
+                >
+                  <el-option
+                    v-for="role in allRoles"
+                    :key="role.id"
+                    :label="role.name"
+                    :value="role.id"
+                  >
+                    <span>{{ role.name }}</span>
+                    <el-tooltip
+                      :content="role.description"
+                      placement="right"
+                      effect="light"
+                    >
+                      <el-icon class="role-info-icon"><InfoFilled /></el-icon>
+                    </el-tooltip>
+                  </el-option>
+                </el-select>
+                <div class="role-edit-actions">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    :loading="row.rolesLoading"
+                    @click="handleRoleUpdate(row)"
+                  >
+                    更新
+                  </el-button>
+                  <el-button size="small" @click="handleRoleEditCancel(row)">
+                    取消
+                  </el-button>
+                </div>
+              </div>
+            </template>
           </template>
         </el-table-column>
+
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button-group>
-              <el-button
-                type="primary"
-                :icon="Edit"
-                size="small"
-                @click.stop="handleEditUser(row)"
-              >
-                編輯
-              </el-button>
-              <el-button
-                type="danger"
-                :icon="Delete"
-                size="small"
-                @click.stop="handleDeleteUser(row)"
-              >
-                刪除
-              </el-button>
-            </el-button-group>
+            <template v-if="loading">
+              <div class="flex gap-2">
+                <el-skeleton-item variant="button" style="width: 60px" />
+                <el-skeleton-item variant="button" style="width: 60px" />
+              </div>
+            </template>
+            <template v-else>
+              <el-button-group>
+                <el-button
+                  type="primary"
+                  :icon="Edit"
+                  size="small"
+                  @click.stop="handleEditUser(row)"
+                >
+                  編輯
+                </el-button>
+                <el-button
+                  type="danger"
+                  :icon="Delete"
+                  size="small"
+                  @click.stop="handleDeleteUser(row)"
+                >
+                  刪除
+                </el-button>
+              </el-button-group>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -216,14 +300,8 @@
 <script setup>
 import { ref, computed, onMounted, h } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import {
-  Plus,
-  Edit,
-  Delete,
-  Search,
-  InfoFilled,
-  Upload,
-} from "@element-plus/icons-vue";
+import { Plus, Edit, Delete, Search, Upload, RefreshCw } from "lucide-vue-next";
+import { InfoFilled } from "@element-plus/icons-vue";
 import { useRbacStore } from "@/stores/rbac";
 import { useUserStore } from "@/stores/user";
 
@@ -275,8 +353,7 @@ const filteredUsers = computed(() => {
       ...user,
       rolesLoading: false,
       isEditingRoles: false,
-      userRoles: user.userRoles.map((ur) => ur.role.id),
-      tempRoles: user.userRoles.map((ur) => ur.role.id),
+      tempRoles: user.userRoles.map((ur) => ur.roleId),
     }))
     .filter(
       (user) =>
@@ -540,6 +617,19 @@ const handleAvatarChange = async (event, user) => {
   }
 };
 
+// 處理重整
+const handleRefresh = async () => {
+  loading.value = true;
+  try {
+    await Promise.all([userStore.fetchUsers(), rbacStore.initialize()]);
+    ElMessage.success("資料已更新");
+  } catch (error) {
+    ElMessage.error("更新失敗");
+  } finally {
+    loading.value = false;
+  }
+};
+
 // 初始化
 onMounted(async () => {
   loading.value = true;
@@ -555,7 +645,7 @@ onMounted(async () => {
 
 <style scoped>
 .user-management {
-  padding: 20px 0;
+  padding: 5px 0;
   display: flex;
   flex-direction: column;
   gap: 20px;
