@@ -1,172 +1,214 @@
 <template>
-  <div class="p-6">
+  <div class="px-2 py-2">
     <!-- 頂部過濾器 -->
-    <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
-      <div class="flex items-center justify-between flex-wrap gap-4">
-        <!-- 左側篩選器 -->
-        <div class="flex items-center space-x-4">
-          <el-select
-            v-model="filters.category"
-            placeholder="選擇分類"
-            clearable
-            class="!w-40"
-          >
-            <el-option
-              v-for="category in categories"
-              :key="category"
-              :label="category"
-              :value="category"
-            />
-          </el-select>
+    <Teleport to="#header-actions">
+      <div v-if="showHeaderContent" class="flex items-center space-x-4">
+        <el-select
+          v-model="filters.category"
+          placeholder="選擇分類"
+          clearable
+          class="!w-40"
+        >
+          <el-option
+            v-for="category in categories"
+            :key="category"
+            :label="category"
+            :value="category"
+          />
+        </el-select>
 
-          <el-select
-            v-model="filters.status"
-            placeholder="選擇狀態"
-            clearable
-            class="!w-32"
+        <el-select
+          v-model="filters.status"
+          placeholder="選擇狀態"
+          clearable
+          class="!w-32"
+        >
+          <el-option
+            v-for="status in statusOptions"
+            :key="status.value"
+            :label="status.label"
+            :value="status.value"
           >
-            <el-option
-              v-for="status in statusOptions"
-              :key="status.value"
-              :label="status.label"
-              :value="status.value"
-            >
-              <el-tag :type="getStatusType(status.value)" size="small">
-                {{ status.label }}
-              </el-tag>
-            </el-option>
-          </el-select>
+            <el-tag :type="getStatusType(status.value)" size="small">
+              {{ status.label }}
+            </el-tag>
+          </el-option>
+        </el-select>
 
-          <el-input
-            v-model="filters.search"
-            placeholder="搜尋範本名稱"
-            class="!w-60"
-            clearable
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </div>
+        <el-input
+          v-model="filters.search"
+          placeholder="搜尋範本名稱"
+          class="!w-60"
+          clearable
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
 
-        <!-- 右側按鈕 -->
-        <div class="flex items-center space-x-2">
-          <el-button type="primary" @click="handleCreateTemplate">
-            <Plus class="mr-1" :size="16" />
-            新增範本
-          </el-button>
-        </div>
+        <el-button
+          plain
+          @click="handleRefresh"
+          :loading="loading"
+          title="重新整理"
+        >
+          <RotateCw class="mr-1" :size="16" />
+          重整
+        </el-button>
+
+        <el-button type="primary" @click="handleCreateTemplate">
+          <Plus class="mr-1" :size="16" />
+          新增範本
+        </el-button>
       </div>
-    </div>
+    </Teleport>
 
-    <!-- 範本列表 -->
+    <!-- 範本列表容器 -->
+
     <div
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"
     >
-      <div
-        v-for="template in filteredTemplates"
-        :key="template.id"
-        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
-      >
-        <div class="p-6">
-          <!-- 範本標題和操作按鈕 -->
+      <!-- Skeleton 載入效果 -->
+      <template v-if="loading">
+        <div
+          v-for="n in 8"
+          :key="n"
+          class="bg-white rounded-lg shadow-md p-6 animate-pulse"
+        >
           <div class="flex items-start justify-between">
-            <div>
-              <h3 class="text-lg font-semibold text-gray-800">
-                {{ template.templateName }}
-              </h3>
-              <div class="flex items-center mt-2 space-x-2">
-                <el-tag size="small" effect="plain">{{
-                  template.templateCategory
-                }}</el-tag>
-                <el-tag
-                  :type="getStatusType(template.status)"
-                  size="small"
-                  effect="light"
-                >
-                  {{ getStatusText(template.status) }}
-                </el-tag>
+            <div class="space-y-3 w-full">
+              <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+              <div class="flex items-center space-x-2">
+                <div class="h-6 bg-gray-200 rounded w-20"></div>
+                <div class="h-6 bg-gray-200 rounded w-16"></div>
               </div>
             </div>
-            <el-dropdown trigger="click">
-              <MoreVertical
-                :size="20"
-                class="text-gray-400 cursor-pointer hover:text-gray-600"
-              />
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="handleEditTemplate(template)">
-                    <Edit2 class="mr-2" :size="14" />
-                    編輯
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="template.status === 'draft'"
-                    @click="handlePublishTemplate(template)"
-                  >
-                    <Send class="mr-2" :size="14" />
-                    發布
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="template.status === 'published'"
-                    @click="handleDeprecateTemplate(template)"
-                  >
-                    <Archive class="mr-2" :size="14" />
-                    棄用
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="template.status === 'draft'"
-                    divided
-                    @click="handleDeleteTemplate(template)"
-                    class="text-red-500"
-                  >
-                    <Trash2 class="mr-2" :size="14" />
-                    刪除
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <div class="h-5 w-5 bg-gray-200 rounded"></div>
           </div>
-
-          <!-- 範本描述 -->
-          <p class="mt-3 text-sm text-gray-600 line-clamp-2">
-            {{ template.description }}
-          </p>
-
-          <!-- 範本資訊 -->
+          <div class="space-y-3 mt-4">
+            <div class="h-4 bg-gray-200 rounded w-full"></div>
+            <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
           <div class="mt-4 space-y-2">
-            <div
-              class="flex items-center justify-between text-sm text-gray-500"
-            >
-              <div class="flex items-center">
-                <Tag :size="16" class="mr-2" />
-                <span class="text-xs">版本 {{ template.version }}</span>
-              </div>
-              <div class="flex items-center">
-                <User :size="16" class="mr-2" />
-                <span class="text-xs">{{ template.creator?.username }}</span>
-              </div>
+            <div class="flex items-center justify-between">
+              <div class="h-4 bg-gray-200 rounded w-20"></div>
+              <div class="h-4 bg-gray-200 rounded w-24"></div>
             </div>
-            <div class="flex items-center text-sm text-gray-500">
-              <Calendar :size="16" class="mr-2" />
-              <span class="text-xs"
-                >更新於 {{ formatDate(template.updatedAt) }}</span
-              >
-            </div>
+            <div class="h-4 bg-gray-200 rounded w-32"></div>
           </div>
-
-          <!-- 底部按鈕 -->
-          <div class="mt-1 flex items-center justify-end space-x-2">
-            <el-button
-              type="primary"
-              link
-              @click="handleDesignTemplate(template)"
-            >
-              <Pencil class="mr-1" :size="14" />
-              設計流程
-            </el-button>
+          <div class="mt-4 flex justify-end">
+            <div class="h-8 bg-gray-200 rounded w-24"></div>
           </div>
         </div>
-      </div>
+      </template>
+
+      <!-- 實際範本列表 -->
+      <template v-else>
+        <div
+          v-for="template in filteredTemplates"
+          :key="template.id"
+          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+        >
+          <div class="p-6">
+            <!-- 範本標題和操作按鈕 -->
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-800">
+                  {{ template.templateName }}
+                </h3>
+                <div class="flex items-center mt-2 space-x-2">
+                  <el-tag size="small" effect="plain">{{
+                    template.templateCategory
+                  }}</el-tag>
+                  <el-tag
+                    :type="getStatusType(template.status)"
+                    size="small"
+                    effect="light"
+                  >
+                    {{ getStatusText(template.status) }}
+                  </el-tag>
+                </div>
+              </div>
+              <el-dropdown trigger="click">
+                <MoreVertical
+                  :size="20"
+                  class="text-gray-400 cursor-pointer hover:text-gray-600"
+                />
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="handleEditTemplate(template)">
+                      <Edit2 class="mr-2" :size="14" />
+                      編輯
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="template.status === 'draft'"
+                      @click="handlePublishTemplate(template)"
+                    >
+                      <Send class="mr-2" :size="14" />
+                      發布
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="template.status === 'published'"
+                      @click="handleDeprecateTemplate(template)"
+                    >
+                      <Archive class="mr-2" :size="14" />
+                      棄用
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="template.status === 'draft'"
+                      divided
+                      @click="handleDeleteTemplate(template)"
+                      class="text-red-500"
+                    >
+                      <Trash2 class="mr-2" :size="14" />
+                      刪除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+
+            <!-- 範本描述 -->
+            <p class="mt-3 text-sm text-gray-600 line-clamp-2">
+              {{ template.description }}
+            </p>
+
+            <!-- 範本資訊 -->
+            <div class="mt-4 space-y-2">
+              <div
+                class="flex items-center justify-between text-sm text-gray-500"
+              >
+                <div class="flex items-center">
+                  <Tag :size="16" class="mr-2" />
+                  <span class="text-xs">版本 {{ template.version }}</span>
+                </div>
+                <div class="flex items-center">
+                  <User :size="16" class="mr-2" />
+                  <span class="text-xs">{{ template.creator?.username }}</span>
+                </div>
+              </div>
+              <div class="flex items-center text-sm text-gray-500">
+                <Calendar :size="16" class="mr-2" />
+                <span class="text-xs"
+                  >更新於 {{ formatDate(template.updatedAt) }}</span
+                >
+              </div>
+            </div>
+
+            <!-- 底部按鈕 -->
+            <div class="mt-1 flex items-center justify-end space-x-2">
+              <el-button
+                type="primary"
+                link
+                @click="handleDesignTemplate(template)"
+              >
+                <Pencil class="mr-1" :size="14" />
+                設計流程
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- 新增/編輯範本對話框 -->
@@ -232,7 +274,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onActivated, onDeactivated } from "vue";
 import { useRouter } from "vue-router";
 import {
   Plus,
@@ -246,6 +288,7 @@ import {
   Archive,
   Trash2,
   Pencil,
+  RotateCw,
 } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -536,6 +579,28 @@ const handleSubmit = async () => {
   }
 };
 
+// 處理重整
+const handleRefresh = async () => {
+  try {
+    await fetchTemplates();
+    ElMessage.success("資料已重新整理");
+  } catch (error) {
+    console.error("重整失敗:", error);
+    ElMessage.error("重整失敗");
+  }
+};
+
+// teleport 內容管理
+const showHeaderContent = ref(true);
+
+onActivated(() => {
+  showHeaderContent.value = true;
+});
+
+onDeactivated(() => {
+  showHeaderContent.value = false;
+});
+
 onMounted(() => {
   fetchTemplates();
 });
@@ -567,5 +632,28 @@ onMounted(() => {
 /* 已棄用狀態 */
 .bg-white:has(.el-tag--danger) {
   border-top-color: var(--el-color-danger);
+}
+
+/* 隱藏最外層捲軸 */
+.h-full {
+  height: 100%;
+}
+
+/* 自定義範本列表區域的捲軸樣式 */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 </style>

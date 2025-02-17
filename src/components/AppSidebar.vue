@@ -39,7 +39,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, Settings } from "lucide-vue-next";
 import { useUserStore } from "@/stores/user";
 
 const route = useRoute();

@@ -1,98 +1,124 @@
 <template>
-  <div>
+  <div class="px-2 py-2">
     <!-- 專案列表內容 -->
-    <div class="bg-white !border-none p-2">
-      <div
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"
-      >
-        <!-- 新增專案卡片 -->
-        <div
-          class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200 border-t-[3px] border-t-gray-300"
+    <!-- 使用 Teleport 將內容傳送到主佈局 -->
+    <Teleport to="#header-actions" v-if="showHeaderContent">
+      <div class="flex items-center space-x-4">
+        <!-- 狀態文字 -->
+        <span class="text-gray-600 text-sm">
+          共 {{ projects.length }} 個專案
+        </span>
+
+        <!-- 篩選下拉選單 -->
+        <el-select
+          v-model="filterStatus"
+          placeholder="篩選狀態"
+          clearable
+          size="small"
+          class="!w-24"
+        >
+          <el-option label="草稿" value="draft" />
+          <el-option label="進行中" value="active" />
+          <el-option label="已完成" value="completed" />
+          <el-option label="已取消" value="cancelled" />
+        </el-select>
+
+        <!-- 新增按鈕 -->
+        <el-button
+          type="primary"
+          class="flex items-center"
           @click="handleCreateProject"
         >
-          <Plus :size="32" class="text-gray-400" />
-          <span class="mt-4 text-gray-600">新增專案</span>
-        </div>
+          <Plus class="mr-1" :size="16" />
+          新增專案
+        </el-button>
+      </div>
+    </Teleport>
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"
+    >
+      <!-- 新增專案卡片 -->
+      <div
+        class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200 border-t-[3px] border-t-gray-300"
+        @click="handleCreateProject"
+      >
+        <Plus :size="32" class="text-gray-400" />
+        <span class="mt-4 text-gray-600">新增專案</span>
+      </div>
 
-        <!-- 專案卡片列表 -->
-        <div
-          v-for="project in filteredProjects"
-          :key="project.id"
-          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer"
-        >
-          <div class="p-6">
-            <div class="flex items-start justify-between">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-800">
-                  {{ project.name }}
-                </h3>
-                <p class="mt-2 text-sm text-gray-600 line-clamp-2">
-                  {{ project.description }}
-                </p>
-              </div>
-              <el-dropdown trigger="click">
-                <MoreVertical
-                  :size="20"
-                  class="text-gray-400 cursor-pointer hover:text-gray-600"
-                />
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="handleEditProject(project)"
-                      >編輯</el-dropdown-item
-                    >
-                    <el-dropdown-item
-                      divided
-                      @click="handleDeleteProject(project)"
-                      class="text-red-500"
-                    >
-                      刪除
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+      <!-- 專案卡片列表 -->
+      <div
+        v-for="project in filteredProjects"
+        :key="project.id"
+        class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer"
+      >
+        <div class="p-6">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-lg font-semibold text-gray-800">
+                {{ project.name }}
+              </h3>
+              <p class="mt-2 text-sm text-gray-600 line-clamp-2">
+                {{ project.description }}
+              </p>
             </div>
+            <el-dropdown trigger="click">
+              <MoreVertical
+                :size="20"
+                class="text-gray-400 cursor-pointer hover:text-gray-600"
+              />
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleEditProject(project)"
+                    >編輯</el-dropdown-item
+                  >
+                  <el-dropdown-item
+                    divided
+                    @click="handleDeleteProject(project)"
+                    class="text-red-500"
+                  >
+                    刪除
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
 
-            <div class="mt-4">
-              <div class="flex items-center text-sm text-gray-500">
-                <Calendar :size="16" class="mr-2" />
-                <span>更新於 {{ formatDate(project.updatedAt) }}</span>
-              </div>
-              <div class="mt-2 flex items-center text-sm text-gray-500">
-                <User :size="16" class="mr-2" />
-                <span>{{ project.creator.username }}</span>
-              </div>
-              <!-- 添加專案號碼 -->
-              <div class="flex items-center gap-2 mt-2">
-                <div
-                  v-if="isAdmin"
-                  class="text-xs text-blue-500 rounded-sm bg-slate-100 p-1"
-                >
-                  {{ project.systemCode }}
-                </div>
-                <span class="text-xs font-semibold text-gray-500">{{
-                  project.projectNumber
-                }}</span>
-              </div>
+          <div class="mt-4">
+            <div class="flex items-center text-sm text-gray-500">
+              <Calendar :size="16" class="mr-2" />
+              <span>更新於 {{ formatDate(project.updatedAt) }}</span>
             </div>
-
-            <el-divider />
-            <div class="mt-2 flex items-center justify-between">
-              <el-tag :type="getStatusType(project.status)" size="small">
-                {{ getStatusText(project.status) }}
-              </el-tag>
-              <el-button
-                type="primary"
-                link
-                @click="handleViewProject(project)"
+            <div class="mt-2 flex items-center text-sm text-gray-500">
+              <User :size="16" class="mr-2" />
+              <span>{{ project.creator.username }}</span>
+            </div>
+            <!-- 添加專案號碼 -->
+            <div class="flex items-center gap-2 mt-2">
+              <div
+                v-if="isAdmin"
+                class="text-xs text-blue-500 rounded-sm bg-slate-100 p-1"
               >
-                開啟專案
-              </el-button>
+                {{ project.systemCode }}
+              </div>
+              <span class="text-xs font-semibold text-gray-500">{{
+                project.projectNumber
+              }}</span>
             </div>
+          </div>
+
+          <el-divider />
+          <div class="mt-2 flex items-center justify-between">
+            <el-tag :type="getStatusType(project.status)" size="small">
+              {{ getStatusText(project.status) }}
+            </el-tag>
+            <el-button type="primary" link @click="handleViewProject(project)">
+              開啟專案
+            </el-button>
           </div>
         </div>
       </div>
     </div>
-
     <!-- 新增/編輯專案對話框 -->
     <el-dialog
       v-model="dialogVisible"
@@ -130,40 +156,6 @@
         </span>
       </template>
     </el-dialog>
-
-    <!-- 使用 Teleport 將內容傳送到主佈局 -->
-    <Teleport to="#header-actions" v-if="showHeaderContent">
-      <div class="flex items-center space-x-4">
-        <!-- 狀態文字 -->
-        <span class="text-gray-600 text-sm">
-          共 {{ projects.length }} 個專案
-        </span>
-
-        <!-- 篩選下拉選單 -->
-        <el-select
-          v-model="filterStatus"
-          placeholder="篩選狀態"
-          clearable
-          size="small"
-          class="!w-24"
-        >
-          <el-option label="草稿" value="draft" />
-          <el-option label="進行中" value="active" />
-          <el-option label="已完成" value="completed" />
-          <el-option label="已取消" value="cancelled" />
-        </el-select>
-
-        <!-- 新增按鈕 -->
-        <el-button
-          type="primary"
-          class="flex items-center"
-          @click="handleCreateProject"
-        >
-          <Plus class="mr-1" :size="16" />
-          新增專案
-        </el-button>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -371,7 +363,7 @@ onMounted(() => {
 <style scoped>
 .line-clamp-2 {
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  /* -webkit-line-clamp: 2; */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

@@ -30,6 +30,8 @@ import {
   WalletCards,
   KeyRound,
   Cog,
+  Home,
+  Component,
 
   // 通用操作圖標
   Plus,
@@ -49,6 +51,16 @@ import {
   Shield,
   LogOut,
   FolderKanban,
+  Search,
+  Edit2,
+  Send,
+  Archive,
+  Trash2,
+  Pencil,
+  RotateCw,
+  MoreVertical,
+  Tag,
+  Calendar,
 } from "lucide-vue-next";
 
 // 創建應用實例
@@ -89,6 +101,8 @@ const icons = {
   WalletCards,
   KeyRound,
   Cog,
+  Home,
+  Component,
 
   // 通用操作圖標
   Plus,
@@ -108,6 +122,16 @@ const icons = {
   Shield,
   LogOut,
   FolderKanban,
+  Search,
+  Edit2,
+  Send,
+  Archive,
+  Trash2,
+  Pencil,
+  RotateCw,
+  MoreVertical,
+  Tag,
+  Calendar,
 };
 
 Object.entries(icons).forEach(([name, component]) => {

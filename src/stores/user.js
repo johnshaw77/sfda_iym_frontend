@@ -13,6 +13,7 @@ import {
   getCurrentUser,
   getUserPermissions,
 } from "@/api/modules/auth";
+import { ref, computed } from "vue";
 
 // 定義系統中所有可能的權限
 const ALL_PERMISSIONS = [
@@ -27,193 +28,281 @@ const ALL_PERMISSIONS = [
   "VIEW_PROJECTS",
 ];
 
-export const useUserStore = defineStore("user", {
-  state: () => ({
-    user: null,
-    userPermissions: [], // 用戶權限列表
-    users: [], // 所有用戶列表
-    usersLoading: false,
-  }),
+export const useUserStore = defineStore("user", () => {
+  const user = ref(null);
+  const token = ref(localStorage.getItem("token") || null);
+  const userPermissions = ref([]);
+  const users = ref([]);
+  const usersLoading = ref(false);
 
-  getters: {
-    isAuthenticated: (state) => !!state.user,
-    isAdmin: (state) =>
-      state.user?.role === "ADMIN" || state.user?.role === "SUPER_ADMIN",
-    token: () => localStorage.getItem("token"),
-    // 如果是管理員，返回所有權限；否則返回用戶實際擁有的權限
-    effectivePermissions: (state) =>
-      state.user?.role === "SUPER_ADMIN"
-        ? ALL_PERMISSIONS
-        : state.user?.role === "ADMIN"
-        ? ALL_PERMISSIONS
-        : state.userPermissions,
+  const isAuthenticated = computed(() => !!token.value);
 
-    hasPermission: (state) => (permission) => {
-      if (state.user?.role === "SUPER_ADMIN" || state.user?.role === "ADMIN")
-        return true;
-      return state.userPermissions.includes(permission);
-    },
+  // 檢查是否有任一權限
+  const hasAnyPermission = (permissions) => {
+    console.log("hasAnyPermission", permissions, user.value?.roles);
 
-    hasAnyPermission: (state) => (permissions) => {
-      if (state.user?.role === "SUPER_ADMIN" || state.user?.role === "ADMIN")
-        return true;
-      return permissions.some((p) => state.userPermissions.includes(p));
-    },
+    const tt = user.value.roles.some(
+      (role) => role.name === "ADMIN" || role.name === "SUPERADMIN"
+    );
+    console.log("tt", tt);
+    if (!user.value?.roles) return false;
 
-    hasAllPermissions: (state) => (permissions) => {
-      if (state.user?.role === "SUPER_ADMIN" || state.user?.role === "ADMIN")
-        return true;
-      return permissions.every((p) => state.userPermissions.includes(p));
-    },
-  },
+    // 如果是超級管理員，直接返回 true
+    if (
+      user.value.roles.some(
+        (role) => role.name === "ADMIN" || role.name === "SUPERADMIN"
+      )
+    ) {
+      return true;
+    }
 
-  actions: {
-    // 認證相關
-    async handleLogin(credentials) {
-      try {
-        const { token, user } = await login(credentials);
-        localStorage.setItem("token", token);
-        this.user = user;
+    // 獲取用戶所有權限
+    const userPermissions = new Set();
+    user.value.roles.forEach((role) => {
+      role.permissions.forEach((permission) => {
+        userPermissions.add(permission.name);
+      });
+    });
 
-        // 根據用戶角色設置權限
-        if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
-          this.userPermissions = ALL_PERMISSIONS;
-        } else if (user.role === "POWERUSER") {
-          this.userPermissions = [
-            "VIEW_PROJECTS",
-            "CREATE_PROJECTS",
-            "EDIT_PROJECTS",
-          ];
-        } else if (user.role === "READER") {
-          this.userPermissions = ["VIEW_PROJECTS"];
-        } else {
-          this.userPermissions = [];
-        }
+    // 檢查是否有任一所需權限
+    return Array.isArray(permissions)
+      ? permissions.some((permission) => userPermissions.has(permission))
+      : userPermissions.has(permissions);
+  };
 
-        return true;
-      } catch (error) {
-        console.error("登入失敗:", error);
-        throw error;
+  // 檢查是否有所有權限
+  const hasAllPermissions = (permissions) => {
+    if (!user.value?.roles) return false;
+
+    // 如果是超級管理員，直接返回 true
+    if (user.value.roles.some((role) => role.name === "SUPERADMIN")) {
+      return true;
+    }
+
+    // 獲取用戶所有權限
+    const userPermissions = new Set();
+    user.value.roles.forEach((role) => {
+      role.permissions.forEach((permission) => {
+        userPermissions.add(permission.name);
+      });
+    });
+
+    // 檢查是否有所有所需權限
+    return Array.isArray(permissions)
+      ? permissions.every((permission) => userPermissions.has(permission))
+      : userPermissions.has(permissions);
+  };
+
+  // 檢查是否有特定角色
+  const hasRole = (roleName) => {
+    return user.value?.roles.some((role) => role.name === roleName) || false;
+  };
+
+  // 檢查是否為管理員
+  const isAdmin = computed(() => {
+    return (
+      user.value?.roles.some((role) =>
+        ["ADMIN", "SUPERADMIN"].includes(role.name)
+      ) || false
+    );
+  });
+
+  // 登入
+  const handleLogin = async (credentials) => {
+    try {
+      const response = await login(credentials);
+      console.log("登入回應:", response); // 用於調試
+
+      // 檢查回應格式
+      if (!response.data) {
+        throw new Error("伺服器回應格式錯誤");
       }
-    },
 
-    async handleLogout() {
-      try {
-        await logout();
-        localStorage.removeItem("token");
-        this.user = null;
-        this.userPermissions = [];
-        this.users = [];
-      } catch (error) {
-        console.error("登出失敗:", error);
-        throw error;
+      const { token: newToken, user: userData } = response.data;
+
+      if (!newToken || !userData) {
+        throw new Error("伺服器回應缺少必要資料");
       }
-    },
 
-    async fetchUser() {
-      try {
-        const userData = await getCurrentUser();
-        this.user = userData;
+      token.value = newToken;
+      user.value = userData;
+      localStorage.setItem("token", newToken);
 
-        // 根據用戶角色設置權限
-        if (userData.role === "ADMIN" || userData.role === "SUPER_ADMIN") {
-          this.userPermissions = ALL_PERMISSIONS;
-        } else if (userData.role === "POWERUSER") {
-          this.userPermissions = [
-            "VIEW_PROJECTS",
-            "CREATE_PROJECTS",
-            "EDIT_PROJECTS",
-          ];
-        } else if (userData.role === "READER") {
-          this.userPermissions = ["VIEW_PROJECTS"];
-        } else {
-          this.userPermissions = [];
-        }
-      } catch (error) {
-        console.error("獲取用戶信息失敗:", error);
-        throw error;
+      // 獲取用戶所有權限
+      const permissionSet = new Set();
+      if (userData.roles) {
+        userData.roles.forEach((role) => {
+          if (role.permissions) {
+            role.permissions.forEach((permission) => {
+              permissionSet.add(permission.name);
+            });
+          }
+        });
       }
-    },
 
-    // 權限相關
-    async fetchUserPermissions() {
-      try {
-        if (this.user?.role === "SUPER_ADMIN" || this.user?.role === "ADMIN") {
-          this.userPermissions = ALL_PERMISSIONS;
-          return;
-        }
+      // 設置用戶權限
+      userPermissions.value = Array.from(permissionSet);
 
-        const permissions = await getUserPermissions();
-        this.userPermissions = permissions;
-      } catch (error) {
-        console.error("獲取權限失敗:", error);
-        this.userPermissions = [];
+      return response;
+    } catch (error) {
+      console.error("登入失敗:", error);
+      if (error.response?.message) {
+        throw new Error(error.response.message);
+      } else {
+        throw new Error(error.message || "登入失敗，請稍後再試");
       }
-    },
+    }
+  };
 
-    // 用戶管理相關
-    async fetchUsers() {
-      this.usersLoading = true;
-      try {
-        const users = await getUsers();
-        this.users = users;
-      } catch (error) {
-        console.error("獲取用戶列表失敗:", error);
-        throw error;
-      } finally {
-        this.usersLoading = false;
-      }
-    },
+  // 登出
+  const handleLogout = async () => {
+    try {
+      await logout();
+      token.value = null;
+      user.value = null;
+      localStorage.removeItem("token");
+      userPermissions.value = [];
+      users.value = [];
+    } catch (error) {
+      console.error("登出失敗:", error);
+      throw error;
+    }
+  };
 
-    async createUser(userData) {
-      try {
-        const newUser = await createUser(userData);
-        await this.fetchUsers();
-        return newUser;
-      } catch (error) {
-        console.error("創建用戶失敗:", error);
-        throw error;
-      }
-    },
+  // 獲取當前用戶信息
+  const fetchUser = async () => {
+    try {
+      const response = await getCurrentUser();
+      user.value = response.data;
 
-    async updateUser(userId, userData) {
-      try {
-        await updateUser(userId, userData);
-        await this.fetchUsers();
-      } catch (error) {
-        console.error("更新用戶失敗:", error);
-        throw error;
+      // 根據用戶角色設置權限
+      if (user.value.role === "ADMIN" || user.value.role === "SUPER_ADMIN") {
+        userPermissions.value = ALL_PERMISSIONS;
+      } else if (user.value.role === "POWERUSER") {
+        userPermissions.value = [
+          "VIEW_PROJECTS",
+          "CREATE_PROJECTS",
+          "EDIT_PROJECTS",
+        ];
+      } else if (user.value.role === "READER") {
+        userPermissions.value = ["VIEW_PROJECTS"];
+      } else {
+        userPermissions.value = [];
       }
-    },
 
-    async deleteUser(userId) {
-      try {
-        await deleteUser(userId);
-        await this.fetchUsers();
-      } catch (error) {
-        console.error("刪除用戶失敗:", error);
-        throw error;
-      }
-    },
+      return response;
+    } catch (error) {
+      console.error("獲取用戶信息失敗:", error);
+      throw error;
+    }
+  };
 
-    async getUserRoles(userId) {
-      try {
-        return await getUserRoles(userId);
-      } catch (error) {
-        console.error("獲取用戶角色失敗:", error);
-        throw error;
+  // 權限相關
+  const fetchUserPermissions = async () => {
+    try {
+      if (user.value?.role === "SUPER_ADMIN" || user.value?.role === "ADMIN") {
+        userPermissions.value = ALL_PERMISSIONS;
+        return;
       }
-    },
 
-    async uploadUserAvatar(userId, file) {
-      try {
-        const response = await uploadAvatar(userId, file);
-        await this.fetchUsers(); // 重新獲取用戶列表以更新頭像
-        return response;
-      } catch (error) {
-        console.error("上傳頭像失敗:", error);
-        throw error;
-      }
-    },
-  },
+      const permissions = await getUserPermissions();
+      userPermissions.value = permissions;
+    } catch (error) {
+      console.error("獲取權限失敗:", error);
+      userPermissions.value = [];
+    }
+  };
+
+  // 用戶管理相關
+  const fetchUsers = async () => {
+    usersLoading.value = true;
+    try {
+      const users = await getUsers();
+      users.value = users;
+    } catch (error) {
+      console.error("獲取用戶列表失敗:", error);
+      throw error;
+    } finally {
+      usersLoading.value = false;
+    }
+  };
+
+  // 創建用戶
+  const createUser = async (userData) => {
+    try {
+      const newUser = await createUser(userData);
+      await fetchUsers();
+      return newUser;
+    } catch (error) {
+      console.error("創建用戶失敗:", error);
+      throw error;
+    }
+  };
+
+  // 更新用戶
+  const updateUser = async (userId, userData) => {
+    try {
+      await updateUser(userId, userData);
+      await fetchUsers();
+    } catch (error) {
+      console.error("更新用戶失敗:", error);
+      throw error;
+    }
+  };
+
+  // 刪除用戶
+  const deleteUser = async (userId) => {
+    try {
+      await deleteUser(userId);
+      await fetchUsers();
+    } catch (error) {
+      console.error("刪除用戶失敗:", error);
+      throw error;
+    }
+  };
+
+  // 獲取用戶角色
+  const getUserRoles = async (userId) => {
+    try {
+      return await getUserRoles(userId);
+    } catch (error) {
+      console.error("獲取用戶角色失敗:", error);
+      throw error;
+    }
+  };
+
+  // 上傳用戶頭像
+  const uploadUserAvatar = async (userId, file) => {
+    try {
+      const response = await uploadAvatar(userId, file);
+      await fetchUsers(); // 重新獲取用戶列表以更新頭像
+      return response;
+    } catch (error) {
+      console.error("上傳頭像失敗:", error);
+      throw error;
+    }
+  };
+
+  return {
+    user,
+    token,
+    isAuthenticated,
+    isAdmin,
+    hasRole,
+    hasAnyPermission,
+    hasAllPermissions,
+    handleLogin,
+    handleLogout,
+    fetchUser,
+    userPermissions,
+    users,
+    usersLoading,
+    fetchUserPermissions,
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getUserRoles,
+    uploadUserAvatar,
+  };
 });

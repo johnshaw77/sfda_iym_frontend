@@ -2,24 +2,12 @@
  * @fileoverview 路由配置
  * @version 1.0.0
  * @since 2025-02-14
- * @description
+ * @description !!注意: meta 的 showContentHeader 除了影響 content-header 的顯示外，如果子頁面有用到 Teleport 就一定要設成 true
  */
 
 import { createRouter, createWebHistory } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { ElMessage } from "element-plus";
-import {
-  User,
-  Settings,
-  FileText,
-  LineChart,
-  GitGraph,
-  Workflow,
-  WalletCards,
-  KeyRound,
-  Cog,
-  Home,
-} from "lucide-vue-next";
 
 // 路由配置
 const routes = [
@@ -32,7 +20,7 @@ const routes = [
       requiresAuth: false,
       layout: "blank",
       title: "登入",
-      icon: User,
+      icon: "User",
     },
   },
   {
@@ -50,7 +38,7 @@ const routes = [
       keepAlive: true,
       requiresAuth: true,
       title: "首頁",
-      icon: Home,
+      icon: "Home",
       showContentHeader: false,
     },
   },
@@ -62,7 +50,8 @@ const routes = [
       keepAlive: true,
       requiresAuth: true,
       title: "專案管理",
-      icon: WalletCards,
+      icon: "WalletCards",
+      showContentHeader: true,
     },
   },
   {
@@ -70,10 +59,11 @@ const routes = [
     name: "Workflow",
     component: () => import("@/views/workflow/index.vue"),
     meta: {
-      keepAlive: true,
+      keepAlive: false,
       requiresAuth: true,
       title: "工作流程",
-      icon: GitGraph,
+      icon: "GitGraph",
+      showContentHeader: false,
     },
   },
   {
@@ -85,7 +75,20 @@ const routes = [
       requiresAuth: true,
       requiresAdmin: true,
       title: "工作流程範本",
-      icon: Workflow,
+      icon: "Workflow",
+      showContentHeader: true,
+    },
+  },
+  {
+    path: "/node-definitions",
+    name: "NodeDefinitions",
+    component: () => import("@/views/node-definitions/index.vue"),
+    meta: {
+      title: "節點定義管理",
+      icon: "Component",
+      requiresAuth: true,
+      showContentHeader: true,
+      // permissions: ["node-definitions:read"],
     },
   },
   {
@@ -93,13 +96,13 @@ const routes = [
     name: "WorkflowTemplateDesign",
     component: () => import("@/views/workflow-templates/design.vue"),
     meta: {
-      keepAlive: false,
+      keepAlive: true,
       requiresAuth: true,
       requiresAdmin: true,
       title: "工作流程範本設計",
-      showContentHeader: false,
+      icon: "Workflow",
+      showContentHeader: true,
       hidden: true,
-      icon: Workflow,
     },
   },
   {
@@ -110,7 +113,8 @@ const routes = [
       keepAlive: true,
       requiresAuth: true,
       title: "文件管理",
-      icon: FileText,
+      icon: "FileText",
+      showContentHeader: true,
     },
   },
   {
@@ -121,7 +125,8 @@ const routes = [
       keepAlive: true,
       requiresAuth: true,
       title: "數據分析",
-      icon: LineChart,
+      icon: "LineChart",
+      showContentHeader: true,
     },
   },
   {
@@ -133,7 +138,8 @@ const routes = [
       requiresAuth: true,
       requiresAdmin: true,
       title: "系統設置",
-      icon: Settings,
+      icon: "Settings",
+      showContentHeader: true,
     },
   },
   {
@@ -142,8 +148,9 @@ const routes = [
     component: () => import("@/views/rbac/index.vue"),
     meta: {
       title: "權限管理",
-      icon: KeyRound,
+      icon: "KeyRound",
       permissions: ["MANAGE_ROLES", "VIEW_ROLES", "VIEW_PERMISSIONS"],
+      showContentHeader: false,
     },
     children: [
       {
@@ -186,7 +193,6 @@ const routes = [
       requiresAdmin: true,
       title: "API 測試",
       showContentHeader: false,
-      icon: Cog,
     },
   },
 
@@ -236,8 +242,7 @@ router.beforeEach(async (to, from, next) => {
     } else {
       // 檢查管理員權限
       if (to.meta.requiresAdmin) {
-        const userRole = userStore.user?.role;
-        if (userRole !== "ADMIN" && userRole !== "SUPERADMIN") {
+        if (!userStore.isAdmin) {
           ElMessage.error("需要管理員權限");
           next(from.path);
           return;

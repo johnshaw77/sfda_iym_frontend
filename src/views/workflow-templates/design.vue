@@ -6,7 +6,7 @@
       <div
         class="p-2.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between"
       >
-        <h3 class="text-lg font-medium text-gray-900">節點類型</h3>
+        <h3 class="text-md font-medium text-gray-900">節點類型</h3>
         <el-tooltip content="拖拽節點到畫布中" class="text-2xl">
           <CircleHelp class="text-gray-500" :size="16" />
         </el-tooltip>
@@ -78,67 +78,62 @@
 
     <!-- 右側工作區 -->
     <div class="flex-1 flex flex-col">
-      <!-- 工具列 -->
-      <div
-        class="h-12 border-b border-gray-200 bg-white px-4 flex items-center justify-between"
-      >
-        <div class="flex items-center space-x-2">
+      <!-- 工具列 TODO: 待實現-->
+      <Teleport to="#header-actions">
+        <div v-if="showHeaderContent" class="flex items-center space-x-2">
           <el-button-group>
-            <el-button :icon="Undo2">復原</el-button>
-            <el-button :icon="Redo2">重做</el-button>
+            <el-tooltip content="復原">
+              <el-button :icon="Undo2" />
+            </el-tooltip>
+            <el-tooltip content="重做">
+              <el-button :icon="Redo2" />
+            </el-tooltip>
+            <el-tooltip content="放大">
+              <el-button :icon="ZoomIn" />
+            </el-tooltip>
+            <el-tooltip content="縮小">
+              <el-button :icon="ZoomOut" />
+            </el-tooltip>
+            <el-tooltip content="重置">
+              <el-button :icon="LayoutGrid" />
+            </el-tooltip>
+            <el-tooltip content="儲存">
+              <el-button :icon="Save" />
+            </el-tooltip>
+            <el-tooltip content="JSON 輸出">
+              <el-button :icon="Code2" @click="handleShowJson" />
+            </el-tooltip>
+            <el-tooltip content="重新布局">
+              <el-button :icon="Layout" @click="handleLayout" />
+            </el-tooltip>
           </el-button-group>
 
-          <el-divider direction="vertical" />
+          <el-dropdown @command="handleLayoutDirectionChange">
+            <el-button>
+              {{ layoutDirections[layoutSettings.direction].label }}
+              <el-icon class="el-icon--right">
+                <ChevronDown />
+              </el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-for="(direction, key) in layoutDirections"
+                  :key="key"
+                  :command="key"
+                >
+                  {{ direction.label }}
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
 
-          <el-button-group>
-            <el-button :icon="ZoomIn">放大</el-button>
-            <el-button :icon="ZoomOut">縮小</el-button>
-            <el-button :icon="LayoutGrid">重置</el-button>
-          </el-button-group>
-
-          <el-divider direction="vertical" />
-
-          <el-button-group>
-            <el-button :icon="Save">儲存</el-button>
-            <el-button :icon="Play">測試</el-button>
-            <el-button :icon="Code2" @click="handleShowJson"
-              >JSON 輸出</el-button
-            >
-          </el-button-group>
-
-          <el-divider direction="vertical" />
-
-          <el-button-group>
-            <el-button :icon="Layout" @click="handleLayout">重新布局</el-button>
-            <el-dropdown @command="handleLayoutDirectionChange">
-              <el-button>
-                {{ layoutDirections[layoutSettings.direction].label }}
-                <el-icon class="el-icon--right">
-                  <ChevronDown />
-                </el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item
-                    v-for="(direction, key) in layoutDirections"
-                    :key="key"
-                    :command="key"
-                  >
-                    {{ direction.label }}
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </el-button-group>
-        </div>
-
-        <div class="flex items-center space-x-2">
           <el-button type="primary" @click="handlePublish">
             <Send class="mr-1" :size="14" />
             發布範本
           </el-button>
         </div>
-      </div>
+      </Teleport>
 
       <!-- JSON 輸出抽屜 -->
       <el-drawer
@@ -165,7 +160,8 @@
         </div>
       </el-drawer>
 
-      <!-- 畫布區域 -->
+      <!-- 畫布區域 
+      :node-types="nodeTypes"-->
       <div class="flex-1 bg-gray-50 relative">
         <!-- Vue Flow 畫布 -->
         <VueFlow
@@ -174,7 +170,6 @@
           :default-zoom="1.5"
           :min-zoom="0.2"
           :max-zoom="4"
-          :node-types="nodeTypes"
           :edge-types="edgeTypes"
           :default-edge-options="defaultEdgeOptions"
           :auto-connect="false"
@@ -189,7 +184,7 @@
           :connection-mode="ConnectionMode.Loose"
           :delete-key-code="['Backspace', 'Delete']"
           :elevate-edges-on-select="true"
-          :fit-view-on-init="true"
+          :fit-view-on-init="false"
           :prevent-scrolling="true"
           :enable-pan-over-edges="true"
           :enable-edge-updates="true"
@@ -218,30 +213,6 @@
           @drop="handleDrop"
           @nodes-initialized="() => {}"
         >
-          <!-- 添加箭頭定義 -->
-          <!-- <svg width="0" height="0">
-            <defs>
-              <marker
-                id="vue-flow__arrowhead"
-                markerWidth="12"
-                markerHeight="12"
-                viewBox="-10 -10 20 20"
-                orient="auto"
-                refX="0"
-                refY="0"
-              >
-                <polyline
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1"
-                  points="-5,-4 0,0 -5,4"
-                  fill="none"
-                  stroke="currentColor"
-                />
-              </marker>
-            </defs>
-          </svg> -->
-
           <template #node-custom="props">
             <CustomNode v-bind="props" />
           </template>
@@ -249,7 +220,7 @@
           <Background :pattern-color="'#aaa'" :gap="8" />
 
           <Controls />
-          <!-- <MiniMap /> -->
+          <MiniMap :pannable="true" :zoomable="true" />
 
           <Panel position="top-right" class="!bg-transparent !border-0">
             <div class="bg-white p-2 rounded shadow-lg">
@@ -409,7 +380,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, onActivated, onDeactivated } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { VueFlow, Panel, useVueFlow, ConnectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
@@ -450,12 +421,15 @@ import "@vue-flow/minimap/dist/style.css";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 import { getTemplateById, updateTemplate, publishTemplate } from "@/api";
+import { useTemplateStore } from "@/stores/template";
 
 const route = useRoute();
 const router = useRouter();
+const templateStore = useTemplateStore();
 
-// 節點類型定義
+//#region 節點類型定義
 const inputNodes = [
+  { type: "input", label: "開始", icon: Play, disabled: false },
   { type: "dataInput", label: "檔案上傳", icon: FileInput, disabled: false },
   { type: "dataInput", label: "資料庫查詢", icon: Database, disabled: true },
 ];
@@ -471,6 +445,7 @@ const outputNodes = [
   { type: "dataOutput", label: "檔案輸出", icon: FileOutput, disabled: true },
   { type: "dataOutput", label: "資料表", icon: Table, disabled: false },
 ];
+//#endregion
 
 // Vue Flow 相關狀態
 const elements = ref([]);
@@ -495,19 +470,49 @@ const layoutDirections = {
   RADIAL: { label: "放射狀", x: 0, y: 0 },
 };
 
+//#region teleport 內容管理
+const showHeaderContent = ref(true);
+
+onActivated(() => {
+  showHeaderContent.value = true;
+});
+
+onDeactivated(() => {
+  showHeaderContent.value = false;
+});
+//#endregion
+
 // 載入範本資料
 const loadTemplate = async () => {
   try {
     const templateId = route.params.id;
+    console.log("正在載入範本，ID:", templateId);
     const response = await getTemplateById(templateId);
+    console.log("API 回傳資料:", response.data);
 
-    if (response.data.config) {
-      const config = JSON.parse(response.data.config);
-      elements.value = config.elements || [];
-      // 在載入數據後執行一次自動布局
-      setTimeout(() => {
-        layoutGraph();
-      }, 100);
+    if (response.data) {
+      // 使用 Pinia store 設置範本名稱
+      templateStore.setTemplateName(response.data.templateName);
+      console.log("範本名稱已更新:", response.data.templateName);
+
+      if (response.data.config) {
+        try {
+          const config = JSON.parse(response.data.config);
+          elements.value = config.elements || [];
+
+          // 只有當有節點時才執行自動布局
+          if (elements.value.length > 0) {
+            setTimeout(() => {
+              layoutGraph();
+            }, 100);
+          }
+        } catch (e) {
+          console.error("解析範本配置失敗:", e);
+          elements.value = [];
+        }
+      } else {
+        elements.value = [];
+      }
     }
   } catch (error) {
     console.error("載入範本失敗:", error);
@@ -607,7 +612,7 @@ const handleDrop = (event) => {
     position.y = Math.round(position.y / 20) * 20;
   }
 
-  // 創建新節點
+  // 創建新節點 這是給節點的初始化設定(點擊節點後的初始化設定)
   const getInitialConfig = (type) => {
     switch (type) {
       case "dataInput":
@@ -656,13 +661,13 @@ const handleDrop = (event) => {
         };
     }
   };
-
+  //這個好像沒用到
   const getNodeStyle = (type) => {
     switch (type) {
       case "dataInput":
         return { borderColor: "#93c5fd", backgroundColor: "#eff6ff" };
-      case "apiRequest":
-        return { borderColor: "#fdba74", backgroundColor: "#fff7ed" };
+      case "apiRequest": // TODO: CHECK
+        return { borderColor: "#fdba74", backgroundColor: "red" };
       case "dataProcess":
         return { borderColor: "#86efac", backgroundColor: "#f0fdf4" };
       case "dataOutput":
@@ -674,6 +679,8 @@ const handleDrop = (event) => {
 
   const getNodeType = (type) => {
     switch (type) {
+      case "input": // TODO: CHECK
+        return "input"; // 只有輸出連接點
       case "dataInput":
         return "input"; // 只有輸出連接點
       case "dataOutput":
@@ -686,10 +693,9 @@ const handleDrop = (event) => {
     }
   };
 
-  console.log("nodeData type", nodeData.type);
   const newNode = {
     id: `node_${Date.now()}`,
-    type: getNodeType(nodeData.type),
+    type: getNodeType(nodeData.type), // 回傳的值是 input, output, default, custom
     position,
     data: {
       label: nodeData.label,
@@ -697,7 +703,7 @@ const handleDrop = (event) => {
       icon: nodeData.icon,
       status: "idle",
       description: "",
-      style: getNodeStyle(nodeData.type),
+      //style: getNodeStyle(nodeData.type),
       config: getInitialConfig(nodeData.type),
     },
   };
@@ -722,7 +728,7 @@ const handleConnect = ({ source, target }) => {
   elements.value = [...elements.value, newEdge];
 };
 
-// 註冊自定義節點類型
+// 註冊自定義節點類型 !TODO: 好像也沒用到
 const nodeTypes = {
   input: CustomNode,
   output: CustomNode,
@@ -737,8 +743,7 @@ const edgeTypes = {
 
 // 設置默認的連接線選項
 const defaultEdgeOptions = {
-  type: "button",
-
+  type: "button", // 這個會影響到節點的連接線類型
   animated: true,
   label: "",
   markerEnd: {
@@ -937,10 +942,12 @@ const layoutGraph = (direction = "LR") => {
   // 更新節點位置
   setNodes([...nodes.value]);
 
-  // 適應視圖
-  setTimeout(() => {
-    fitView({ padding: 0.2 });
-  }, 100);
+  // 只有當有多個節點時才執行 fitView
+  if (nodes.value.length > 1) {
+    setTimeout(() => {
+      fitView({ padding: 0.2 });
+    }, 100);
+  }
 };
 
 onMounted(() => {
@@ -952,26 +959,29 @@ onMounted(() => {
 @import "@vue-flow/core/dist/style.css";
 @import "@vue-flow/core/dist/theme-default.css";
 
+/** 基礎的節點樣式 */
 .vue-flow__node {
-  @apply !px-0 !py-0 !border-0 !shadow-none !bg-transparent;
+  /* @apply !px-0 !py-0 !border-0 !shadow-none !bg-transparent; */
+  @apply bg-slate-100 rounded-md border border-slate-600 text-sm;
 }
 
 .vue-flow__handle {
   @apply !w-3 !h-3 !min-w-0;
 }
 
+/** 影響自定節點 ex: Custom的連接點 */
 .vue-flow__handle-bottom {
   @apply !bottom-0 !translate-y-1/2;
 }
-
+/** 影響自定節點 ex: Custom的連接點 */
 .vue-flow__handle-top {
   @apply !top-0 !-translate-y-1/2;
 }
-
+/** 影響自定節點 ex: Custom的連接點 */
 .vue-flow__handle-left {
   @apply !left-0 !-translate-x-1/2;
 }
-
+/** 影響自定節點 ex: Custom的連接點 */
 .vue-flow__handle-right {
   @apply !right-0 !translate-x-1/2;
 }

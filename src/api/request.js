@@ -39,7 +39,6 @@ service.interceptors.request.use(
     if (!(config.data instanceof FormData)) {
       config.headers["Content-Type"] = "application/json";
     }
-
     return config;
   },
   (error) => {

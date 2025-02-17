@@ -178,7 +178,7 @@ const handleSubmit = async () => {
     ElMessage.success("登入成功");
   } catch (error) {
     console.error("登入錯誤:", error);
-    ElMessage.error(error.response?.data?.message || "登入失敗");
+    ElMessage.error(error.message || "登入失敗");
   } finally {
     loading.value = false;
   }
