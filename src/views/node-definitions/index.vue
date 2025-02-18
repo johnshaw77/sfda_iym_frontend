@@ -1,7 +1,7 @@
 <template>
   <div class="h-full flex">
     <!-- 左側：節點定義列表 -->
-    <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <div class="w-60 bg-white border-r border-gray-200 flex flex-col">
       <!-- 頂部操作區 -->
       <div class="p-2.5 bg-slate-50 border-b border-gray-200">
         <div class="flex items-center justify-between mb-4">
@@ -146,6 +146,13 @@
             <el-tooltip content="測試">
               <el-button :icon="Play" :disabled="!activeNode" />
             </el-tooltip>
+            <el-tooltip content="顯示 JSON">
+              <el-button
+                :icon="Braces"
+                :disabled="!activeNode"
+                @click="handleShowJson"
+              />
+            </el-tooltip>
             <el-tooltip content="刪除">
               <el-button
                 :icon="Trash2"
@@ -191,156 +198,219 @@
       v-if="activeNode"
       class="w-80 bg-white border-l border-gray-200 flex flex-col"
     >
-      <div class="p-2.5 bg-slate-50 border-b border-gray-200">
+      <div
+        class="p-2.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between"
+      >
         <h3 class="text-lg font-medium text-gray-900">節點配置</h3>
+        <div class="space-x-2">
+          <el-button-group>
+            <el-tooltip content="儲存">
+              <el-button
+                :icon="Save"
+                :loading="submitting"
+                @click="handleSave"
+              />
+            </el-tooltip>
+          </el-button-group>
+        </div>
       </div>
       <div class="flex-1 overflow-y-auto p-4">
-        <el-form label-position="top">
+        <el-form
+          ref="formRef"
+          :model="activeNode"
+          :rules="formRules"
+          label-position="top"
+          @submit.prevent
+        >
           <!-- 基本資訊 -->
-          <el-form-item label="節點定義鍵值" required>
+          <el-form-item label="節點定義鍵值" prop="definitionKey">
             <el-input
-              v-model="activeNode.typeKey"
-              placeholder="請輸入唯一的節點定義鍵值（5-15字元）"
-              @input="handleNodeDefinitionKeyInput"
-              minlength="5"
-              maxlength="15"
+              v-model="activeNode.definitionKey"
+              placeholder="請輸入節點定義鍵值（5-15字元）"
+              @input="handleDefinitionKeyInput"
+              @keydown="handleDefinitionKeyKeydown"
             >
               <template #append>
                 <el-tooltip
-                  content="此鍵值必須是唯一的，長度為5-15字元，僅允許英文字母、數字和連字符號"
+                  content="此鍵值必須是唯一的，長度為5-15字元，僅允許小寫英文字母、數字和連字符號"
                   placement="top"
                 >
                   <span class="px-2">?</span>
                 </el-tooltip>
               </template>
             </el-input>
-            <span class="text-xs text-gray-500 mt-1"
-              >僅允許英文字母、數字和連字符號，長度為5-15字元，會自動轉換為小寫</span
-            >
+            <!-- <div class="form-item-tip">
+              僅允許小寫英文字母、數字和連字符號，長度為5-15字元，會自動轉換格式
+            </div> -->
           </el-form-item>
-          <el-form-item label="節點名稱" required>
-            <el-input v-model="activeNode.name" />
+
+          <!-- 分類和節點類型放在同一行 -->
+          <div class="flex items-start space-x-4">
+            <el-form-item label="分類" prop="category" class="flex-1">
+              <el-select
+                v-model="activeNode.category"
+                class="w-full"
+                placeholder="請選擇節點分類"
+              >
+                <el-option
+                  v-for="category in nodeCategories"
+                  :key="category.value"
+                  :label="category.label"
+                  :value="category.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="類型" prop="nodeType" class="flex-1">
+              <div class="flex items-center">
+                <el-select
+                  v-model="activeNode.nodeType"
+                  class="w-[160px]"
+                  placeholder="請選擇節點類型"
+                >
+                  <el-option
+                    v-for="type in nodeTypes"
+                    :key="type.value"
+                    :label="type.label"
+                    :value="type.value"
+                  />
+                </el-select>
+                <el-tooltip
+                  content="custom-input：需要 Vue 組件<br />custom-process：可以是組件或 API<br />statistic-process：統計分析專用"
+                  placement="top"
+                  raw-content
+                >
+                  <el-icon class="ml-2 text-gray-400">
+                    <CircleHelp :size="16" />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </el-form-item>
+          </div>
+
+          <el-form-item label="節點名稱" prop="name">
+            <el-input
+              v-model="activeNode.name"
+              placeholder="請輸入節點名稱（2-50字元）"
+              @input="handleNameInput"
+            />
           </el-form-item>
-          <el-form-item label="分類">
-            <el-select v-model="activeNode.category" class="w-full">
-              <el-option
-                v-for="category in nodeCategories"
-                :key="category.value"
-                :label="category.label"
-                :value="category.value"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="描述">
+
+          <el-form-item label="描述" prop="description">
             <el-input
               v-model="activeNode.description"
               type="textarea"
               :rows="3"
+              placeholder="請輸入節點描述（2-200字元）"
             />
           </el-form-item>
-          <el-form-item label="Vue組件名稱">
+
+          <el-form-item
+            label="Vue組件名稱"
+            prop="componentName"
+            v-if="activeNode.nodeType === 'custom-input'"
+          >
             <el-input
               v-model="activeNode.componentName"
-              placeholder="如果有預先寫好的組件，請填入組件名稱"
+              placeholder="請輸入Vue組件名稱"
             />
-            <span class="text-xs text-gray-500 mt-1"
-              >可以同時使用 Vue 組件和 API 端點</span
-            >
+            <div class="form-item-tip">custom-input 類型必須指定 Vue 組件</div>
           </el-form-item>
-          <el-form-item label="API 路由">
+
+          <el-form-item
+            label="API設定"
+            prop="apiEndpoint"
+            v-if="
+              ['custom-process', 'statistic-process'].includes(
+                activeNode.nodeType
+              )
+            "
+          >
             <el-input
               v-model="activeNode.apiEndpoint"
-              placeholder="請輸入 FastAPI 的路由名"
+              placeholder="請輸入API端點，以 / 開頭"
             >
               <template #append>
-                <el-select v-model="activeNode.apiMethod" style="width: 100px">
-                  <el-option label="POST" value="POST" />
+                <el-select
+                  v-model="activeNode.apiMethod"
+                  style="width: 100px"
+                  placeholder="方法"
+                >
                   <el-option label="GET" value="GET" />
+                  <el-option label="POST" value="POST" />
                   <el-option label="PUT" value="PUT" />
                   <el-option label="DELETE" value="DELETE" />
                 </el-select>
               </template>
             </el-input>
-            <span class="text-xs text-gray-500 mt-1"
-              >FastAPI 的路由名稱<a
+            <div class="form-item-tip">
+              FastAPI 的路由名稱
+              <a
                 href="http://localhost:8000/docs"
                 target="_blank"
                 class="text-blue-500 hover:text-blue-600 hover:underline"
                 >查看</a
-              >，例如：/statistical/analysis</span
-            >
+              >
+              ，例如：/statistical/analysis
+            </div>
           </el-form-item>
 
           <!-- 外觀設定 -->
           <el-divider>外觀設定</el-divider>
           <div class="flex items-center space-x-4">
             <el-form-item label="背景顏色" class="flex-1">
-              <el-color-picker
-                v-model="activeNode.ui_config.style.backgroundColor"
-                :predefine="predefineColors"
-                show-alpha
-              />
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="color in predefineColors"
+                  :key="color"
+                  class="w-4 h-4 rounded cursor-pointer border border-gray-200 transition-all hover:scale-110"
+                  :class="{
+                    'ring-2 ring-blue-500 ring-offset-2':
+                      activeNode.uiConfig.style.backgroundColor === color,
+                  }"
+                  :style="{ backgroundColor: color }"
+                  @click="activeNode.uiConfig.style.backgroundColor = color"
+                />
+              </div>
             </el-form-item>
             <el-form-item label="邊框顏色" class="flex-1">
-              <el-color-picker
-                v-model="activeNode.ui_config.style.borderColor"
-                :predefine="predefineColors"
-                show-alpha
-              />
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="color in predefineColors"
+                  :key="color"
+                  class="w-4 h-4 rounded cursor-pointer border border-gray-200 transition-all hover:scale-110"
+                  :class="{
+                    'ring-2 ring-blue-500 ring-offset-2':
+                      activeNode.uiConfig.style.borderColor === color,
+                  }"
+                  :style="{ backgroundColor: color }"
+                  @click="activeNode.uiConfig.style.borderColor = color"
+                />
+              </div>
             </el-form-item>
           </div>
 
           <!-- 驗證規則 -->
           <el-divider>驗證規則</el-divider>
           <el-form-item label="必填">
-            <el-switch v-model="activeNode.validation_rules.required" />
+            <el-switch
+              :model-value="activeNode.validation?.required ?? false"
+              @update:model-value="handleValidationChange"
+            />
           </el-form-item>
         </el-form>
       </div>
     </div>
 
-    <!-- 新增/編輯節點對話框 -->
+    <!-- JSON 預覽對話框 -->
     <el-dialog
-      v-model="dialogVisible"
-      :title="isEdit ? '編輯節點定義' : '新增節點定義'"
-      width="500px"
+      v-model="jsonDialogVisible"
+      title="節點 JSON 預覽"
+      width="50%"
+      destroy-on-close
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="類型鍵值" prop="typeKey">
-          <el-input
-            v-model="form.typeKey"
-            placeholder="請輸入唯一的節點定義鍵值（5-15字元）"
-            @input="(value) => handleNodeDefinitionKeyInput(value, form)"
-            minlength="5"
-            maxlength="15"
-          />
-          <span class="text-xs text-gray-500 mt-1"
-            >僅允許英文字母、數字和連字符號，長度為5-15字元，會自動轉換為小寫</span
-          >
-        </el-form-item>
-        <el-form-item label="節點名稱" prop="name">
-          <el-input v-model="form.name" />
-        </el-form-item>
-        <el-form-item label="分類" prop="category">
-          <el-select v-model="form.category" class="w-full">
-            <el-option
-              v-for="category in nodeCategories"
-              :key="category.value"
-              :label="category.label"
-              :value="category.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="3" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">確定</el-button>
-        </span>
-      </template>
+      <div class="bg-gray-50 p-4 rounded-lg overflow-auto max-h-[60vh]">
+        <json-viewer :value="activeNode" :expand-depth="5" copyable sort />
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -351,6 +421,7 @@ import { VueFlow, useVueFlow } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import { MiniMap } from "@vue-flow/minimap";
+import JsonViewer from "vue-json-viewer";
 import {
   Component,
   Search,
@@ -366,11 +437,14 @@ import {
   FileOutput,
   Table,
   TextCursorInput,
+  Braces,
+  CircleHelp,
 } from "lucide-vue-next";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
+import "vue-json-viewer/style.css";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getNodeDefinitions,
@@ -378,8 +452,13 @@ import {
   updateNodeDefinition,
   deleteNodeDefinition,
 } from "@/api";
+import {
+  nodeDefinitionValidators,
+  formatDefinitionKey,
+  isValidDefinitionKeyInput,
+} from "@/utils/validators";
 
-// 節點定義配置（未來會從後端 API 獲取）
+// 節點定義配置（未來會從後端 API 獲取）,value
 const nodeDefinitionsConfig = {
   categories: [
     {
@@ -389,20 +468,21 @@ const nodeDefinitionsConfig = {
       nodes: [
         {
           id: "1",
-          typeKey: "complaint-selector",
+          definitionKey: "complaint-selector",
+          nodeType: "custom-input",
           name: "客訴單號選擇器",
           icon: Component,
           description: "用於選擇客訴單號",
           version: "1.0.0",
           componentName: "ComplaintSelector",
           config: {},
-          ui_config: {
+          uiConfig: {
             style: {
               backgroundColor: "#ffffff",
               borderColor: "#64748b",
             },
           },
-          validation_rules: {
+          validation: {
             required: true,
           },
           handles: {
@@ -412,20 +492,21 @@ const nodeDefinitionsConfig = {
         },
         {
           id: "2",
-          typeKey: "defect-item-selector",
+          definitionKey: "defect-item-selector",
+          nodeType: "custom-input",
           name: "不良品項選擇器",
           icon: TextCursorInput,
           description: "用於選擇不良品項",
           version: "1.0.0",
           componentName: "DefectItemSelector",
           config: {},
-          ui_config: {
+          uiConfig: {
             style: {
               backgroundColor: "#ffffff",
               borderColor: "#64748b",
             },
           },
-          validation_rules: {
+          validation: {
             required: true,
           },
           handles: {
@@ -448,7 +529,8 @@ const nodeDefinitionsConfig = {
       nodes: [
         {
           id: "5",
-          typeKey: "shared-statistics",
+          definitionKey: "shared-statistics",
+          nodeType: "statistic-process",
           name: "共用統計組件",
           icon: Component,
           description: "進行基礎統計分析，必須定義apiEndpoint",
@@ -457,13 +539,13 @@ const nodeDefinitionsConfig = {
           apiEndpoint: "/statistical/basic-statistics",
           apiMethod: "POST",
           config: {},
-          ui_config: {
+          uiConfig: {
             style: {
               backgroundColor: "#ffffff",
               borderColor: "#64748b",
             },
           },
-          validation_rules: {
+          validation: {
             required: true,
           },
           handles: {
@@ -473,7 +555,8 @@ const nodeDefinitionsConfig = {
         },
         {
           id: "3",
-          typeKey: "hypothesis-test",
+          definitionKey: "hypothesis-test",
+          nodeType: "statistic-process",
           name: "假設檢定",
           icon: Calculator,
           description: "進行統計假設檢定分析",
@@ -482,13 +565,13 @@ const nodeDefinitionsConfig = {
           apiEndpoint: "/statistical/hypothesis-test",
           apiMethod: "POST",
           config: {},
-          ui_config: {
+          uiConfig: {
             style: {
               backgroundColor: "#ffffff",
               borderColor: "#64748b",
             },
           },
-          validation_rules: {
+          validation: {
             required: true,
           },
           handles: {
@@ -498,7 +581,8 @@ const nodeDefinitionsConfig = {
         },
         {
           id: "4",
-          typeKey: "correlation-analysis",
+          definitionKey: "correlation-analysis",
+          nodeType: "statistic-process",
           name: "相關性分析",
           icon: BarChart,
           description: "進行變數間的相關性分析",
@@ -507,13 +591,13 @@ const nodeDefinitionsConfig = {
           apiEndpoint: "/statistical/correlation",
           apiMethod: "POST",
           config: {},
-          ui_config: {
+          uiConfig: {
             style: {
               backgroundColor: "#ffffff",
               borderColor: "#64748b",
             },
           },
-          validation_rules: {
+          validation: {
             required: true,
           },
           handles: {
@@ -523,7 +607,8 @@ const nodeDefinitionsConfig = {
         },
         {
           id: "6",
-          typeKey: "chi-square-analysis",
+          definitionKey: "chi-square-analysis",
+          nodeType: "statistic-process",
           name: "卡方圖分析",
           icon: Component,
           description:
@@ -533,13 +618,13 @@ const nodeDefinitionsConfig = {
           apiEndpoint: "/statistical/chi-square",
           apiMethod: "POST",
           config: {},
-          ui_config: {
+          uiConfig: {
             style: {
               backgroundColor: "#ffffff",
               borderColor: "#64748b",
             },
           },
-          validation_rules: {
+          validation: {
             required: true,
           },
           handles: {
@@ -587,20 +672,63 @@ const statisticalAnalysisNodes = computed(
 // 狀態
 const searchQuery = ref("");
 const activeNode = ref(null);
+const submitting = ref(false);
+const formRef = ref(null);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const elements = ref([]);
 
 // 表單
 const form = ref({
+  definitionKey: "",
+  nodeType: "",
   name: "",
   category: "",
   description: "",
-  typeKey: "",
+  componentName: "",
+  apiEndpoint: "",
+  apiMethod: "POST",
+  version: "1.0.0",
+  config: {},
+  uiConfig: {
+    style: {
+      backgroundColor: "#ffffff",
+      borderColor: "#64748b",
+    },
+  },
+  validation: {
+    required: false,
+  },
+  handles: {
+    inputs: [],
+    outputs: [],
+  },
 });
 
 // 使用 useVueFlow hook
 const { fitView } = useVueFlow();
+
+// JSON 對話框控制
+const jsonDialogVisible = ref(false);
+
+// 節點類型選項
+const nodeTypes = [
+  {
+    value: "custom-input",
+    label: "自定義輸入節點",
+  },
+  {
+    value: "custom-process",
+    label: "自定義處理節點",
+  },
+  {
+    value: "statistic-process",
+    label: "統計分析節點",
+  },
+];
+
+// 表單驗證規則
+const formRules = nodeDefinitionValidators;
 
 // 載入節點定義列表
 const loadNodeDefinitions = async () => {
@@ -617,18 +745,19 @@ const loadNodeDefinitions = async () => {
           .filter((node) => node.category === category.id)
           .map((node) => ({
             id: node.id.toString(),
-            typeKey: node.type_key,
+            definitionKey: node.definitionKey,
+            nodeType: node.nodeType,
             name: node.name,
-            icon: getNodeIcon(node.category, node.type_key),
+            icon: getNodeIcon(node.category, node.definitionKey),
             description: node.description,
             version: node.version,
-            componentName: node.component_name,
-            apiEndpoint: node.api_endpoint,
-            apiMethod: node.api_method,
-            config: {},
-            ui_config: node.ui_config,
-            validation_rules: node.validation_rules,
-            handles: node.handles,
+            componentName: node.componentName,
+            apiEndpoint: node.apiEndpoint,
+            apiMethod: node.apiMethod,
+            config: JSON.parse(node.config || "{}"),
+            uiConfig: JSON.parse(node.uiConfig || "{}"),
+            validation: JSON.parse(node.validation || "{}"),
+            handles: JSON.parse(node.handles || "{}"),
           })),
       })
     );
@@ -661,18 +790,31 @@ const getNodeIcon = (category, typeKey) => {
 
 // 處理節點選擇
 const handleSelectNode = (node) => {
-  activeNode.value = { ...node };
+  // 確保 uiConfig 和其他必要的屬性存在
+  const processedNode = {
+    ...node,
+    uiConfig: node.uiConfig || {
+      style: {
+        backgroundColor: "#ffffff",
+        borderColor: "#64748b",
+      },
+    },
+    validation: node.validation || {
+      required: false,
+    },
+    handles: node.handles || {
+      inputs: [],
+      outputs: [],
+    },
+  };
+
+  activeNode.value = processedNode;
   // 更新預覽
   updatePreview();
 };
 
 // 更新預覽
 const updatePreview = () => {
-  console.log(
-    "activeNode.value updatePreview",
-    activeNode.value.name,
-    activeNode.value.ui_config.style
-  );
   if (!activeNode.value) {
     elements.value = [];
     return;
@@ -688,11 +830,13 @@ const updatePreview = () => {
         label: activeNode.value.name,
         ...activeNode.value.config,
       },
-      style: activeNode.value.ui_config.style,
+      style: activeNode.value.uiConfig?.style || {
+        backgroundColor: "#ffffff",
+        borderColor: "#64748b",
+      },
     },
   ];
 
-  console.log("elements", elements.value);
   // 使用 setTimeout 確保節點已經渲染完成
   setTimeout(() => {
     fitView({ padding: 0.2 });
@@ -701,33 +845,56 @@ const updatePreview = () => {
 
 // 處理新增節點
 const handleCreateNode = () => {
-  isEdit.value = false;
-  form.value = {
+  // 創建一個新的節點定義
+  activeNode.value = {
+    id: `temp-${Date.now()}`, // 臨時 ID
+    definitionKey: "",
+    nodeType: "",
     name: "",
     category: "",
     description: "",
-    typeKey: "",
+    componentName: "",
+    apiEndpoint: "",
+    apiMethod: "POST",
+    version: "1.0.0",
+    config: {},
+    uiConfig: {
+      style: {
+        backgroundColor: "#ffffff",
+        borderColor: "#64748b",
+      },
+    },
+    validation: {
+      required: false,
+    },
+    handles: {
+      inputs: [],
+      outputs: [],
+    },
   };
-  dialogVisible.value = true;
+
+  // 更新預覽
+  updatePreview();
 };
 
 // 處理表單提交
 const handleSubmit = async () => {
   try {
     const data = {
-      type_key: form.value.typeKey,
+      definition_key: form.value.definitionKey,
+      node_type: form.value.nodeType,
       name: form.value.name,
       category: form.value.category,
       description: form.value.description,
       version: "1.0.0",
-      component_name: "",
-      ui_config: {
+      component_name: form.value.componentName,
+      uiConfig: {
         style: {
           backgroundColor: "#ffffff",
           borderColor: "#64748b",
         },
       },
-      validation_rules: {
+      validation: {
         required: false,
       },
       handles: {
@@ -737,7 +904,7 @@ const handleSubmit = async () => {
     };
 
     if (isEdit.value) {
-      await updateNodeDefinition(form.value.typeKey, data);
+      await updateNodeDefinition(form.value.definitionKey, data);
       ElMessage.success("節點定義更新成功");
     } else {
       await createNodeDefinition(data);
@@ -767,7 +934,7 @@ const handleDeleteNode = async () => {
       }
     );
 
-    await deleteNodeDefinition(activeNode.value.typeKey);
+    await deleteNodeDefinition(activeNode.value.definitionKey);
     ElMessage.success("節點定義刪除成功");
     activeNode.value = null;
     loadNodeDefinitions(); // 重新載入列表
@@ -799,7 +966,7 @@ const predefineColors = [
 ];
 
 // 處理節點定義鍵值輸入
-const handleNodeDefinitionKeyInput = (value) => {
+const handleDefinitionKeyInput = (value) => {
   if (!value) return;
 
   // 移除非英文字母、數字的字符，將空格轉換為連字符，並轉為小寫
@@ -815,21 +982,94 @@ const handleNodeDefinitionKeyInput = (value) => {
   }
 
   // 更新值
-  activeNode.value.typeKey = processed;
+  activeNode.value.definitionKey = processed;
 };
 
-// 更新表單配置，添加必填驗證
-const rules = {
-  name: [{ required: true, message: "請輸入節點名稱", trigger: "blur" }],
-  typeKey: [
-    { required: true, message: "請輸入節點定義鍵值", trigger: "blur" },
-    {
-      pattern: /^[a-z0-9-]+$/,
-      message: "僅允許小寫英文字母、數字和連字符號",
-      trigger: "blur",
-    },
-    { min: 5, max: 15, message: "長度必須在5到15個字元之間", trigger: "blur" },
-  ],
+// 處理節點定義鍵值按鍵
+const handleDefinitionKeyKeydown = (event) => {
+  if (!isValidDefinitionKeyInput(event)) {
+    event.preventDefault();
+  }
+};
+
+// 處理顯示 JSON
+const handleShowJson = () => {
+  jsonDialogVisible.value = true;
+};
+
+// 添加 handleValidationChange 函數
+const handleValidationChange = (value) => {
+  if (!activeNode.value) return;
+
+  // 確保 validation 對象存在
+  if (!activeNode.value.validation) {
+    activeNode.value.validation = {};
+  }
+
+  activeNode.value.validation.required = value;
+};
+
+// 處理儲存
+const handleSave = async () => {
+  if (!formRef.value || !activeNode.value) return;
+
+  await formRef.value.validate(async (valid) => {
+    if (!valid) {
+      ElMessage.warning("請檢查並修正表單中的錯誤");
+      return;
+    }
+
+    submitting.value = true;
+    try {
+      const data = {
+        definition_key: activeNode.value.definitionKey,
+        node_type: activeNode.value.nodeType,
+        name: activeNode.value.name,
+        category: activeNode.value.category,
+        description: activeNode.value.description,
+        version: activeNode.value.version || "1.0.0",
+        component_name: activeNode.value.componentName,
+        api_endpoint: activeNode.value.apiEndpoint,
+        api_method: activeNode.value.apiMethod,
+        config: JSON.stringify(activeNode.value.config || {}),
+        ui_config: JSON.stringify(activeNode.value.uiConfig || {}),
+        validation: JSON.stringify(activeNode.value.validation || {}),
+        handles: JSON.stringify(activeNode.value.handles || {}),
+      };
+
+      // 判斷是新增還是更新
+      const isNew = activeNode.value.id.startsWith("temp-");
+
+      if (isNew) {
+        await createNodeDefinition(data);
+        ElMessage.success("節點定義創建成功");
+      } else {
+        await updateNodeDefinition(activeNode.value.definitionKey, data);
+        ElMessage.success("節點定義更新成功");
+      }
+
+      // 重新載入列表
+      await loadNodeDefinitions();
+
+      // 如果是新增，清空當前選中的節點
+      if (isNew) {
+        activeNode.value = null;
+      }
+    } catch (error) {
+      console.error("儲存失敗:", error);
+      ElMessage.error(error.response?.data?.message || "儲存失敗");
+    } finally {
+      submitting.value = false;
+    }
+  });
+};
+
+// 在 script setup 部分添加處理函數
+const handleNameInput = (value) => {
+  if (!activeNode.value) return;
+
+  // 更新預覽
+  updatePreview();
 };
 </script>
 
@@ -876,5 +1116,45 @@ const rules = {
 :deep(.el-menu-item:hover),
 :deep(.el-sub-menu__title:hover) {
   @apply !bg-gray-50;
+}
+
+.form-item-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+}
+
+:deep(.el-select) {
+  width: 100%;
+}
+
+:deep(.el-input-group__append) {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* 表單樣式優化 */
+:deep(.el-form-item) {
+  margin-bottom: 20px;
+}
+
+:deep(.el-form-item__label) {
+  padding-bottom: 4px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+:deep(.el-form-item.is-error .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #f56c6c inset;
+}
+
+:deep(.el-form-item__error) {
+  padding-top: 4px;
+  font-size: 12px;
 }
 </style>

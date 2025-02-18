@@ -1,6 +1,9 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50">
-    <div class="w-[420px] bg-white p-8 rounded-lg shadow-lg">
+  <div
+    class="min-h-screen flex items-center justify-center bg-gray-50 background"
+  >
+    <div class="grid"></div>
+    <div class="w-[420px] bg-white p-8 rounded-xl shadow-lg z-50">
       <!-- Logo -->
       <div class="mb-8">
         <div class="flex items-center justify-center space-x-2">
@@ -236,5 +239,95 @@ const handleReaderLogin = () => {
 
 .sign-up-link {
   @apply !text-[#1976D2] font-medium hover:!text-[#1565C0];
+}
+
+.background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+}
+
+.grid {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: linear-gradient(rgba(30, 41, 59, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 41, 59, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  transform-origin: center;
+  /* animation: gridAnimation 5s linear infinite; */
+}
+
+.glow {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle at center,
+    rgba(120, 100, 255, 0.4) 0%,
+    rgba(120, 100, 255, 0.2) 20%,
+    rgba(120, 100, 255, 0.1) 40%,
+    transparent 60%
+  );
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: blur(20px);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 20px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 64px;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  background: linear-gradient(to right, #1e293b 20%, rgba(30, 41, 59, 0.8));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+p {
+  font-size: 20px;
+  line-height: 1.6;
+  color: rgba(30, 41, 59, 0.8);
+  margin-bottom: 40px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@keyframes gridAnimation {
+  0% {
+    transform: perspective(1000px) rotateX(10deg) translateY(0);
+  }
+  100% {
+    transform: perspective(2000px) rotateX(10deg) translateY(50px);
+  }
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 40px;
+  }
+  p {
+    font-size: 18px;
+  }
+  .glow {
+    width: 200px;
+    height: 200px;
+  }
 }
 </style>

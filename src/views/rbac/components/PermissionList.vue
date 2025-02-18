@@ -36,7 +36,7 @@
       >
         <template #default="{ row }">
           <el-tooltip
-            v-for="role in row.roles"
+            v-for="role in row.roles || []"
             :key="role.id"
             :content="role.description || '暫無描述'"
             placement="top"
@@ -46,7 +46,7 @@
               {{ role.name }}
             </el-tag>
           </el-tooltip>
-          <el-tag v-if="!row.roles.length" type="info" size="small">
+          <el-tag v-if="!(row.roles || []).length" type="info" size="small">
             暫無角色使用
           </el-tag>
         </template>
@@ -165,23 +165,63 @@ const formData = ref({
 });
 
 const formRules = {
-  name: nameValidationRules,
-  description: descriptionValidationRules,
+  name: [
+    { required: true, message: "請輸入權限名稱", trigger: "blur" },
+    { min: 3, max: 50, message: "長度在 3 到 50 個字符之間", trigger: "blur" },
+    {
+      pattern: /^[A-Z][A-Z0-9_]*$/,
+      message: "必須以英文字母開頭，只能包含大寫字母、數字和下底線",
+      trigger: ["blur", "change"],
+    },
+    {
+      validator: (rule, value, callback) => {
+        if (value && !value.match(/^[A-Z][A-Z0-9_]*$/)) {
+          callback(new Error("權限名稱格式不正確"));
+        } else if (value && value.includes("__")) {
+          callback(new Error("不能包含連續的下底線"));
+        } else {
+          callback();
+        }
+      },
+      trigger: ["blur", "change"],
+    },
+  ],
+  description: [
+    { required: true, message: "請輸入權限描述", trigger: "blur" },
+    {
+      min: 2,
+      max: 200,
+      message: "長度在 2 到 200 個字符之間",
+      trigger: "blur",
+    },
+    {
+      validator: (rule, value, callback) => {
+        if (value && value.trim().length === 0) {
+          callback(new Error("描述不能只包含空白字符"));
+        } else {
+          callback();
+        }
+      },
+      trigger: "blur",
+    },
+  ],
 };
 
 const loading = computed(() => rbacStore.loading);
 
 const permissions = computed(() => {
-  const allPermissions = rbacStore.permissions;
-  const allRoles = rbacStore.roles;
+  const allPermissions = rbacStore.permissions || [];
+  const allRoles = rbacStore.roles || [];
 
   let processedPermissions = allPermissions.map((permission) => {
     const roles = allRoles.filter((role) =>
-      role.rolePermissions.some((rp) => rp.permission.id === permission.id)
+      (role.rolePermissions || []).some(
+        (rp) => rp.permission?.id === permission.id
+      )
     );
     return {
       ...permission,
-      roles,
+      roles: roles || [],
     };
   });
 
@@ -190,8 +230,8 @@ const permissions = computed(() => {
       const isAsc = sortConfig.value.order === "ascending";
       if (sortConfig.value.prop === "roles") {
         return isAsc
-          ? a.roles.length - b.roles.length
-          : b.roles.length - a.roles.length;
+          ? (a.roles || []).length - (b.roles || []).length
+          : (b.roles || []).length - (a.roles || []).length;
       }
       if (a[sortConfig.value.prop] < b[sortConfig.value.prop])
         return isAsc ? -1 : 1;
@@ -292,12 +332,39 @@ const handleSubmit = async () => {
 
 // 處理權限名稱輸入格式化
 const handleNameInput = (value) => {
-  formData.value.name = formatName(value);
+  if (!value) return;
+  // 移除非法字符，保留大寫字母、數字和下底線
+  let formatted = value
+    .toUpperCase()
+    .replace(/[^A-Z0-9_\s]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_");
+
+  // 確保以字母開頭
+  if (formatted && !formatted.match(/^[A-Z]/)) {
+    formatted = formatted.replace(/^[^A-Z]*([A-Z])?/, "$1");
+  }
+
+  formData.value.name = formatted;
 };
 
 // 處理鍵盤輸入，防止輸入非法字符
 const handleNameKeydown = (event) => {
-  if (!isValidKeyInput(event)) {
+  const allowedKeys = [
+    "Backspace",
+    "Delete",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Tab",
+    "Enter",
+    "_",
+    " ",
+  ];
+
+  // 只允許字母、數字、下底線和控制鍵
+  if (!allowedKeys.includes(event.key) && !event.key.match(/^[a-zA-Z0-9]$/)) {
     event.preventDefault();
   }
 };
