@@ -170,6 +170,7 @@
           :default-zoom="1.5"
           :min-zoom="0.2"
           :max-zoom="4"
+          :node-types="nodeTypes"
           :edge-types="edgeTypes"
           :default-edge-options="defaultEdgeOptions"
           :auto-connect="false"
@@ -213,10 +214,6 @@
           @drop="handleDrop"
           @nodes-initialized="() => {}"
         >
-          <template #node-custom="props">
-            <CustomNode v-bind="props" />
-          </template>
-
           <Background :pattern-color="'#aaa'" :gap="8" />
 
           <Controls />
@@ -422,6 +419,7 @@ import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 import { getTemplateById, updateTemplate, publishTemplate } from "@/api";
 import { useTemplateStore } from "@/stores/template";
+import ComplaintSelectorNode from "@/components/flow-nodes/business/ComplaintSelectorNode.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -429,9 +427,9 @@ const templateStore = useTemplateStore();
 
 //#region 節點類型定義
 const inputNodes = [
-  { type: "input", label: "開始", icon: Play, disabled: false },
-  { type: "dataInput", label: "檔案上傳", icon: FileInput, disabled: false },
-  { type: "dataInput", label: "資料庫查詢", icon: Database, disabled: true },
+  { type: "custom-input", label: "客訴單號選擇", icon: FileInput },
+  { type: "dataInput", label: "檔案上傳", icon: FileInput },
+  { type: "dataInput", label: "資料庫查詢", icon: Database },
 ];
 
 const processNodes = [
@@ -591,6 +589,55 @@ const handleDragOver = (event) => {
   event.dataTransfer.dropEffect = "move";
 };
 
+// 獲取節點初始配置
+const getInitialConfig = (type) => {
+  const baseConfig = {
+    timeout: 60,
+    retryCount: 0,
+    errorHandler: "stop",
+  };
+
+  switch (type) {
+    case "custom-input":
+      return {
+        ...baseConfig,
+        selectedComplaint: null,
+      };
+    case "dataInput":
+      return {
+        ...baseConfig,
+        source: "file",
+        fileType: ["csv", "xlsx", "json"],
+        validateSchema: true,
+        maxFileSize: 10,
+        encoding: "utf-8",
+      };
+    case "apiRequest":
+      return {
+        ...baseConfig,
+        apiEndpoint: "",
+        apiMethod: "POST",
+        headers: {},
+        params: {},
+      };
+    case "dataProcess":
+      return {
+        ...baseConfig,
+        processType: "filter",
+        condition: "",
+      };
+    case "dataOutput":
+      return {
+        ...baseConfig,
+        format: "csv",
+        outputPath: "",
+        compress: false,
+      };
+    default:
+      return baseConfig;
+  }
+};
+
 // 處理節點拖放
 const handleDrop = (event) => {
   event.preventDefault();
@@ -612,90 +659,10 @@ const handleDrop = (event) => {
     position.y = Math.round(position.y / 20) * 20;
   }
 
-  // 創建新節點 這是給節點的初始化設定(點擊節點後的初始化設定)
-  const getInitialConfig = (type) => {
-    switch (type) {
-      case "dataInput":
-        return {
-          source: "file",
-          fileType: ["csv", "xlsx", "json"],
-          validateSchema: true,
-          maxFileSize: 10,
-          encoding: "utf-8",
-          timeout: 60,
-          retryCount: 0,
-          errorHandler: "stop",
-        };
-      case "apiRequest":
-        return {
-          apiEndpoint: "",
-          apiMethod: "POST",
-          headers: {},
-          params: {},
-          timeout: 60,
-          retryCount: 0,
-          errorHandler: "stop",
-        };
-      case "dataProcess":
-        return {
-          processType: "filter",
-          condition: "",
-          timeout: 60,
-          retryCount: 0,
-          errorHandler: "stop",
-        };
-      case "dataOutput":
-        return {
-          format: "csv",
-          outputPath: "",
-          compress: false,
-          timeout: 60,
-          retryCount: 0,
-          errorHandler: "stop",
-        };
-      default:
-        return {
-          timeout: 60,
-          retryCount: 0,
-          errorHandler: "stop",
-        };
-    }
-  };
-  //這個好像沒用到
-  const getNodeStyle = (type) => {
-    switch (type) {
-      case "dataInput":
-        return { borderColor: "#93c5fd", backgroundColor: "#eff6ff" };
-      case "apiRequest": // TODO: CHECK
-        return { borderColor: "#fdba74", backgroundColor: "red" };
-      case "dataProcess":
-        return { borderColor: "#86efac", backgroundColor: "#f0fdf4" };
-      case "dataOutput":
-        return { borderColor: "#d8b4fe", backgroundColor: "#faf5ff" };
-      default:
-        return { borderColor: "#e5e7eb", backgroundColor: "#ffffff" };
-    }
-  };
-
-  const getNodeType = (type) => {
-    switch (type) {
-      case "input": // TODO: CHECK
-        return "input"; // 只有輸出連接點
-      case "dataInput":
-        return "input"; // 只有輸出連接點
-      case "dataOutput":
-        return "output"; // 只有輸入連接點
-      case "dataProcess":
-      case "apiRequest":
-        return "custom"; // 同時有輸入和輸出連接點
-      default:
-        return "default";
-    }
-  };
-
+  // 創建新節點
   const newNode = {
     id: `node_${Date.now()}`,
-    type: getNodeType(nodeData.type), // 回傳的值是 input, output, default, custom
+    type: nodeData.type,
     position,
     data: {
       label: nodeData.label,
@@ -703,11 +670,9 @@ const handleDrop = (event) => {
       icon: nodeData.icon,
       status: "idle",
       description: "",
-      //style: getNodeStyle(nodeData.type),
       config: getInitialConfig(nodeData.type),
     },
   };
-  console.log("newNode", newNode);
 
   // 添加新節點到畫布
   elements.value = [...elements.value, newNode];
@@ -728,10 +693,10 @@ const handleConnect = ({ source, target }) => {
   elements.value = [...elements.value, newEdge];
 };
 
-// 註冊自定義節點類型 !TODO: 好像也沒用到
+// 註冊自定義節點類型
 const nodeTypes = {
-  input: CustomNode,
-  output: CustomNode,
+  "custom-input": ComplaintSelectorNode,
+  custom: CustomNode,
   default: CustomNode,
 };
 
@@ -962,7 +927,7 @@ onMounted(() => {
 /** 基礎的節點樣式 */
 .vue-flow__node {
   /* @apply !px-0 !py-0 !border-0 !shadow-none !bg-transparent; */
-  @apply bg-slate-100 rounded-md border border-slate-600 text-sm;
+  /* @apply bg-slate-100 rounded-md border border-slate-600 text-sm; */
 }
 
 .vue-flow__handle {

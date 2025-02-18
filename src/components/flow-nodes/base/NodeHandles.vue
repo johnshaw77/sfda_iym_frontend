@@ -1,150 +1,152 @@
+<!-- 節點連接點系統組件 -->
 <template>
   <div class="node-handles">
-    <!-- 輸入端口 -->
-    <div v-if="inputs.length > 0" class="node-handles__inputs">
-      <div
-        v-for="input in inputs"
-        :key="input.id"
-        class="node-handles__handle node-handles__handle--input"
-        :class="{
-          'node-handles__handle--required': input.required,
-          'node-handles__handle--connected': input.connected,
-        }"
-        :style="{ top: `${input.position}%` }"
+    <!-- 輸入連接點 -->
+    <template v-for="handle in inputs" :key="handle.id">
+      <Handle
+        :id="handle.id"
+        :type="handle.type"
+        :position="handle.position"
+        :class="[
+          'handle',
+          `handle-${handle.position}`,
+          {
+            'handle-connected': isHandleConnected(handle.id),
+            'handle-input': true,
+          },
+        ]"
       >
-        <el-tooltip
-          :content="input.description || input.id"
-          placement="left"
-          :show-after="300"
-        >
-          <div class="node-handles__handle-point" />
-        </el-tooltip>
-      </div>
-    </div>
+        <span v-if="showLabels" class="handle-label">{{
+          handle.label || handle.id
+        }}</span>
+      </Handle>
+    </template>
 
-    <!-- 輸出端口 -->
-    <div v-if="outputs.length > 0" class="node-handles__outputs">
-      <div
-        v-for="output in outputs"
-        :key="output.id"
-        class="node-handles__handle node-handles__handle--output"
-        :class="{
-          'node-handles__handle--connected': output.connected,
-        }"
-        :style="{ top: `${output.position}%` }"
+    <!-- 輸出連接點 -->
+    <template v-for="handle in outputs" :key="handle.id">
+      <Handle
+        :id="handle.id"
+        :type="handle.type"
+        :position="handle.position"
+        :class="[
+          'handle',
+          `handle-${handle.position}`,
+          {
+            'handle-connected': isHandleConnected(handle.id),
+            'handle-output': true,
+          },
+        ]"
       >
-        <el-tooltip
-          :content="output.description || output.id"
-          placement="right"
-          :show-after="300"
-        >
-          <div class="node-handles__handle-point" />
-        </el-tooltip>
-      </div>
-    </div>
+        <span v-if="showLabels" class="handle-label">{{
+          handle.label || handle.id
+        }}</span>
+      </Handle>
+    </template>
   </div>
 </template>
 
 <script setup>
+import { Handle } from "@vue-flow/core";
 import { computed } from "vue";
+import { useVueFlow } from "@vue-flow/core";
 
 const props = defineProps({
-  // 輸入端口配置
+  nodeId: {
+    type: String,
+    required: true,
+  },
+  nodeType: {
+    type: String,
+    default: "default",
+  },
   inputs: {
     type: Array,
     default: () => [],
-    validator: (value) => {
-      return value.every((input) => {
-        return (
-          typeof input === "object" && "id" in input && "position" in input
-        );
-      });
-    },
   },
-  // 輸出端口配置
   outputs: {
     type: Array,
     default: () => [],
-    validator: (value) => {
-      return value.every((output) => {
-        return (
-          typeof output === "object" && "id" in output && "position" in output
-        );
-      });
-    },
+  },
+  showLabels: {
+    type: Boolean,
+    default: false,
   },
 });
 
-// 事件
-const emit = defineEmits([
-  "handle-connect", // 當連接建立時
-  "handle-disconnect", // 當連接斷開時
-  "handle-click", // 當端口被點擊時
-]);
+const { edges } = useVueFlow();
+
+const isHandleConnected = (handleId) => {
+  return edges.value.some(
+    (edge) =>
+      (edge.source === props.nodeId && edge.sourceHandle === handleId) ||
+      (edge.target === props.nodeId && edge.targetHandle === handleId)
+  );
+};
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .node-handles {
   @apply absolute inset-0 pointer-events-none;
+}
 
-  // 輸入端口容器
-  &__inputs {
-    @apply absolute left-0 top-0 h-full;
-    width: 20px;
-    transform: translateX(-50%);
-  }
+.handle {
+  @apply w-3 h-3 rounded-full bg-gray-400 border-2 border-white transition-all duration-200 pointer-events-auto;
+}
 
-  // 輸出端口容器
-  &__outputs {
-    @apply absolute right-0 top-0 h-full;
-    width: 20px;
-    transform: translateX(50%);
-  }
+.handle:hover {
+  @apply scale-125 bg-blue-500;
+}
 
-  // 端口基本樣式
-  &__handle {
-    @apply absolute left-1/2 -translate-x-1/2 pointer-events-auto;
-    width: 20px;
-    height: 20px;
+.handle-connected {
+  @apply bg-green-500;
+}
 
-    // 端口連接點
-    &-point {
-      @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2;
-      @apply w-3 h-3 rounded-full border-2 border-gray-400 bg-white;
-      @apply transition-all duration-200;
-    }
+/* 輸入連接點樣式（箭頭） */
+.handle-input {
+  @apply bg-blue-500;
+}
 
-    // 輸入端口特殊樣式
-    &--input {
-      .node-handles__handle-point {
-        @apply border-blue-400;
-      }
+/* 輸出連接點樣式（圓形） */
+.handle-output {
+  @apply bg-green-500;
+}
 
-      &.node-handles__handle--required .node-handles__handle-point {
-        @apply border-red-400;
-      }
-    }
+/* 位置相關樣式 */
+.handle-left {
+  @apply left-0 top-1/2 -translate-x-1/2 -translate-y-1/2;
+}
 
-    // 輸出端口特殊樣式
-    &--output {
-      .node-handles__handle-point {
-        @apply border-green-400;
-      }
-    }
+.handle-right {
+  @apply right-0 top-1/2 translate-x-1/2 -translate-y-1/2;
+}
 
-    // 已連接狀態
-    &--connected {
-      .node-handles__handle-point {
-        @apply bg-gray-100;
-      }
-    }
+.handle-top {
+  @apply top-0 left-1/2 -translate-x-1/2 -translate-y-1/2;
+}
 
-    // 懸停效果
-    &:hover {
-      .node-handles__handle-point {
-        @apply scale-125;
-      }
-    }
-  }
+.handle-bottom {
+  @apply bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2;
+}
+
+.handle-label {
+  @apply absolute whitespace-nowrap text-xs text-gray-600 pointer-events-none;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.handle-left .handle-label {
+  @apply -left-1 translate-x-0;
+}
+
+.handle-right .handle-label {
+  @apply -right-1 translate-x-0;
+}
+
+.handle-top .handle-label {
+  @apply -top-5;
+}
+
+.handle-bottom .handle-label {
+  @apply -bottom-5;
 }
 </style>

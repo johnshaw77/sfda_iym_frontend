@@ -1,60 +1,89 @@
+<!-- 基礎節點組件 -->
 <template>
   <div
-    class="flow-node"
-    :class="[`flow-node--${status}`, { 'flow-node--selected': selected }]"
-    :style="{
-      backgroundColor: style.backgroundColor,
-      borderColor: style.borderColor,
+    class="node-wrapper"
+    :class="{
+      'border-blue-500 shadow-blue-100': selected,
+      'cursor-pointer': !disabled,
+      'opacity-50 cursor-not-allowed': disabled,
     }"
-    @click="handleNodeClick"
   >
-    <!-- 標題區域 -->
-    <div class="flow-node__header">
-      <slot name="icon">
-        <component :is="icon" :size="16" class="flow-node__icon" />
-      </slot>
-      <div class="flow-node__title">
-        <slot name="title">{{ title }}</slot>
-      </div>
-      <slot name="header-actions" />
-    </div>
-
-    <!-- 描述區域（可選） -->
+    <!-- 節點標題 -->
     <div
-      v-if="description || $slots.description"
-      class="flow-node__description"
+      class="node-header"
+      :class="[
+        customHeaderClass ||
+          headerClasses[type] ||
+          'bg-gray-50 border-gray-100',
+        { 'cursor-grab': !disabled },
+      ]"
+      :style="customHeaderStyle"
     >
-      <slot name="description">{{ description }}</slot>
+      <div class="flex items-center space-x-2">
+        <component
+          :is="icon"
+          :class="[iconClasses[type] || 'text-gray-600']"
+          :size="16"
+        />
+        <span class="text-sm font-medium text-gray-700">{{ title }}</span>
+      </div>
+      <div v-if="description" class="mt-1 text-xs text-gray-500">
+        {{ description }}
+      </div>
     </div>
 
-    <!-- 主要內容區域 -->
-    <div class="flow-node__content">
-      <slot />
+    <!-- 節點內容 -->
+    <div class="node-content">
+      <slot></slot>
     </div>
 
-    <!-- 底部區域（可選） -->
-    <div v-if="$slots.footer" class="flow-node__footer">
-      <slot name="footer" />
+    <!-- 節點狀態 -->
+    <div v-if="status" class="node-status">
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-gray-500">狀態</span>
+        <el-tag
+          :type="statusType"
+          size="small"
+          :class="{ 'animate-pulse': status === 'running' }"
+        >
+          {{ statusText }}
+        </el-tag>
+      </div>
     </div>
 
-    <!-- 連接點 -->
+    <!-- 使用 NodeHandles 組件 -->
     <NodeHandles
-      :inputs="processedInputs"
-      :outputs="processedOutputs"
-      @handle-connect="handleConnect"
-      @handle-disconnect="handleDisconnect"
-      @handle-click="handleHandleClick"
+      :node-id="id"
+      :node-type="type"
+      :inputs="defaultHandles.inputs"
+      :outputs="defaultHandles.outputs"
+      :show-labels="showHandleLabels"
+      @connect="handleConnect"
+      @disconnect="handleDisconnect"
     />
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
-import { Component } from "lucide-vue-next";
 import NodeHandles from "./NodeHandles.vue";
+import { Box } from "lucide-vue-next";
 
+// 定義 props
 const props = defineProps({
-  // 節點基本資訊
+  id: {
+    type: String,
+    required: true,
+  },
+  // 節點類型 (!TODO: check this)
+  type: {
+    type: String,
+    default: "default",
+    validator: (value) =>
+      ["default", "input", "process", "output", "complaint-selector"].includes(
+        value
+      ),
+  },
   title: {
     type: String,
     required: true,
@@ -64,157 +93,192 @@ const props = defineProps({
     default: "",
   },
   icon: {
-    type: [String, Object],
-    default: () => Component,
+    type: Object,
+    default: () => Box,
   },
-
-  // 節點狀態
   status: {
     type: String,
-    default: "default",
-    validator: (value) =>
-      ["default", "processing", "success", "error"].includes(value),
+    default: "",
   },
   selected: {
     type: Boolean,
     default: false,
   },
-
-  // 節點樣式
-  style: {
-    type: Object,
-    default: () => ({
-      backgroundColor: "#ffffff",
-      borderColor: "#64748b",
-    }),
+  disabled: {
+    type: Boolean,
+    default: false,
   },
-
-  // 連接點配置
   handles: {
     type: Object,
     default: () => ({
       inputs: [],
       outputs: [],
     }),
-    validator: (value) => {
-      return (
-        typeof value === "object" &&
-        Array.isArray(value.inputs) &&
-        Array.isArray(value.outputs)
-      );
-    },
+  },
+  style: {
+    type: Object,
+    default: () => ({}),
+  },
+  showHandleLabels: {
+    type: Boolean,
+    default: false,
+  },
+  headerBgColor: {
+    type: String,
+    default: "",
+  },
+  headerBorderColor: {
+    type: String,
+    default: "",
   },
 });
 
-// 事件
+// 定義事件
 const emit = defineEmits([
   "click",
   "handle-connect",
   "handle-disconnect",
-  "handle-click",
+  "update:data",
 ]);
 
-// 處理節點點擊
-const handleNodeClick = (event) => {
-  emit("click", event);
+// 節點類型樣式映射
+const headerClasses = {
+  "complaint-selector": "bg-blue-50 border-blue-100",
+  "data-input": "bg-blue-50 border-blue-100",
+  "data-process": "bg-green-50 border-green-100",
+  "data-output": "bg-purple-50 border-purple-100",
+  "api-request": "bg-orange-50 border-orange-100",
 };
 
-// 處理連接點事件
+// 圖標顏色映射
+const iconClasses = {
+  "complaint-selector": "text-blue-600",
+  "data-input": "text-blue-600",
+  "data-process": "text-green-600",
+  "data-output": "text-purple-600",
+  "api-request": "text-orange-600",
+};
+
+// 狀態類型映射
+const statusType = computed(() => {
+  const typeMap = {
+    idle: "info",
+    running: "warning",
+    completed: "success",
+    error: "danger",
+  };
+  return typeMap[props.status] || "info";
+});
+
+// 狀態文字映射
+const statusText = computed(() => {
+  const textMap = {
+    idle: "待執行",
+    running: "執行中",
+    completed: "已完成",
+    error: "錯誤",
+  };
+  return textMap[props.status] || props.status;
+});
+
+// 處理連接事件
 const handleConnect = (data) => {
-  emit("handle-connect", data);
+  emit("handle-connect", { id: props.id, ...data });
 };
 
+// 處理斷開連接事件
 const handleDisconnect = (data) => {
-  emit("handle-disconnect", data);
+  emit("handle-disconnect", { id: props.id, ...data });
 };
 
-const handleHandleClick = (data) => {
-  emit("handle-click", data);
-};
+const defaultHandles = computed(() => {
+  const baseHandles = {
+    inputs: [
+      { id: "right", position: "right", type: "target" },
+      { id: "bottom", position: "bottom", type: "target" },
+    ],
+    outputs: [
+      { id: "left", position: "left", type: "source" },
+      { id: "top", position: "top", type: "source" },
+    ],
+  };
 
-// 處理連接點位置計算
-const processedInputs = computed(() => {
-  return props.handles.inputs.map((input, index) => ({
-    ...input,
-    position: calculatePosition(index, props.handles.inputs.length),
-  }));
+  // 根據節點類型決定顯示哪些連接點
+  switch (props.type) {
+    case "input":
+    case "complaint-selector":
+      // 輸入節點只顯示輸出連接點（右和下）
+      return {
+        inputs: [],
+        outputs: [
+          { id: "right", position: "right", type: "source" },
+          { id: "bottom", position: "bottom", type: "source" },
+        ],
+      };
+    case "output":
+      // 輸出節點只顯示輸入連接點（左和上）
+      return {
+        inputs: [
+          { id: "left", position: "left", type: "target" },
+          { id: "top", position: "top", type: "target" },
+        ],
+        outputs: [],
+      };
+    case "process":
+    default:
+      // 處理節點顯示所有連接點
+      return baseHandles;
+  }
 });
 
-const processedOutputs = computed(() => {
-  return props.handles.outputs.map((output, index) => ({
-    ...output,
-    position: calculatePosition(index, props.handles.outputs.length),
-  }));
+// 添加自定義樣式計算屬性
+const customHeaderStyle = computed(() => {
+  const style = {};
+  if (props.headerBgColor) {
+    style.backgroundColor = props.headerBgColor;
+  }
+  if (props.headerBorderColor) {
+    style.borderColor = props.headerBorderColor;
+  }
+  return style;
 });
 
-// 計算連接點位置
-const calculatePosition = (index, total) => {
-  if (total === 1) return 50;
-  if (total === 2) return index === 0 ? 30 : 70;
-  const step = 100 / (total + 1);
-  return step * (index + 1);
-};
+// 添加自定義類名計算屬性
+const customHeaderClass = computed(() => {
+  if (props.headerBgColor || props.headerBorderColor) {
+    return "custom-header";
+  }
+  return "";
+});
 </script>
 
-<style lang="scss" scoped>
-.flow-node {
-  @apply relative rounded-lg border p-3 shadow-sm transition-all duration-200;
-  min-width: 200px;
-  max-width: 320px;
+<style scoped>
+.node-wrapper {
+  @apply bg-white rounded-lg border transition-all duration-200 min-w-[200px];
+  box-shadow: 0 1px 13px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
 
-  // 狀態樣式
-  &--default {
-    @apply border-slate-300;
-  }
+.node-wrapper:hover {
+  @apply shadow-md;
+}
 
-  &--processing {
-    @apply border-blue-400;
-  }
+.node-wrapper.selected {
+  @apply shadow-lg;
+}
 
-  &--success {
-    @apply border-green-400;
-  }
+.node-header {
+  @apply p-3 border-b rounded-t-lg transition-colors duration-200;
+}
 
-  &--error {
-    @apply border-red-400;
-  }
+.node-header:hover {
+  @apply bg-opacity-80;
+}
 
-  // 選中狀態
-  &--selected {
-    @apply ring-2 ring-blue-500 ring-offset-2;
-  }
+.node-content {
+  @apply p-3;
+}
 
-  // 標題區域
-  &__header {
-    @apply flex items-center space-x-2 mb-2;
-  }
-
-  &__icon {
-    @apply flex-shrink-0 text-gray-500;
-  }
-
-  &__title {
-    @apply flex-1 font-medium text-gray-900 truncate;
-  }
-
-  // 描述區域
-  &__description {
-    @apply text-sm text-gray-500 mb-3;
-  }
-
-  // 內容區域
-  &__content {
-    @apply relative;
-  }
-
-  // 底部區域
-  &__footer {
-    @apply mt-3 pt-3 border-t border-gray-100;
-  }
-
-  // 懸停效果
-  &:hover:not(&--selected) {
-    @apply shadow-md;
-  }
+.node-status {
+  @apply px-3 py-2 border-t bg-gray-50 rounded-b-lg;
 }
 </style>

@@ -258,9 +258,9 @@ const handleReaderLogin = () => {
   height: 100%;
   background-image: linear-gradient(rgba(30, 41, 59, 0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(30, 41, 59, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
+  background-size: 38px 38px;
   transform-origin: center;
-  /* animation: gridAnimation 5s linear infinite; */
+  animation: gridAnimation 5s linear infinite;
 }
 
 .glow {
@@ -311,10 +311,10 @@ p {
 
 @keyframes gridAnimation {
   0% {
-    transform: perspective(1000px) rotateX(10deg) translateY(0);
+    transform: perspective(10px) rotateX(0deg) translateY(0);
   }
   100% {
-    transform: perspective(2000px) rotateX(10deg) translateY(50px);
+    transform: perspective(10px) rotateX(0deg) translateY(50px);
   }
 }
 
