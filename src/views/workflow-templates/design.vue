@@ -13,11 +13,11 @@
           節點類型
         </h3>
         <div class="flex items-center">
-          <CircleHelp
+          <!-- <CircleHelp
             v-show="!isCollapsed"
             class="text-gray-500 mr-2"
             :size="16"
-          />
+          /> -->
           <el-tooltip
             :content="isCollapsed ? '展開面板' : '收合面板'"
             placement="right"
@@ -78,7 +78,7 @@
           </div>
 
           <!-- 輸出節點 -->
-          <div class="space-y-2">
+          <!-- <div class="space-y-2">
             <div class="text-xs font-medium text-gray-500">資料輸出</div>
             <div
               v-for="node in outputNodes"
@@ -94,7 +94,7 @@
                 <span class="text-sm text-gray-700">{{ node.label }}</span>
               </div>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 
@@ -138,7 +138,7 @@
           </div>
 
           <!-- 輸出節點 -->
-          <div class="space-y-2">
+          <!-- <div class="space-y-2">
             <div v-for="node in outputNodes" :key="node.type" class="px-2">
               <el-tooltip :content="node.label" placement="right">
                 <div
@@ -155,14 +155,14 @@
                 </div>
               </el-tooltip>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>
 
     <!-- 右側工作區 -->
     <div class="flex-1 flex flex-col">
-      <!-- 工具列 TODO: 待實現-->
+      <!-- 工具列 TODO: 功能待實現-->
       <Teleport to="#header-actions">
         <div v-if="showHeaderContent" class="flex items-center space-x-2">
           <el-button-group>
@@ -530,24 +530,44 @@ const templateStore = useTemplateStore();
 
 //#region 節點類型定義
 const inputNodes = [
-  { type: "complaint-selector", label: "客訴單號選擇", icon: FileInput },
-  { type: "dataInput", label: "檔案上傳", icon: FileInput },
-  { type: "dataInput", label: "資料庫查詢", icon: Database },
+  {
+    type: "custom-input",
+    componentName: "ComplaintSelectorNode",
+    label: "客訴單號選擇",
+    icon: FileInput,
+    description: "用於選擇客訴單號進行分析",
+  },
+  // 未來可以添加更多輸入節點
 ];
 
 const processNodes = [
-  { type: "custom-process", label: "前五大不良分析", icon: BarChart },
-  { type: "statistic-process", label: "卡方圖分析 4M1E", icon: BarChart2 },
-  // { type: "dataProcess", label: "資料過濾", icon: Filter, disabled: true },
-  // { type: "dataProcess", label: "數據計算", icon: Calculator, disabled: true },
-  // { type: "dataProcess", label: "資料分析", icon: BarChart, disabled: true },
-  { type: "apiRequest", label: "API 呼叫", icon: Braces, disabled: false },
+  {
+    type: "custom-process",
+    componentName: "TopDefectsNode",
+    label: "前五大不良分析",
+    icon: BarChart,
+    description: "分析並顯示前五大不良項目",
+  },
+  {
+    type: "statistic-process",
+    componentName: "StatisticProcessNode",
+    label: "卡方圖分析 4M1E",
+    icon: BarChart2,
+    description: "使用卡方分析方法進行 4M1E 分析",
+  },
+  {
+    type: "api-request",
+    componentName: "ApiRequestNode",
+    label: "API 呼叫",
+    icon: Braces,
+    description: "呼叫外部 API 服務",
+  },
 ];
 
-const outputNodes = [
-  { type: "dataOutput", label: "檔案輸出", icon: FileOutput, disabled: true },
-  { type: "dataOutput", label: "資料表", icon: Table, disabled: false },
-];
+// const outputNodes = [
+//   { type: "dataOutput", label: "檔案輸出", icon: FileOutput, disabled: true },
+//   { type: "dataOutput", label: "資料表", icon: Table, disabled: false },
+// ];
 //#endregion
 
 // Vue Flow 相關狀態
@@ -610,6 +630,7 @@ const handleRouteChange = async (to, from, next) => {
           type: "warning",
         }
       );
+      hasUnsavedChanges.value = false; // 重置未保存狀態
       next();
     } catch (error) {
       next(false);
@@ -657,18 +678,78 @@ const loadTemplate = async () => {
   }
 };
 
+// 註冊自定義節點類型
+const nodeTypes = {
+  // 基礎節點類型
+  custom: CustomNode,
+  default: CustomNode,
+
+  // 業務輸入節點
+  ComplaintSelectorNode, // 客訴單號選擇器
+
+  // 業務處理節點
+  TopDefectsNode, // 前五大不良分析
+  StatisticProcessNode, // 統計分析節點
+
+  // API 請求節點
+  ApiRequestNode: CustomNode, // TODO:暫時使用 CustomNode 作為 API 請求節點的基礎
+};
+
 // 處理節點拖拽開始
 const handleDragStart = (event, node) => {
   event.dataTransfer.setData(
     "application/vueflow",
     JSON.stringify({
       type: node.type,
+      componentName: node.componentName,
       label: node.label,
       icon: node.icon,
+      description: node.description,
     })
   );
-  console.log("handleDragStart", node.type);
+  console.log("handleDragStart", node.type, node.componentName);
   event.dataTransfer.effectAllowed = "move";
+};
+
+// 處理節點拖放
+const handleDrop = (event) => {
+  event.preventDefault();
+
+  const nodeData = JSON.parse(
+    event.dataTransfer.getData("application/vueflow")
+  );
+
+  // 獲取畫布的 DOM 元素和位置資訊
+  const bounds = event.target.getBoundingClientRect();
+  const position = project({
+    x: event.clientX - bounds.left - 90,
+    y: event.clientY - bounds.top - 50,
+  });
+
+  // 如果啟用了網格對齊，將位置四捨五入到最近的網格點
+  if (snapToGrid.value) {
+    position.x = Math.round(position.x / 20) * 20;
+    position.y = Math.round(position.y / 20) * 20;
+  }
+
+  // 創建新節點，使用 componentName 作為節點類型
+  const newNode = {
+    id: `node_${Date.now()}`,
+    type: nodeData.componentName, // 使用 componentName 作為節點類型
+    position,
+    data: {
+      label: nodeData.label,
+      type: nodeData.type,
+      icon: nodeData.icon,
+      componentName: nodeData.componentName,
+      description: nodeData.description || "",
+      status: "idle",
+      config: getInitialConfig(nodeData.type, nodeData.componentName),
+    },
+  };
+
+  // 添加新節點到畫布
+  elements.value = [...elements.value, newNode];
 };
 
 // 處理刪除節點
@@ -728,8 +809,8 @@ const handleDragOver = (event) => {
   event.dataTransfer.dropEffect = "move";
 };
 
-// 獲取節點初始配置
-const getInitialConfig = (type) => {
+// 獲取節點初始配置 TODO: 需要改成從節點的 component 中獲取
+const getInitialConfig = (type, componentName) => {
   const baseConfig = {
     timeout: 60,
     retryCount: 0,
@@ -741,104 +822,32 @@ const getInitialConfig = (type) => {
       return {
         ...baseConfig,
         selectedComplaint: null,
+        componentName,
       };
-    case "dataInput":
+    case "custom-process":
+    case "statistic-process":
       return {
         ...baseConfig,
-        source: "file",
-        fileType: ["csv", "xlsx", "json"],
-        validateSchema: true,
-        maxFileSize: 10,
-        encoding: "utf-8",
+        componentName,
+        apiEndpoint: "",
+        apiMethod: "POST",
+        params: {},
       };
-    case "apiRequest":
+    case "api-request":
       return {
         ...baseConfig,
+        componentName,
         apiEndpoint: "",
         apiMethod: "POST",
         headers: {},
         params: {},
       };
-    case "dataProcess":
-      return {
-        ...baseConfig,
-        processType: "filter",
-        condition: "",
-      };
-    case "dataOutput":
-      return {
-        ...baseConfig,
-        format: "csv",
-        outputPath: "",
-        compress: false,
-      };
     default:
-      return baseConfig;
+      return {
+        ...baseConfig,
+        componentName,
+      };
   }
-};
-
-// 處理節點拖放
-const handleDrop = (event) => {
-  event.preventDefault();
-
-  const nodeData = JSON.parse(
-    event.dataTransfer.getData("application/vueflow")
-  );
-
-  // 獲取畫布的 DOM 元素和位置資訊
-  const bounds = event.target.getBoundingClientRect();
-  const position = project({
-    x: event.clientX - bounds.left - 90,
-    y: event.clientY - bounds.top - 50,
-  });
-
-  // 如果啟用了網格對齊，將位置四捨五入到最近的網格點
-  if (snapToGrid.value) {
-    position.x = Math.round(position.x / 20) * 20;
-    position.y = Math.round(position.y / 20) * 20;
-  }
-
-  // 創建新節點
-  const newNode = {
-    id: `node_${Date.now()}`,
-    type: nodeData.type,
-    position,
-    data: {
-      label: nodeData.label,
-      type: nodeData.type,
-      icon: nodeData.icon,
-      status: "idle",
-      description: "",
-      config: getInitialConfig(nodeData.type),
-    },
-  };
-
-  // 添加新節點到畫布
-  elements.value = [...elements.value, newNode];
-};
-
-// 處理節點連接
-const handleConnect = ({ source, target }) => {
-  // 創建新的連接
-  const newEdge = {
-    id: `edge_${Date.now()}`,
-    source,
-    target,
-    type: "smoothstep", // 或使用 'default', 'straight', 'step' 等
-    animated: true,
-    style: { stroke: "#b1b1b7" },
-  };
-
-  elements.value = [...elements.value, newEdge];
-};
-
-// 註冊自定義節點類型
-const nodeTypes = {
-  "complaint-selector": ComplaintSelectorNode,
-  "custom-process": TopDefectsNode,
-  "statistic-process": StatisticProcessNode,
-  custom: CustomNode,
-  default: CustomNode,
 };
 
 // 註冊自定義邊線類型

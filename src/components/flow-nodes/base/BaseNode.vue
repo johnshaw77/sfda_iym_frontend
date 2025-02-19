@@ -115,7 +115,7 @@ const props = defineProps({
   },
   status: {
     type: String,
-    default: "",
+    default: "idle",
   },
   selected: {
     type: Boolean,
@@ -142,19 +142,30 @@ const props = defineProps({
   },
   headerBgColor: {
     type: String,
-    default: "#F5F5F5",
+    default: "#F8FAFC", // slate-50
   },
   headerBorderColor: {
     type: String,
-    default: "#e0e0e0",
+    default: "#E2E8F0", // slate-200
   },
   minWidth: {
     type: Number,
-    default: 180,
+    default: 240,
   },
   minHeight: {
     type: Number,
-    default: 100,
+    default: 120,
+  },
+  apiEndpoint: {
+    type: String,
+    default: "",
+  },
+  apiMethod: {
+    type: String,
+    default: "POST",
+    validator: (value) => {
+      return ["GET", "POST", "PUT", "DELETE"].includes(value);
+    },
   },
 });
 
@@ -274,6 +285,38 @@ const customHeaderClass = computed(() => {
     return "custom-header";
   }
   return "";
+});
+
+// API 相關的處理方法
+const handleApiCall = async (data) => {
+  if (!props.apiEndpoint) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(props.apiEndpoint, {
+      method: props.apiMethod,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: props.apiMethod !== "GET" ? JSON.stringify(data) : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error("API 呼叫失敗");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("API 呼叫錯誤:", error);
+    throw error;
+  }
+};
+
+// 暴露方法
+defineExpose({
+  // ... existing code ...
+  handleApiCall,
 });
 </script>
 

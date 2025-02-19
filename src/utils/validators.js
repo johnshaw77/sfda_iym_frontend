@@ -57,7 +57,7 @@ export const descriptionValidationRules = [
 export const nodeDefinitionValidators = {
   definitionKey: [
     { required: true, message: "請輸入節點定義鍵值", trigger: "blur" },
-    { min: 5, max: 15, message: "長度必須在5到15個字元之間", trigger: "blur" },
+    { min: 5, max: 30, message: "長度必須在5到30個字元之間", trigger: "blur" },
     {
       pattern: /^[a-z][a-z0-9-]*$/,
       message: "必須以小寫字母開頭，只能包含小寫字母、數字和連字符號",

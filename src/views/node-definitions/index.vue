@@ -457,64 +457,25 @@ import {
   formatDefinitionKey,
   isValidDefinitionKeyInput,
 } from "@/utils/validators";
+import { getNodeIcon, getCategoryIcon } from "@/utils/nodeIcons";
+import {
+  DEFAULT_UI_CONFIG,
+  DEFAULT_VALIDATION,
+  DEFAULT_HANDLES,
+  parseJsonField,
+  createDefaultNode,
+  processNodeData,
+  prepareNodeDataForSave,
+} from "@/utils/nodeUtils";
 
-// 節點定義配置（未來會從後端 API 獲取）,value
-const nodeDefinitionsConfig = {
+// 改為使用 ref 來儲存從後端載入的配置
+const nodeDefinitionsConfig = ref({
   categories: [
     {
       id: "business-input",
       label: "業務輸入節點",
       icon: FileInput,
-      nodes: [
-        {
-          id: "1",
-          definitionKey: "complaint-selector",
-          nodeType: "custom-input",
-          name: "客訴單號選擇器",
-          icon: Component,
-          description: "用於選擇客訴單號",
-          version: "1.0.0",
-          componentName: "ComplaintSelectorNode",
-          config: {},
-          uiConfig: {
-            style: {
-              backgroundColor: "#ffffff",
-              borderColor: "#64748b",
-            },
-          },
-          validation: {
-            required: true,
-          },
-          handles: {
-            inputs: [],
-            outputs: ["data"],
-          },
-        },
-        {
-          id: "2",
-          definitionKey: "defect-item-selector",
-          nodeType: "custom-input",
-          name: "不良品項選擇器",
-          icon: TextCursorInput,
-          description: "用於選擇不良品項",
-          version: "1.0.0",
-          componentName: "DefectItemSelector",
-          config: {},
-          uiConfig: {
-            style: {
-              backgroundColor: "#ffffff",
-              borderColor: "#64748b",
-            },
-          },
-          validation: {
-            required: true,
-          },
-          handles: {
-            inputs: [],
-            outputs: ["data"],
-          },
-        },
-      ],
+      nodes: [],
     },
     {
       id: "business-process",
@@ -526,120 +487,14 @@ const nodeDefinitionsConfig = {
       id: "statistical-analysis",
       label: "統計分析節點",
       icon: BarChart,
-      nodes: [
-        {
-          id: "5",
-          definitionKey: "shared-statistics",
-          nodeType: "statistic-process",
-          name: "共用統計組件",
-          icon: Component,
-          description: "進行基礎統計分析，必須定義apiEndpoint",
-          version: "1.0.0",
-          componentName: "",
-          apiEndpoint: "/statistical/basic-statistics",
-          apiMethod: "POST",
-          config: {},
-          uiConfig: {
-            style: {
-              backgroundColor: "#ffffff",
-              borderColor: "#64748b",
-            },
-          },
-          validation: {
-            required: true,
-          },
-          handles: {
-            inputs: ["data"],
-            outputs: ["result"],
-          },
-        },
-        {
-          id: "3",
-          definitionKey: "hypothesis-test",
-          nodeType: "statistic-process",
-          name: "假設檢定",
-          icon: Calculator,
-          description: "進行統計假設檢定分析",
-          version: "1.0.0",
-          componentName: "",
-          apiEndpoint: "/statistical/hypothesis-test",
-          apiMethod: "POST",
-          config: {},
-          uiConfig: {
-            style: {
-              backgroundColor: "#ffffff",
-              borderColor: "#64748b",
-            },
-          },
-          validation: {
-            required: true,
-          },
-          handles: {
-            inputs: ["data"],
-            outputs: ["result"],
-          },
-        },
-        {
-          id: "4",
-          definitionKey: "correlation-analysis",
-          nodeType: "statistic-process",
-          name: "相關性分析",
-          icon: BarChart,
-          description: "進行變數間的相關性分析",
-          version: "1.0.0",
-          componentName: "",
-          apiEndpoint: "/statistical/correlation",
-          apiMethod: "POST",
-          config: {},
-          uiConfig: {
-            style: {
-              backgroundColor: "#ffffff",
-              borderColor: "#64748b",
-            },
-          },
-          validation: {
-            required: true,
-          },
-          handles: {
-            inputs: ["data"],
-            outputs: ["result"],
-          },
-        },
-        {
-          id: "6",
-          definitionKey: "chi-square-analysis",
-          nodeType: "statistic-process",
-          name: "卡方圖分析",
-          icon: Component,
-          description:
-            "卡方圖分析（Chi-Square Analysis）是一種統計方法，用於檢驗分類資料之間的相關性或獨立性。它通常應用於檢驗兩個或多個變數之間是否存在顯著的關聯，或者檢查觀察值與期望值之間的差異是否由隨機性所引起。",
-          version: "1.0.0",
-          componentName: "",
-          apiEndpoint: "/statistical/chi-square",
-          apiMethod: "POST",
-          config: {},
-          uiConfig: {
-            style: {
-              backgroundColor: "#ffffff",
-              borderColor: "#64748b",
-            },
-          },
-          validation: {
-            required: true,
-          },
-          handles: {
-            inputs: ["data"],
-            outputs: ["result"],
-          },
-        },
-      ],
+      nodes: [],
     },
   ],
-};
+});
 
 // 從配置中提取分類選項
 const nodeCategories = computed(() =>
-  nodeDefinitionsConfig.categories.map(({ id, label, icon }) => ({
+  nodeDefinitionsConfig.value.categories.map(({ id, label, icon }) => ({
     value: id,
     label,
     icon,
@@ -649,21 +504,21 @@ const nodeCategories = computed(() =>
 // 按分類過濾節點 (TODO: 未來會從後端 API 獲取)
 const businessInputNodes = computed(
   () =>
-    nodeDefinitionsConfig.categories
+    nodeDefinitionsConfig.value.categories
       .find((cat) => cat.id === "business-input")
       ?.nodes.map((node) => ({ ...node, category: "business-input" })) || []
 );
 
 const businessProcessNodes = computed(
   () =>
-    nodeDefinitionsConfig.categories
+    nodeDefinitionsConfig.value.categories
       .find((cat) => cat.id === "business-process")
       ?.nodes.map((node) => ({ ...node, category: "business-process" })) || []
 );
 
 const statisticalAnalysisNodes = computed(
   () =>
-    nodeDefinitionsConfig.categories
+    nodeDefinitionsConfig.value.categories
       .find((cat) => cat.id === "statistical-analysis")
       ?.nodes.map((node) => ({ ...node, category: "statistical-analysis" })) ||
     []
@@ -679,31 +534,7 @@ const isEdit = ref(false);
 const elements = ref([]);
 
 // 表單
-const form = ref({
-  definitionKey: "",
-  nodeType: "",
-  name: "",
-  category: "",
-  description: "",
-  componentName: "",
-  apiEndpoint: "",
-  apiMethod: "POST",
-  version: "1.0.0",
-  config: {},
-  uiConfig: {
-    style: {
-      backgroundColor: "#ffffff",
-      borderColor: "#64748b",
-    },
-  },
-  validation: {
-    required: false,
-  },
-  handles: {
-    inputs: [],
-    outputs: [],
-  },
-});
+const form = ref(createDefaultNode());
 
 // 使用 useVueFlow hook
 const { fitView } = useVueFlow();
@@ -734,12 +565,11 @@ const formRules = nodeDefinitionValidators;
 const loadNodeDefinitions = async () => {
   try {
     const response = await getNodeDefinitions();
-    // 將 API 返回的數據轉換為前端需要的格式
     const nodeDefinitions = response.data;
 
     // 更新 nodeDefinitionsConfig
-    nodeDefinitionsConfig.categories = nodeDefinitionsConfig.categories.map(
-      (category) => ({
+    nodeDefinitionsConfig.value.categories =
+      nodeDefinitionsConfig.value.categories.map((category) => ({
         ...category,
         nodes: nodeDefinitions
           .filter((node) => node.category === category.id)
@@ -750,66 +580,21 @@ const loadNodeDefinitions = async () => {
             name: node.name,
             icon: getNodeIcon(node.category, node.definitionKey),
             description: node.description,
-            version: node.version,
             componentName: node.componentName,
             apiEndpoint: node.apiEndpoint,
-            apiMethod: node.apiMethod,
-            config: JSON.parse(node.config || "{}"),
-            uiConfig: JSON.parse(node.uiConfig || "{}"),
-            validation: JSON.parse(node.validation || "{}"),
-            handles: JSON.parse(node.handles || "{}"),
+            apiMethod: node.apiMethod || "POST",
+            ...processNodeData(node),
           })),
-      })
-    );
+      }));
   } catch (error) {
     console.error("載入節點定義失敗:", error);
     ElMessage.error("載入節點定義失敗");
   }
 };
 
-// 根據節點定義獲取對應的圖標
-const getNodeIcon = (category, typeKey) => {
-  switch (category) {
-    case "business-input":
-      return TextCursorInput;
-    case "business-process":
-      return Filter;
-    case "statistical-analysis":
-      switch (typeKey) {
-        case "hypothesis-test":
-          return Calculator;
-        case "correlation-analysis":
-          return BarChart;
-        default:
-          return Component;
-      }
-    default:
-      return Component;
-  }
-};
-
 // 處理節點選擇
 const handleSelectNode = (node) => {
-  // 確保 uiConfig 和其他必要的屬性存在
-  const processedNode = {
-    ...node,
-    uiConfig: node.uiConfig || {
-      style: {
-        backgroundColor: "#ffffff",
-        borderColor: "#64748b",
-      },
-    },
-    validation: node.validation || {
-      required: false,
-    },
-    handles: node.handles || {
-      inputs: [],
-      outputs: [],
-    },
-  };
-
-  activeNode.value = processedNode;
-  // 更新預覽
+  activeNode.value = processNodeData(node);
   updatePreview();
 };
 
@@ -820,20 +605,16 @@ const updatePreview = () => {
     return;
   }
 
-  // 創建預覽節點
   elements.value = [
     {
       id: "preview",
-      type: activeNode.value.category,
+      type: activeNode.value.nodeType,
       position: { x: 100, y: 100 },
       data: {
         label: activeNode.value.name,
         ...activeNode.value.config,
       },
-      style: activeNode.value.uiConfig?.style || {
-        backgroundColor: "#ffffff",
-        borderColor: "#64748b",
-      },
+      style: activeNode.value.uiConfig?.style || DEFAULT_UI_CONFIG.style,
     },
   ];
 
@@ -845,78 +626,8 @@ const updatePreview = () => {
 
 // 處理新增節點
 const handleCreateNode = () => {
-  // 創建一個新的節點定義
-  activeNode.value = {
-    id: `temp-${Date.now()}`, // 臨時 ID
-    definitionKey: "",
-    nodeType: "",
-    name: "",
-    category: "",
-    description: "",
-    componentName: "",
-    apiEndpoint: "",
-    apiMethod: "POST",
-    version: "1.0.0",
-    config: {},
-    uiConfig: {
-      style: {
-        backgroundColor: "#ffffff",
-        borderColor: "#64748b",
-      },
-    },
-    validation: {
-      required: false,
-    },
-    handles: {
-      inputs: [],
-      outputs: [],
-    },
-  };
-
-  // 更新預覽
+  activeNode.value = createDefaultNode();
   updatePreview();
-};
-
-// 處理表單提交
-const handleSubmit = async () => {
-  try {
-    const data = {
-      definition_key: form.value.definitionKey,
-      node_type: form.value.nodeType,
-      name: form.value.name,
-      category: form.value.category,
-      description: form.value.description,
-      version: "1.0.0",
-      component_name: form.value.componentName,
-      uiConfig: {
-        style: {
-          backgroundColor: "#ffffff",
-          borderColor: "#64748b",
-        },
-      },
-      validation: {
-        required: false,
-      },
-      handles: {
-        inputs: [],
-        outputs: [],
-      },
-    };
-
-    if (isEdit.value) {
-      await updateNodeDefinition(form.value.definitionKey, data);
-      ElMessage.success("節點定義更新成功");
-    } else {
-      await createNodeDefinition(data);
-      ElMessage.success("節點定義創建成功");
-    }
-
-    dialogVisible.value = false;
-    loadNodeDefinitions(); // 重新載入列表
-  } catch (error) {
-    console.error("提交失敗:", error);
-    ElMessage.error(error.response?.data?.message || "操作失敗");
-  }
 };
 
 // 處理刪除節點
@@ -1021,23 +732,7 @@ const handleSave = async () => {
 
     submitting.value = true;
     try {
-      const data = {
-        definition_key: activeNode.value.definitionKey,
-        node_type: activeNode.value.nodeType,
-        name: activeNode.value.name,
-        category: activeNode.value.category,
-        description: activeNode.value.description,
-        version: activeNode.value.version || "1.0.0",
-        component_name: activeNode.value.componentName,
-        api_endpoint: activeNode.value.apiEndpoint,
-        api_method: activeNode.value.apiMethod,
-        config: JSON.stringify(activeNode.value.config || {}),
-        ui_config: JSON.stringify(activeNode.value.uiConfig || {}),
-        validation: JSON.stringify(activeNode.value.validation || {}),
-        handles: JSON.stringify(activeNode.value.handles || {}),
-      };
-
-      // 判斷是新增還是更新
+      const data = prepareNodeDataForSave(activeNode.value);
       const isNew = activeNode.value.id.startsWith("temp-");
 
       if (isNew) {
@@ -1048,10 +743,7 @@ const handleSave = async () => {
         ElMessage.success("節點定義更新成功");
       }
 
-      // 重新載入列表
       await loadNodeDefinitions();
-
-      // 如果是新增，清空當前選中的節點
       if (isNew) {
         activeNode.value = null;
       }
