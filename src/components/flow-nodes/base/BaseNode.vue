@@ -7,10 +7,25 @@
       'cursor-pointer': !disabled,
       'opacity-50 cursor-not-allowed': disabled,
     }"
+    :style="{ width: '100%', height: '100%' }"
   >
+    <NodeResizer
+      :minWidth="minWidth"
+      :minHeight="minHeight"
+      :isVisible="selected"
+      class="!border-blue-400"
+      :lineStyle="{ borderWidth: '1px' }"
+      :handleStyle="{
+        width: '16px',
+        height: '16px',
+        border: '2px solid white',
+        transition: 'all 0.2s ease',
+        zIndex: '1',
+      }"
+    />
     <!-- 節點標題 -->
     <div
-      class="node-header"
+      class="node-header bg-opacity-30 text-red-700"
       :class="[
         customHeaderClass ||
           headerClasses[type] ||
@@ -68,6 +83,8 @@
 import { computed } from "vue";
 import NodeHandles from "./NodeHandles.vue";
 import { Box } from "lucide-vue-next";
+import { NodeResizer } from "@vue-flow/node-resizer";
+import "@vue-flow/node-resizer/dist/style.css";
 
 // 定義 props
 const props = defineProps({
@@ -125,11 +142,19 @@ const props = defineProps({
   },
   headerBgColor: {
     type: String,
-    default: "",
+    default: "#F5F5F5",
   },
   headerBorderColor: {
     type: String,
-    default: "",
+    default: "#e0e0e0",
+  },
+  minWidth: {
+    type: Number,
+    default: 180,
+  },
+  minHeight: {
+    type: Number,
+    default: 100,
   },
 });
 
@@ -267,7 +292,7 @@ const customHeaderClass = computed(() => {
 }
 
 .node-header {
-  @apply p-3 border-b rounded-t-lg transition-colors duration-200;
+  @apply p-3 border-b rounded-t-lg transition-colors duration-200 bg-opacity-30;
 }
 
 .node-header:hover {

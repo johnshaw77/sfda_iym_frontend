@@ -474,7 +474,7 @@ const nodeDefinitionsConfig = {
           icon: Component,
           description: "用於選擇客訴單號",
           version: "1.0.0",
-          componentName: "ComplaintSelector",
+          componentName: "ComplaintSelectorNode",
           config: {},
           uiConfig: {
             style: {
@@ -646,7 +646,7 @@ const nodeCategories = computed(() =>
   }))
 );
 
-// 按分類過濾節點
+// 按分類過濾節點 (TODO: 未來會從後端 API 獲取)
 const businessInputNodes = computed(
   () =>
     nodeDefinitionsConfig.categories

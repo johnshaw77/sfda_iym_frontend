@@ -63,7 +63,7 @@ const routes = [
       requiresAuth: true,
       title: "工作流程",
       icon: "GitGraph",
-      showContentHeader: false,
+      showContentHeader: true,
     },
   },
   {
@@ -73,7 +73,7 @@ const routes = [
     meta: {
       keepAlive: true,
       requiresAuth: true,
-      //requiresAdmin: true,
+      requiresAdmin: true,
       title: "工作流程範本",
       icon: "Workflow",
       showContentHeader: true,
@@ -87,8 +87,8 @@ const routes = [
       title: "節點定義管理",
       icon: "Component",
       requiresAuth: true,
+      requiresAdmin: true,
       showContentHeader: true,
-      // permissions: ["node-definitions:read"],
     },
   },
   {
@@ -221,7 +221,8 @@ router.beforeEach(async (to, from, next) => {
 
   // 需要認證的頁面
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    if (!userStore.isAuthenticated && token) {
+    // 如果沒有用戶資訊但有 token，先獲取用戶資訊
+    if ((!userStore.user || !userStore.isAuthenticated) && token) {
       try {
         await userStore.fetchUser();
       } catch (error) {
@@ -234,31 +235,33 @@ router.beforeEach(async (to, from, next) => {
       }
     }
 
+    // 如果沒有認證，轉到登入頁
     if (!userStore.isAuthenticated) {
       next({
         path: "/login",
         query: { redirect: to.fullPath },
       });
-    } else {
-      // 檢查管理員權限
-      if (to.meta.requiresAdmin) {
-        if (!userStore.isAdmin) {
-          ElMessage.error("需要管理員權限");
-          next(from.path);
-          return;
-        }
-      }
-      // 檢查權限
-      if (to.meta.permissions) {
-        const hasPermission = userStore.hasAnyPermission(to.meta.permissions);
-        if (!hasPermission) {
-          ElMessage.error("權限不足");
-          next(from.path);
-          return;
-        }
-      }
-      next();
+      return;
     }
+
+    // 檢查管理員權限
+    if (to.meta.requiresAdmin && !userStore.isAdmin) {
+      ElMessage.error("需要管理員權限");
+      next(from.path);
+      return;
+    }
+
+    // 檢查特定權限
+    if (
+      to.meta.permissions &&
+      !userStore.hasAnyPermission(to.meta.permissions)
+    ) {
+      ElMessage.error("權限不足");
+      next(from.path);
+      return;
+    }
+
+    next();
   }
   // 訪客頁面（如登入頁）
   else if (to.matched.some((record) => record.meta.guest)) {

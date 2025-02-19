@@ -5,8 +5,6 @@
     :icon="icon"
     :status="status"
     :selected="selected"
-    :header-bg-color="headerBgColor"
-    :header-border-color="headerBorderColor"
     :handles="handles"
     @click="handleNodeClick"
     @handle-connect="handleConnect"
@@ -60,8 +58,8 @@ import { TextCursorInput, Box } from "lucide-vue-next";
 import BaseNode from "../base/BaseNode.vue";
 
 // 節點基本屬性
-const headerBgColor = ref("#a6daff"); // 淺藍色背景
-const headerBorderColor = ref("#BFDBFE"); // 淺藍色邊框
+const headerBgColor = ref("#ebebeb"); // 淺藍色背景
+const headerBorderColor = ref("#cfcfcf"); // 淺藍色邊框
 
 const props = defineProps({
   id: {

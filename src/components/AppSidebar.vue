@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChevronLeft, ChevronRight, Settings } from "lucide-vue-next";
 import { useUserStore } from "@/stores/user";
@@ -47,14 +47,24 @@ const router = useRouter();
 const userStore = useUserStore();
 const isCollapse = ref(false);
 
+// 從 localStorage 讀取狀態
+onMounted(() => {
+  const savedState = localStorage.getItem("sidebarCollapsed");
+  if (savedState !== null) {
+    isCollapse.value = savedState === "true";
+  }
+});
+
 // 檢查用戶是否有權限訪問該選單項目
 const canAccessMenuItem = (route) => {
+  // 如果是管理員，直接返回 true
+  if (userStore.isAdmin) {
+    return true;
+  }
+
   // 檢查是否需要管理員權限
   if (route.meta?.requiresAdmin) {
-    const userRole = userStore.user?.role;
-    if (userRole !== "ADMIN" && userRole !== "SUPERADMIN") {
-      return false;
-    }
+    return false;
   }
 
   // 檢查是否需要特定權限
@@ -87,6 +97,8 @@ const menuItems = computed(() => {
 // 折疊切換
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value;
+  // 保存狀態到 localStorage
+  localStorage.setItem("sidebarCollapsed", isCollapse.value.toString());
 };
 
 // 暴露 isCollapse 屬性

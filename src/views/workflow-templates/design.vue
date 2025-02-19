@@ -1,20 +1,43 @@
 <template>
   <div class="h-full flex">
     <!-- 左側工具欄 -->
-    <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <div
+      class="bg-white border-r border-gray-200 flex flex-col transition-all duration-300"
+      :class="[isCollapsed ? 'w-12' : 'w-64']"
+    >
       <!-- 工具欄標題 -->
       <div
         class="p-2.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between"
       >
-        <h3 class="text-md font-medium text-gray-900">節點類型</h3>
-        <el-tooltip content="拖拽節點到畫布中" class="text-2xl">
-          <CircleHelp class="text-gray-500" :size="16" />
-        </el-tooltip>
-        <!-- <p class="mt-1 text-sm text-gray-500">拖拽節點到畫布中</p> -->
+        <h3 v-show="!isCollapsed" class="text-md font-medium text-gray-900">
+          節點類型
+        </h3>
+        <div class="flex items-center">
+          <CircleHelp
+            v-show="!isCollapsed"
+            class="text-gray-500 mr-2"
+            :size="16"
+          />
+          <el-tooltip
+            :content="isCollapsed ? '展開面板' : '收合面板'"
+            placement="right"
+          >
+            <div
+              class="p-1 rounded hover:bg-gray-100 cursor-pointer"
+              @click="handlePanelCollapse"
+            >
+              <component
+                :is="isCollapsed ? PanelLeftOpen : PanelLeftClose"
+                class="text-gray-500"
+                :size="16"
+              />
+            </div>
+          </el-tooltip>
+        </div>
       </div>
 
       <!-- 節點類型列表 -->
-      <div class="flex-1 overflow-y-auto p-4">
+      <div v-show="!isCollapsed" class="flex-1 overflow-y-auto p-4">
         <div class="space-y-4">
           <!-- 資料輸入節點 -->
           <div class="space-y-2">
@@ -74,6 +97,67 @@
           </div>
         </div>
       </div>
+
+      <!-- 收合時的圖示列表 -->
+      <div v-show="isCollapsed" class="flex-1 overflow-y-auto py-4">
+        <div class="space-y-4">
+          <!-- 資料輸入節點 -->
+          <div class="space-y-2">
+            <div v-for="node in inputNodes" :key="node.type" class="px-2">
+              <el-tooltip :content="node.label" placement="right">
+                <div
+                  class="p-2 rounded-lg cursor-move hover:bg-blue-50 transition-colors"
+                  :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
+                  draggable="true"
+                  @dragstart="!node.disabled && handleDragStart($event, node)"
+                >
+                  <component :is="node.icon" class="text-blue-500" :size="16" />
+                </div>
+              </el-tooltip>
+            </div>
+          </div>
+
+          <!-- 資料處理節點 -->
+          <div class="space-y-2">
+            <div v-for="node in processNodes" :key="node.type" class="px-2">
+              <el-tooltip :content="node.label" placement="right">
+                <div
+                  class="p-2 rounded-lg cursor-move hover:bg-green-50 transition-colors"
+                  :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
+                  draggable="true"
+                  @dragstart="!node.disabled && handleDragStart($event, node)"
+                >
+                  <component
+                    :is="node.icon"
+                    class="text-green-500"
+                    :size="16"
+                  />
+                </div>
+              </el-tooltip>
+            </div>
+          </div>
+
+          <!-- 輸出節點 -->
+          <div class="space-y-2">
+            <div v-for="node in outputNodes" :key="node.type" class="px-2">
+              <el-tooltip :content="node.label" placement="right">
+                <div
+                  class="p-2 rounded-lg cursor-move hover:bg-purple-50 transition-colors"
+                  :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
+                  draggable="true"
+                  @dragstart="!node.disabled && handleDragStart($event, node)"
+                >
+                  <component
+                    :is="node.icon"
+                    class="text-purple-500"
+                    :size="16"
+                  />
+                </div>
+              </el-tooltip>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 右側工作區 -->
@@ -98,7 +182,11 @@
               <el-button :icon="LayoutGrid" />
             </el-tooltip>
             <el-tooltip content="儲存">
-              <el-button :icon="Save" />
+              <el-button
+                :icon="Save"
+                :type="hasUnsavedChanges ? 'warning' : 'default'"
+                @click="handleSave"
+              />
             </el-tooltip>
             <el-tooltip content="JSON 輸出">
               <el-button :icon="Code2" @click="handleShowJson" />
@@ -214,7 +302,7 @@
           @drop="handleDrop"
           @nodes-initialized="() => {}"
         >
-          <Background :pattern-color="'#aaa'" :gap="8" />
+          <Background pattern="lines" :gap="20" :size="1" />
 
           <Controls />
           <MiniMap :pannable="true" :zoomable="true" />
@@ -377,7 +465,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onActivated, onDeactivated } from "vue";
+import {
+  ref,
+  onMounted,
+  computed,
+  onActivated,
+  onDeactivated,
+  onUnmounted,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { VueFlow, Panel, useVueFlow, ConnectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
@@ -407,6 +502,12 @@ import {
   Code2,
   Copy,
   ChevronDown,
+  BarChart2,
+  ChevronLeft,
+  ChevronRight,
+  PanelLeftClose,
+  PanelRightOpen,
+  PanelLeftOpen,
 } from "lucide-vue-next";
 import CustomNode from "./components/CustomNode.vue";
 import CustomEdge from "./components/CustomEdge.vue";
@@ -420,6 +521,8 @@ import "vue-json-viewer/style.css";
 import { getTemplateById, updateTemplate, publishTemplate } from "@/api";
 import { useTemplateStore } from "@/stores/template";
 import ComplaintSelectorNode from "@/components/flow-nodes/business/ComplaintSelectorNode.vue";
+import TopDefectsNode from "@/components/flow-nodes/business/TopDefectsNode.vue";
+import StatisticProcessNode from "@/components/flow-nodes/business/StatisticProcessNode.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -427,15 +530,17 @@ const templateStore = useTemplateStore();
 
 //#region 節點類型定義
 const inputNodes = [
-  { type: "custom-input", label: "客訴單號選擇", icon: FileInput },
+  { type: "complaint-selector", label: "客訴單號選擇", icon: FileInput },
   { type: "dataInput", label: "檔案上傳", icon: FileInput },
   { type: "dataInput", label: "資料庫查詢", icon: Database },
 ];
 
 const processNodes = [
-  { type: "dataProcess", label: "資料過濾", icon: Filter, disabled: true },
-  { type: "dataProcess", label: "數據計算", icon: Calculator, disabled: true },
-  { type: "dataProcess", label: "資料分析", icon: BarChart, disabled: true },
+  { type: "custom-process", label: "前五大不良分析", icon: BarChart },
+  { type: "statistic-process", label: "卡方圖分析 4M1E", icon: BarChart2 },
+  // { type: "dataProcess", label: "資料過濾", icon: Filter, disabled: true },
+  // { type: "dataProcess", label: "數據計算", icon: Calculator, disabled: true },
+  // { type: "dataProcess", label: "資料分析", icon: BarChart, disabled: true },
   { type: "apiRequest", label: "API 呼叫", icon: Braces, disabled: false },
 ];
 
@@ -479,6 +584,40 @@ onDeactivated(() => {
   showHeaderContent.value = false;
 });
 //#endregion
+
+// 添加頁面離開警告控制
+const hasUnsavedChanges = ref(false);
+
+// 處理瀏覽器原生的離開提示（用於重新整理和關閉頁面）
+const handleBeforeUnload = (e) => {
+  if (hasUnsavedChanges.value) {
+    const message = "您有未保存的更改，確定要離開嗎？";
+    e.returnValue = message;
+    return message;
+  }
+};
+
+// 處理路由變化的提示（使用 Element Plus 對話框）
+const handleRouteChange = async (to, from, next) => {
+  if (hasUnsavedChanges.value) {
+    try {
+      await ElMessageBox.confirm(
+        "您有未保存的更改，確定要離開嗎？",
+        "離開確認",
+        {
+          confirmButtonText: "確定離開",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      );
+      next();
+    } catch (error) {
+      next(false);
+    }
+  } else {
+    next();
+  }
+};
 
 // 載入範本資料
 const loadTemplate = async () => {
@@ -695,7 +834,9 @@ const handleConnect = ({ source, target }) => {
 
 // 註冊自定義節點類型
 const nodeTypes = {
-  "custom-input": ComplaintSelectorNode,
+  "complaint-selector": ComplaintSelectorNode,
+  "custom-process": TopDefectsNode,
+  "statistic-process": StatisticProcessNode,
   custom: CustomNode,
   default: CustomNode,
 };
@@ -811,11 +952,13 @@ const onNodeDragStop = (event) => {
 // 節點變化事件
 const onNodesChange = (changes) => {
   console.log("Nodes changed:", changes);
+  hasUnsavedChanges.value = true;
 };
 
 // 邊線變化事件
 const onEdgesChange = (changes) => {
   console.log("Edges changed:", changes);
+  hasUnsavedChanges.value = true;
 };
 
 // 更新節點資料
@@ -825,6 +968,7 @@ const updateNodeData = () => {
   elements.value = elements.value.map((el) =>
     el.id === selectedNode.value.id ? selectedNode.value : el
   );
+  hasUnsavedChanges.value = true;
 };
 
 const handleShowJson = () => {
@@ -915,20 +1059,54 @@ const layoutGraph = (direction = "LR") => {
   }
 };
 
+// 處理儲存
+const handleSave = async () => {
+  try {
+    // 在這裡添加儲存邏輯
+    await updateTemplate(route.params.id, {
+      config: JSON.stringify({ elements: elements.value }),
+    });
+    hasUnsavedChanges.value = false;
+    ElMessage.success("儲存成功");
+  } catch (error) {
+    console.error("儲存失敗:", error);
+    ElMessage.error("儲存失敗");
+  }
+};
+
+// 面板摺疊狀態
+const isCollapsed = ref(false);
+
+// 處理面板摺疊
+const handlePanelCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
+};
+
 onMounted(() => {
   loadTemplate();
+  // 添加瀏覽器原生的離開提示
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  // 添加路由守衛
+  router.beforeEach(handleRouteChange);
+});
+
+onUnmounted(() => {
+  // 移除瀏覽器原生的離開提示
+  window.removeEventListener("beforeunload", handleBeforeUnload);
+  // 移除路由守衛
+  router.beforeEach(handleRouteChange);
 });
 </script>
 
 <style>
-@import "@vue-flow/core/dist/style.css";
-@import "@vue-flow/core/dist/theme-default.css";
+/* @import "@vue-flow/core/dist/style.css";
+@import "@vue-flow/core/dist/theme-default.css"; */
 
 /** 基礎的節點樣式 */
-.vue-flow__node {
-  /* @apply !px-0 !py-0 !border-0 !shadow-none !bg-transparent; */
-  /* @apply bg-slate-100 rounded-md border border-slate-600 text-sm; */
-}
+/* .vue-flow__node { */
+/* @apply !px-0 !py-0 !border-0 !shadow-none !bg-transparent; */
+/* @apply bg-slate-100 rounded-md border border-slate-600 text-sm; */
+/* } */
 
 .vue-flow__handle {
   @apply !w-3 !h-3 !min-w-0;

@@ -81,7 +81,9 @@
                   {{ userInfo.email }}
                 </div>
                 <div class="text-xs text-gray-500 mt-1">
-                  {{ userInfo.role }}
+                  <el-tag v-for="role in userInfo.roles" :key="role.id">
+                    {{ role.name }}
+                  </el-tag>
                 </div>
               </div>
               <el-divider class="!my-1" />

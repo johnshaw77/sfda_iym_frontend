@@ -39,13 +39,13 @@ export const useUserStore = defineStore("user", () => {
 
   // 檢查是否有任一權限
   const hasAnyPermission = (permissions) => {
-    console.log("hasAnyPermission", permissions, user.value?.roles);
+    // 如果用戶未登入或沒有 roles，直接返回 false
+    if (!user.value || !user.value.roles) return false;
 
-    const tt = user.value.roles.some(
+    console.log("45 hasAnyPermission", permissions, user.value?.roles);
+    const aaa = user.value.roles.some(
       (role) => role.name === "ADMIN" || role.name === "SUPERADMIN"
     );
-    console.log("tt", tt);
-    if (!user.value?.roles) return false;
 
     // 如果是超級管理員，直接返回 true
     if (
@@ -53,9 +53,11 @@ export const useUserStore = defineStore("user", () => {
         (role) => role.name === "ADMIN" || role.name === "SUPERADMIN"
       )
     ) {
+      console.log("53 超級管理員");
       return true;
     }
 
+    console.log("56 user.value.roles", user.value.roles);
     // 獲取用戶所有權限
     const userPermissions = new Set();
     user.value.roles.forEach((role) => {
@@ -72,7 +74,8 @@ export const useUserStore = defineStore("user", () => {
 
   // 檢查是否有所有權限
   const hasAllPermissions = (permissions) => {
-    if (!user.value?.roles) return false;
+    // 如果用戶未登入或沒有 roles，直接返回 false
+    if (!user.value || !user.value.roles) return false;
 
     // 如果是超級管理員，直接返回 true
     if (user.value.roles.some((role) => role.name === "SUPERADMIN")) {
@@ -95,15 +98,20 @@ export const useUserStore = defineStore("user", () => {
 
   // 檢查是否有特定角色
   const hasRole = (roleName) => {
-    return user.value?.roles.some((role) => role.name === roleName) || false;
+    // 如果用戶未登入或沒有 roles，直接返回 false
+    if (!user.value || !user.value.roles) return false;
+
+    return user.value.roles.some((role) => role.name === roleName);
   };
 
   // 檢查是否為管理員
   const isAdmin = computed(() => {
-    return (
-      user.value?.roles.some((role) =>
-        ["ADMIN", "SUPERADMIN"].includes(role.name)
-      ) || false
+    // 如果用戶未登入或沒有 roles，直接返回 false
+    if (!user.value || !user.value.roles) return false;
+
+    // 檢查是否有 ADMIN 或 SUPERADMIN 角色
+    return user.value.roles.some((role) =>
+      ["ADMIN", "SUPERADMIN"].includes(role.name)
     );
   });
 
@@ -173,23 +181,12 @@ export const useUserStore = defineStore("user", () => {
   const fetchUser = async () => {
     try {
       const response = await getCurrentUser();
-      user.value = response.data;
 
-      // 根據用戶角色設置權限
-      if (user.value.role === "ADMIN" || user.value.role === "SUPER_ADMIN") {
-        userPermissions.value = ALL_PERMISSIONS;
-      } else if (user.value.role === "POWERUSER") {
-        userPermissions.value = [
-          "VIEW_PROJECTS",
-          "CREATE_PROJECTS",
-          "EDIT_PROJECTS",
-        ];
-      } else if (user.value.role === "READER") {
-        userPermissions.value = ["VIEW_PROJECTS"];
-      } else {
-        userPermissions.value = [];
+      if (!response.data) {
+        throw new Error("未獲取到用戶資訊");
       }
 
+      user.value = response.data;
       return response;
     } catch (error) {
       console.error("獲取用戶信息失敗:", error);
