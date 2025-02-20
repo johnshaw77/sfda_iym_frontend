@@ -2,6 +2,20 @@
  * 節點相關的工具函數
  */
 
+// 預設的節點配置
+export const DEFAULT_NODE_CONFIG = {
+  type: "BaseNode",
+  category: "business-input",
+  nodeType: "custom-process",
+  version: "1.0.0",
+  style: {
+    backgroundColor: "#ffffff",
+    borderColor: "#e2e8f0",
+  },
+  headerBgColor: "#F8FAFC",
+  headerBorderColor: "#E2E8F0",
+};
+
 // 預設的 UI 配置
 export const DEFAULT_UI_CONFIG = {
   style: {
@@ -46,18 +60,27 @@ export const parseJsonField = (value, defaultValue = {}) => {
 export const createDefaultNode = () => ({
   id: `temp-${Date.now()}`,
   definitionKey: "",
-  nodeType: "",
+  nodeType: DEFAULT_NODE_CONFIG.nodeType,
   name: "",
-  category: "",
+  category: DEFAULT_NODE_CONFIG.category,
   description: "",
   componentName: "",
+  componentPath: "",
   apiEndpoint: "",
   apiMethod: "POST",
-  version: "1.0.0",
+  version: DEFAULT_NODE_CONFIG.version,
   config: {},
-  uiConfig: { ...DEFAULT_UI_CONFIG },
+  uiConfig: {
+    ...DEFAULT_UI_CONFIG,
+    style: {
+      ...DEFAULT_UI_CONFIG.style,
+      ...DEFAULT_NODE_CONFIG.style,
+    },
+  },
   validation: { ...DEFAULT_VALIDATION },
   handles: { ...DEFAULT_HANDLES },
+  headerBgColor: DEFAULT_NODE_CONFIG.headerBgColor,
+  headerBorderColor: DEFAULT_NODE_CONFIG.headerBorderColor,
 });
 
 /**
@@ -106,6 +129,7 @@ export const prepareNodeDataForSave = (node) => {
     description: node.description,
     version: node.version || "1.0.0",
     componentName: node.componentName,
+    componentPath: node.componentPath,
     apiEndpoint: node.apiEndpoint,
     apiMethod: node.apiMethod,
     config: node.config || {},

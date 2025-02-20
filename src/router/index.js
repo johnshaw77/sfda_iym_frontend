@@ -92,6 +92,18 @@ const routes = [
     },
   },
   {
+    path: "/node-definitions2",
+    name: "NodeDefinitions2",
+    component: () => import("@/views/node-definitions/index2.vue"),
+    meta: {
+      title: "節點定義管理2",
+      icon: "Component",
+      requiresAuth: true,
+      requiresAdmin: true,
+      showContentHeader: true,
+    },
+  },
+  {
     path: "/workflow-templates/:id/design",
     name: "WorkflowTemplateDesign",
     component: () => import("@/views/workflow-templates/design.vue"),

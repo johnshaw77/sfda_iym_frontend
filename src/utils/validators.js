@@ -53,166 +53,67 @@ export const descriptionValidationRules = [
   { max: 200, message: "長度不能超過 200 個字符", trigger: "blur" },
 ];
 
-// 節點定義相關的驗證規則
+// 節點定義驗證規則
 export const nodeDefinitionValidators = {
   definitionKey: [
-    { required: true, message: "請輸入節點定義鍵值", trigger: "blur" },
-    { min: 5, max: 30, message: "長度必須在5到30個字元之間", trigger: "blur" },
+    { required: true, message: '請輸入節點定義鍵值' },
+    { min: 5, max: 100, message: '鍵值長度需在 5-100 個字元之間' },
     {
-      pattern: /^[a-z][a-z0-9-]*$/,
-      message: "必須以小寫字母開頭，只能包含小寫字母、數字和連字符號",
-      trigger: ["blur", "change"],
+      pattern: /^[a-z0-9_]+$/,
+      message: '鍵值只能包含小寫字母、數字和底線'
     },
     {
-      validator: (rule, value, callback) => {
-        if (value && value.includes("--")) {
-          callback(new Error("不能包含連續的連字符號"));
-        } else {
-          callback();
-        }
-      },
-      trigger: ["blur", "change"],
-    },
+      pattern: /^[a-z0-9_]+_[a-z0-9_]+_[a-z0-9]{4}$/,
+      message: '鍵值格式必須為：分類_名稱_隨機碼'
+    }
   ],
   name: [
-    { required: true, message: "請輸入節點名稱", trigger: "blur" },
-    { min: 2, max: 50, message: "長度必須在2到50個字元之間", trigger: "blur" },
+    { required: true, message: '請輸入節點名稱' },
+    { min: 2, max: 50, message: '名稱長度需在 2-50 個字元之間' }
   ],
   category: [
-    { required: true, message: "請選擇節點分類", trigger: "change" },
-    {
-      validator: (rule, value, callback) => {
-        const validCategories = [
-          "business-input",
-          "business-process",
-          "statistical-analysis",
-        ];
-        if (!validCategories.includes(value)) {
-          callback(new Error("無效的節點分類"));
-        } else {
-          callback();
-        }
-      },
-      trigger: "change",
-    },
+    { required: true, message: '請選擇節點分類' }
   ],
   nodeType: [
-    { required: true, message: "請選擇節點類型", trigger: "change" },
-    {
-      validator: (rule, value, callback) => {
-        const validTypes = [
-          "custom-input",
-          "custom-process",
-          "statistic-process",
-        ];
-        if (!validTypes.includes(value)) {
-          callback(new Error("無效的節點類型"));
-        } else {
-          callback();
-        }
-      },
-      trigger: "change",
-    },
+    { required: true, message: '請選擇節點類型' }
   ],
   description: [
-    { required: true, message: "請輸入節點描述", trigger: "blur" },
-    {
-      min: 2,
-      max: 200,
-      message: "長度必須在2到200個字元之間",
-      trigger: "blur",
-    },
-    {
-      validator: (rule, value, callback) => {
-        if (value && value.trim().length === 0) {
-          callback(new Error("描述不能只包含空白字符"));
-        } else {
-          callback();
-        }
-      },
-      trigger: "blur",
-    },
-  ],
-  componentName: [
-    {
-      validator: (rule, value, callback, source) => {
-        if (source.nodeType === "custom-input" && !value) {
-          callback(new Error("custom-input 類型必須指定組件名稱"));
-        } else {
-          callback();
-        }
-      },
-      trigger: ["blur", "change"],
-    },
-  ],
-  apiEndpoint: [
-    {
-      validator: (rule, value, callback, source) => {
-        if (
-          ["custom-process", "statistic-process"].includes(source.nodeType) &&
-          !value
-        ) {
-          callback(new Error("處理類型節點必須指定 API 端點"));
-        } else if (value && !value.startsWith("/")) {
-          callback(new Error("API 端點必須以 / 開頭"));
-        } else {
-          callback();
-        }
-      },
-      trigger: ["blur", "change"],
-    },
-  ],
-  apiMethod: [
-    {
-      validator: (rule, value, callback, source) => {
-        const validMethods = ["GET", "POST", "PUT", "DELETE"];
-        if (source.apiEndpoint && !value) {
-          callback(new Error("請選擇 API 方法"));
-        } else if (value && !validMethods.includes(value)) {
-          callback(new Error("無效的 API 方法"));
-        } else {
-          callback();
-        }
-      },
-      trigger: "change",
-    },
-  ],
+    { required: true, message: '請輸入節點描述' },
+    { min: 2, max: 200, message: '描述長度需在 2-200 個字元之間' }
+  ]
 };
 
-// 格式化節點定義鍵值
+// 格式化定義鍵值
 export const formatDefinitionKey = (value) => {
-  if (!value) return "";
-
-  // 移除非法字符，只保留小寫字母、數字和連字符號
-  let formatted = value
+  if (!value) return '';
+  
+  // 移除特殊字符，只保留小寫字母、數字和底線
+  return value
     .toLowerCase()
-    .replace(/[^a-z0-9-\s]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-
-  // 確保以小寫字母開頭
-  if (formatted && !formatted.match(/^[a-z]/)) {
-    formatted = formatted.replace(/^[^a-z]*([a-z])?/, "$1");
-  }
-
-  return formatted;
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_') // 將多個連續底線替換為單個底線
+    .replace(/^_|_$/g, ''); // 移除開頭和結尾的底線
 };
 
-// 驗證節點定義鍵值輸入
+// 驗證鍵值輸入
 export const isValidDefinitionKeyInput = (event) => {
-  const allowedKeys = [
-    "Backspace",
-    "Delete",
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowUp",
-    "ArrowDown",
-    "Tab",
-    "Enter",
-    "-",
-    " ",
+  // 允許的按鍵：字母、數字、底線、退格、刪除、方向鍵等
+  const validKeys = [
+    'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab',
+    '_', 
+    ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(97 + i)), // a-z
+    ...Array.from({ length: 10 }, (_, i) => i.toString()) // 0-9
   ];
 
-  // 只允許小寫字母、數字、連字符號和控制鍵
-  return allowedKeys.includes(event.key) || event.key.match(/^[a-z0-9]$/);
+  // 檢查是否為允許的按鍵
+  if (!validKeys.includes(event.key)) {
+    return false;
+  }
+
+  // 如果是字母，確保是小寫
+  if (/^[a-zA-Z]$/.test(event.key)) {
+    return event.key === event.key.toLowerCase();
+  }
+
+  return true;
 };
