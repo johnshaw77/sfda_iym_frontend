@@ -127,6 +127,38 @@
             </div>
           </div>
         </el-tab-pane>
+
+        <el-tab-pane label="Flow Nodes 組件" name="flow-nodes">
+          <!-- 組件列表 -->
+          <div class="component-manager">
+            <h2>組件列表</h2>
+            <div class="component-list">
+              <div
+                v-for="(component, path) in components"
+                :key="path"
+                class="component-item"
+              >
+                <div class="component-info">
+                  <h3>{{ getComponentName(path) }}</h3>
+                  <p class="component-path">路徑: {{ path }}</p>
+                </div>
+                <!-- 可以加入預覽按鈕或其他操作 -->
+                <div class="component-actions">
+                  <button @click="previewComponent(path)">預覽</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 預覽模態框 -->
+            <div v-if="showPreview" class="preview-modal">
+              <div class="modal-content">
+                <button @click="closePreview" class="close-btn">關閉</button>
+                <component :is="currentComponent" v-if="currentComponent" />
+              </div>
+            </div>
+          </div>
+          <!-- end 組件列表 -->
+        </el-tab-pane>
       </el-tabs>
 
       <!-- API 請求日誌 -->
@@ -157,6 +189,7 @@ import { ref } from "vue";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { request } from "@/api/request";
 import { testExternalApi } from "@/api/modules/external";
+import { useFlowComponents } from "@/composables/useFlowComponents";
 
 const activeTab = ref("users");
 const uploadResult = ref(null);
@@ -268,6 +301,16 @@ const handleTestExternalApi = async () => {
     externalApiLoading.value = false;
   }
 };
+
+// 使用 Flow Components composable
+const {
+  components,
+  showPreview,
+  currentComponent,
+  getComponentName,
+  previewComponent,
+  closePreview
+} = useFlowComponents();
 </script>
 
 <style scoped>

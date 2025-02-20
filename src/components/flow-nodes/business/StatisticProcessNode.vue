@@ -16,7 +16,7 @@
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
   >
-    <!-- 主要內容區域 -->
+    <!-- 主要內容區域? -->
     <div class="p-4 space-y-4">
       <!-- 4M1E 分析結果 -->
       <div class="bg-gray-50 p-4 rounded-lg">

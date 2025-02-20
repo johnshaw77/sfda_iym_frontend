@@ -203,7 +203,8 @@ const breadcrumbs = computed(() => {
 }
 
 .content-header {
-  @apply fixed right-0 z-10;
+  @apply fixed right-0;
+  z-index: 8;
   width: calc(100% - 12rem); /* 48px * 3 = 12rem，對應左側導航欄寬度 */
   transition: width 0.2s ease-in-out;
 }

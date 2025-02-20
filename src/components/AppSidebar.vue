@@ -133,6 +133,7 @@ defineExpose({
   top: 72px;
   transform: translateX(50%);
   transition: left 0.2s ease-in-out;
+  z-index: 9;
 }
 
 /* 當選單收合時，按鈕也要跟著移動 */

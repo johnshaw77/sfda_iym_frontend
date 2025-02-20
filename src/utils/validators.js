@@ -59,12 +59,8 @@ export const nodeDefinitionValidators = {
     { required: true, message: '請輸入節點定義鍵值' },
     { min: 5, max: 100, message: '鍵值長度需在 5-100 個字元之間' },
     {
-      pattern: /^[a-z0-9_]+$/,
-      message: '鍵值只能包含小寫字母、數字和底線'
-    },
-    {
-      pattern: /^[a-z0-9_]+_[a-z0-9_]+_[a-z0-9]{4}$/,
-      message: '鍵值格式必須為：分類_名稱_隨機碼'
+      pattern: /^[a-z][a-z0-9_]+$/,
+      message: '鍵值必須以小寫字母開頭，只能包含小寫字母、數字和底線'
     }
   ],
   name: [
@@ -83,16 +79,23 @@ export const nodeDefinitionValidators = {
   ]
 };
 
-// 格式化定義鍵值
+// 格式化節點定義鍵值
 export const formatDefinitionKey = (value) => {
   if (!value) return '';
-  
-  // 移除特殊字符，只保留小寫字母、數字和底線
-  return value
+
+  // 移除特殊字符，轉換為小寫
+  let formatted = value
     .toLowerCase()
-    .replace(/[^a-z0-9_]/g, '_')
-    .replace(/_+/g, '_') // 將多個連續底線替換為單個底線
-    .replace(/^_|_$/g, ''); // 移除開頭和結尾的底線
+    .replace(/[^a-z0-9_\s]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_');
+
+  // 確保以小寫字母開頭
+  if (formatted && !formatted.match(/^[a-z]/)) {
+    formatted = 'n' + formatted;
+  }
+
+  return formatted;
 };
 
 // 驗證鍵值輸入
