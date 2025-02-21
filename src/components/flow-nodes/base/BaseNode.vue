@@ -95,9 +95,9 @@ const props = defineProps({
   // 節點類型 (!TODO: check this)
   type: {
     type: String,
-    default: "default",
+    default: "http-request",
     validator: (value) =>
-      ["default", "input", "process", "output", "complaint-selector"].includes(
+      ["custom-input", "custom-process", "http-request"].includes(
         value
       ),
   },
@@ -228,6 +228,13 @@ const handleDisconnect = (data) => {
 };
 
 const defaultHandles = computed(() => {
+  // 如果有傳入 handles，優先使用傳入的設定
+  console.log("props.handles", props.handles);
+  console.log("props.type", props.type);
+  if (props.handles.inputs?.length > 0 || props.handles.outputs?.length > 0) {
+    return props.handles;
+  }
+
   const baseHandles = {
     inputs: [
       { id: "right", position: "right", type: "target" },
@@ -242,8 +249,7 @@ const defaultHandles = computed(() => {
   // 根據節點類型決定顯示哪些連接點
   switch (props.type) {
     case "input":
-    case "complaint-selector":
-      // 輸入節點只顯示輸出連接點（右和下）
+    case "custom-input":
       return {
         inputs: [],
         outputs: [
@@ -252,7 +258,6 @@ const defaultHandles = computed(() => {
         ],
       };
     case "output":
-      // 輸出節點只顯示輸入連接點（左和上）
       return {
         inputs: [
           { id: "left", position: "left", type: "target" },
@@ -262,7 +267,6 @@ const defaultHandles = computed(() => {
       };
     case "process":
     default:
-      // 處理節點顯示所有連接點
       return baseHandles;
   }
 });

@@ -51,22 +51,27 @@ import { computed } from "vue";
 import { useVueFlow } from "@vue-flow/core";
 
 const props = defineProps({
+  // 節點ID
   nodeId: {
     type: String,
     required: true,
   },
+  // 節點類型
   nodeType: {
     type: String,
     default: "default",
   },
+  // 節點連接點配置
   inputs: {
     type: Array,
     default: () => [],
   },
+  // 節點輸出連接點配置
   outputs: {
     type: Array,
     default: () => [],
   },
+  // 是否顯示連接點標籤
   showLabels: {
     type: Boolean,
     default: false,
@@ -75,6 +80,11 @@ const props = defineProps({
 
 const { edges } = useVueFlow();
 
+/**
+ * 判斷連接點是否已連接
+ * @param {string} handleId - 連接點ID
+ * @returns {boolean} - 是否已連接
+ */
 const isHandleConnected = (handleId) => {
   return edges.value.some(
     (edge) =>

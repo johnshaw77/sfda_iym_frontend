@@ -113,6 +113,9 @@
 </template>
 
 <script setup>
+/**
+ * TODO: check this file, it should be no longer used!!
+ */
 import { ref, computed } from "vue";
 import BaseNode from "./BaseNode.vue";
 import { Loading } from "@element-plus/icons-vue";

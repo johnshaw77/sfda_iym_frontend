@@ -1,11 +1,11 @@
 <template>
   <BaseNode
     :title="title"
+    type="custominput2"
     :description="description"
     :icon="icon"
     :status="status"
     :selected="selected"
-    :handles="handles"
     @click="handleNodeClick"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"

@@ -38,7 +38,7 @@
         style="width: 100%"
         v-if="!loading"
       >
-        <el-table-column prop="definitionKey" label="定義鍵值" width="240">
+        <el-table-column prop="definitionKey" label="定義鍵值" width="200">
           <template #default="{ row }">
             <div class="flex items-center">
               <component
@@ -50,7 +50,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名稱" width="220" />
+        <el-table-column prop="name" label="名稱" width="200" />
         <el-table-column prop="category" label="分類" width="150">
           <template #default="{ row }">
             <el-tag
@@ -99,7 +99,7 @@
         <el-table-column label="API設定" width="300">
           <template #default="{ row }">
             <div
-              v-if="row.componentName?.startsWith('Base') && row.apiEndpoint"
+              v-if="row.componentName?.startsWith('HttpRequestNode')"
               class="space-y-1"
             >
               <div class="flex items-center space-x-2">
@@ -242,7 +242,7 @@
           <el-form-item class="flex-1">
             <template #label>
               <div class="flex items-center">
-                <span>類型</span>
+                <span>類型(NodeType)</span>
                 <el-tooltip
                   content="主要提供給 VueFlow 識別用"
                   placement="top"
@@ -317,8 +317,6 @@
               v-model="form.componentPath"
               class="!w-[140px]"
               placeholder="請選擇組件路徑"
-              clearable
-              allow-create
               filterable
             >
               <el-option label="base" value="base" />
@@ -328,7 +326,7 @@
             <el-autocomplete
               v-model="form.componentName"
               :fetch-suggestions="queryComponentSearch"
-              placeholder="組件名稱，例如：BaseNode.vue"
+              placeholder="組件名稱，例如：HttpRequestNode"
               clearable
               class="!flex-1"
               style="width: 420px"
@@ -369,7 +367,7 @@
         </div>
 
         <el-form-item
-          v-if="form.componentName?.startsWith('Base')"
+          v-if="form.componentName?.startsWith('HttpRequestNode')"
           label="API設定"
           prop="apiEndpoint"
         >
@@ -489,7 +487,7 @@
           :deletable="false"
           :draggable="false"
           :node-types="{
-            custom: currentPreviewComponent,
+            custom: currentComponent,
           }"
           class="w-full h-full flex items-center justify-center"
           :fit-view="true"
@@ -570,29 +568,35 @@ const selectedConfig = ref(null);
 const configEditDialogVisible = ref(false);
 const configEditValue = ref("");
 const previewDialogVisible = ref(false);
-const currentPreviewComponent = shallowRef(null);
-const previewNodeData = ref(null);
 const vueFlowInstance = useVueFlow();
-const nodes = ref([]);
 
 // 使用 Flow Components composable
-const { components, getComponentName, loadComponents } = useFlowComponents();
-const selectedComponent = ref("");
+const { 
+  components, 
+  getComponentName, 
+  loadComponents, 
+  previewComponent, 
+  currentComponent,
+  nodes,
+  closePreview 
+} = useFlowComponents();
 
-console.log("components", components);
+// 其他狀態
+const selectedComponent = ref("");
 
 // 節點分類
 const nodeCategories = [
-  { value: "business-input", label: "業務輸入節點" },
-  { value: "business-process", label: "業務處理節點" },
-  { value: "statistical-analysis", label: "統計分析節點" },
+  { value: "business-input", label: "業務輸入類" },
+  { value: "business-process", label: "業務處理類" },
+  { value: "statistical-analysis", label: "統計分析類" },
 ];
 
 // 節點類型
 const nodeTypes = [
-  { value: "custom-input", label: "自定義輸入節點" },
-  { value: "custom-process", label: "自定義處理節點" },
-  { value: "statistic-process", label: "統計分析節點" },
+  { value: "custom-input", label: "自定義輸入節點(custom-input)" },
+  { value: "custom-process", label: "自定義處理節點(custom-process)" },
+  { value: "statistic-process", label: "統計分析節點(statistic-process)" },
+  { value: "http-request", label: "HTTP請求節點(http-request)" },
 ];
 
 // 將 components 轉換為下拉選單選項
@@ -1023,151 +1027,85 @@ const fullComponentPath = computed(() => {
   return `@/components/flow-nodes/${form.value.componentPath}/${componentName}`;
 });
 
-// 預覽組件
+// 處理預覽組件
 const handlePreviewComponent = async (row) => {
   try {
-    if (!row.componentPath || !row.componentName) return;
+    if (!row.componentPath || !row.componentName) {
+      ElMessage.warning('請先填寫完整的組件路徑和名稱');
+      return;
+    }
 
-    // 確保組件名稱包含 .vue 副檔名
-    const componentName = row.componentName.endsWith(".vue")
-      ? row.componentName
-      : `${row.componentName}.vue`;
+    await previewComponent({
+      componentPath: row.componentPath,
+      componentName: row.componentName,
+      nodeData: row
+    });
 
-    // 構建完整的組件路徑
-    const componentPath = `/src/components/flow-nodes/${row.componentPath}/${componentName}`;
-
-    // 動態載入組件
-    const module = await import(/* @vite-ignore */ componentPath);
-    currentPreviewComponent.value = module.default;
-
-    // 設置預覽節點數據
-    const newNode = {
-      id: "preview-node",
-      type: "custom",
-      position: { x: 0, y: 0 },
-      draggable: false,
-      selectable: false,
-      data: {
-        ...row,
-        title: row.name,
-        description: row.description,
-      },
-    };
-
-    nodes.value = [newNode];
-    previewNodeData.value = newNode;
     previewDialogVisible.value = true;
   } catch (error) {
-    ElMessageBox.alert(
-      `<div class="text-red-500 font-bold text-lg mb-2">❌ 載入組件失敗</div>
-       <div class="text-gray-700">請檢查：</div>
-       <ul class="list-disc pl-4 mt-2 space-y-1 text-gray-600">
-         <li>組件路徑是否正確</li>
-         <li>檔案名稱是否有錯字</li>
-         <li>對應的 Vue 檔案是否存在</li>
-       </ul>`,
-      "錯誤提示",
-      {
-        confirmButtonText: "我知道了",
-        dangerouslyUseHTMLString: true,
-        customClass: {
-          container: "error-alert-container",
-        },
-        width: "360px",
-      }
-    );
-    console.error("載入組件失敗：", error);
+    console.error('預覽組件失敗：', error);
   }
 };
 
 // 處理表單中的預覽
 const handlePreviewFormComponent = async () => {
   if (!form.value.componentPath || !form.value.componentName) {
-    ElMessage.warning("請先填寫完整的組件路徑和名稱");
+    ElMessage.warning('請先填寫完整的組件路徑和名稱');
     return;
   }
 
   try {
-    // 確保組件名稱包含 .vue 副檔名
-    const componentName = form.value.componentName.endsWith(".vue")
-      ? form.value.componentName
-      : `${form.value.componentName}.vue`;
+    await previewComponent({
+      componentPath: form.value.componentPath,
+      componentName: form.value.componentName,
+      nodeData: form.value
+    });
 
-    // 構建完整的組件路徑
-    const componentPath = `/src/components/flow-nodes/${form.value.componentPath}/${componentName}`;
-
-    // 動態載入組件
-    const module = await import(/* @vite-ignore */ componentPath);
-    currentPreviewComponent.value = module.default;
-
-    // 設置預覽節點數據
-    const newNode = {
-      id: "preview-node",
-      type: "custom",
-      position: { x: 0, y: 0 },
-      draggable: false,
-      selectable: false,
-      data: {
-        ...form.value,
-        title: form.value.name,
-        description: form.value.description,
-      },
-    };
-
-    nodes.value = [newNode];
-    previewNodeData.value = newNode;
     previewDialogVisible.value = true;
   } catch (error) {
-    ElMessage.error("載入組件失敗：" + error.message);
-    console.error("載入組件失敗：", error);
+    console.error('預覽組件失敗：', error);
   }
 };
 
 // 監聽預覽對話框的開關
 watch(previewDialogVisible, (visible) => {
   if (!visible) {
-    // 當對話框關閉時，清理狀態
-    nodes.value = [];
-    previewNodeData.value = null;
-    currentPreviewComponent.value = null;
+    closePreview();
   }
 });
 
 // 新增 queryComponentSearch 函數
 const queryComponentSearch = (queryString, cb) => {
   const results = componentOptions.value
-    .filter((option) => {
+    .filter(option => {
       // 如果有選擇 componentPath，則只顯示對應路徑下的組件
       if (form.value.componentPath) {
-        return (
-          option.path.includes(`/${form.value.componentPath}/`) &&
-          option.label.toLowerCase().includes(queryString.toLowerCase())
-        );
+        return option.path.includes(`/${form.value.componentPath}/`) &&
+               option.label.toLowerCase().includes(queryString.toLowerCase());
       }
       // 否則顯示所有符合搜尋條件的組件
       return option.label.toLowerCase().includes(queryString.toLowerCase());
     })
-    .map((option) => ({
-      value: option.label,
+    .map(option => ({
+      value: option.label.replace('.vue', ''),
       path: option.path,
-      fullPath: option.value,
+      fullPath: option.value
     }));
-
+  
   cb(results);
 };
 
 // 新增 handleComponentNameSelect 函數
 const handleComponentNameSelect = (item) => {
-  if (!item) return;
-
+  if (!item) {
+    form.value.componentName = '';
+    return;
+  }
+  
   // 從完整路徑中提取必要資訊
-  const pathParts = item.path.split("components/flow-nodes/")[1].split("/");
+  const pathParts = item.path.split('components/flow-nodes/')[1].split('/');
   form.value.componentPath = pathParts[0];
-  // 確保組件名稱包含 .vue 副檔名
-  const componentName = pathParts[pathParts.length - 1];
-  form.value.componentName = componentName.endsWith(".vue")
-    ? componentName
-    : `${componentName}.vue`;
+  form.value.componentName = item.value;
 };
 </script>
 
