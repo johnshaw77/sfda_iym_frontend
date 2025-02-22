@@ -224,33 +224,18 @@
           @submit.prevent
         >
           <!-- 基本資訊 -->
-          <el-form-item label="節點定義鍵值" prop="definitionKey">
+          <el-form-item label="名稱" prop="name">
             <el-input
-              v-model="activeNode.definitionKey"
-              placeholder="請輸入節點定義鍵值（5-15字元）"
-              @input="handleDefinitionKeyInput"
-              @keydown="handleDefinitionKeyKeydown"
-            >
-              <template #append>
-                <el-tooltip
-                  content="此鍵值必須是唯一的，長度為5-15字元，僅允許小寫英文字母、數字和連字符號"
-                  placement="top"
-                >
-                  <span class="px-2">?</span>
-                </el-tooltip>
-              </template>
-            </el-input>
-            <!-- <div class="form-item-tip">
-              僅允許小寫英文字母、數字和連字符號，長度為5-15字元，會自動轉換格式
-            </div> -->
+              v-model="activeNode.name"
+              placeholder="請輸入節點名稱（2-50字元）"
+            />
           </el-form-item>
 
           <!-- 分類和節點類型放在同一行 -->
-          <div class="flex items-start space-x-4">
-            <el-form-item label="分類" prop="category" class="flex-1">
+          <div class="grid grid-cols-2 gap-4">
+            <el-form-item label="分類" prop="category">
               <el-select
                 v-model="activeNode.category"
-                class="w-full"
                 placeholder="請選擇節點分類"
               >
                 <el-option
@@ -261,40 +246,21 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="類型" prop="nodeType" class="flex-1">
-              <div class="flex items-center">
-                <el-select
-                  v-model="activeNode.nodeType"
-                  class="w-[160px]"
-                  placeholder="請選擇節點類型"
-                >
-                  <el-option
-                    v-for="type in nodeTypes"
-                    :key="type.value"
-                    :label="type.label"
-                    :value="type.value"
-                  />
-                </el-select>
-                <el-tooltip
-                  content="custom-input：需要 Vue 組件<br />custom-process：可以是組件或 API<br />statistic-process：統計分析專用"
-                  placement="top"
-                  raw-content
-                >
-                  <el-icon class="ml-2 text-gray-400">
-                    <CircleHelp :size="16" />
-                  </el-icon>
-                </el-tooltip>
-              </div>
+
+            <el-form-item label="節點類型" prop="nodeType">
+              <el-select
+                v-model="activeNode.nodeType"
+                placeholder="請選擇節點類型"
+              >
+                <el-option
+                  v-for="type in nodeTypes"
+                  :key="type.value"
+                  :label="type.label"
+                  :value="type.value"
+                />
+              </el-select>
             </el-form-item>
           </div>
-
-          <el-form-item label="節點名稱" prop="name">
-            <el-input
-              v-model="activeNode.name"
-              placeholder="請輸入節點名稱（2-50字元）"
-              @input="handleNameInput"
-            />
-          </el-form-item>
 
           <el-form-item label="描述" prop="description">
             <el-input
@@ -302,7 +268,6 @@
               type="textarea"
               :rows="3"
               placeholder="請輸入節點描述（2-200字元）"
-              @input="handleDescriptionInput"
             />
           </el-form-item>
 

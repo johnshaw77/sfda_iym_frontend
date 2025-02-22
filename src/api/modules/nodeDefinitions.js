@@ -6,8 +6,8 @@ export const getNodeDefinitions = () => {
 };
 
 // 獲取單個節點定義
-export const getNodeDefinition = (typeKey) => {
-  return request.get(`/node-definitions/${typeKey}`);
+export const getNodeDefinition = (id) => {
+  return request.get(`/node-definitions/${id}`);
 };
 
 // 創建節點定義
@@ -16,11 +16,11 @@ export const createNodeDefinition = (data) => {
 };
 
 // 更新節點定義
-export const updateNodeDefinition = (typeKey, data) => {
-  return request.put(`/node-definitions/${typeKey}`, data);
+export const updateNodeDefinition = (id, data) => {
+  return request.put(`/node-definitions/${id}`, data);
 };
 
 // 刪除節點定義
-export const deleteNodeDefinition = (typeKey) => {
-  return request.delete(`/node-definitions/${typeKey}`);
+export const deleteNodeDefinition = (id) => {
+  return request.delete(`/node-definitions/${id}`);
 };

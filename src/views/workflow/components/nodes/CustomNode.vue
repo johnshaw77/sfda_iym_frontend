@@ -71,9 +71,13 @@
 <script setup>
 import { computed } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { getNodeConfig, getNodeStatus } from "../config/nodeTypes";
+import { getNodeDefinition } from "@/api/modules/nodeDefinitions";
 
 const props = defineProps({
+  id: {
+    type: String,
+    required: true,
+  },
   data: {
     type: Object,
     required: true,
@@ -84,8 +88,23 @@ const props = defineProps({
   },
 });
 
-const nodeConfig = computed(() => {
-  return getNodeConfig(props.data.type);
+// 獲取節點配置
+const nodeConfig = computed(async () => {
+  try {
+    const response = await getNodeDefinition(props.data.type.toUpperCase());
+    return response.data;
+  } catch (error) {
+    console.error("獲取節點配置失敗：", error);
+    return {
+      type: "process",
+      label: "處理節點",
+      icon: null,
+      color: "#60A5FA",
+      description: "數據處理節點",
+      allowedInputs: 1,
+      allowedOutputs: 1,
+    };
+  }
 });
 
 const statusConfig = computed(() => {

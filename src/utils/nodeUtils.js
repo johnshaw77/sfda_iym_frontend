@@ -122,7 +122,6 @@ export const prepareNodeDataForSave = (node) => {
   if (!node) return null;
 
   return {
-    definitionKey: node.definitionKey,
     nodeType: node.nodeType,
     name: node.name,
     category: node.category,

@@ -207,6 +207,30 @@ const routes = [
       showContentHeader: false,
     },
   },
+  {
+    path: '/flow-node-definitions',
+    name: 'FlowNodeDefinitions',
+    component: () => import('@/views/flow/NodeDefinitionList.vue'),
+    meta: {
+      title: "節點定義管理",
+      icon: "Component",
+      requiresAuth: true,
+      requiresAdmin: true,
+      showContentHeader: true,
+    },
+  },
+  {
+    path: "/flow-templates",
+    name: "FlowTemplates",
+    component: () => import("@/views/flow/TemplateList.vue"),
+    meta: {
+      title: "流程模板管理",
+      icon: "Workflow",
+      requiresAuth: true,
+      requiresAdmin: true,
+      showContentHeader: true,
+    },
+  },
 
   // {
   //   path: "/workflow-test",

@@ -21,9 +21,11 @@ export function useFlowComponents() {
       const fullComponentName = componentName.endsWith('.vue') 
         ? componentName 
         : `${componentName}.vue`;
-
+      console.log('fullComponentName',componentPath,fullComponentName);
       // 構建完整的組件路徑
-      const fullPath = `/src/components/flow-nodes/${componentPath}/${fullComponentName}`;
+      //const fullPath = `/src/components/flow-nodes/${componentPath}/${fullComponentName}`;
+      const fullPath = componentPath.startsWith('/components') ? `/src/${componentPath.slice(1)}/${fullComponentName}` : 
+      `/src/components/flow-nodes/${componentPath}/${fullComponentName}`;
 
       // 動態載入組件
       const module = await import(/* @vite-ignore */ fullPath);
@@ -41,6 +43,8 @@ export function useFlowComponents() {
         throw new Error('組件路徑或名稱未提供');
       }
 
+      console.log('componentPath', componentPath,nodeData);
+      
       // 載入組件
       currentComponent.value = await loadComponent(componentPath, componentName);
       

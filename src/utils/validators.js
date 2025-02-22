@@ -55,14 +55,6 @@ export const descriptionValidationRules = [
 
 // 節點定義驗證規則
 export const nodeDefinitionValidators = {
-  definitionKey: [
-    { required: true, message: '請輸入節點定義鍵值' },
-    { min: 5, max: 100, message: '鍵值長度需在 5-100 個字元之間' },
-    {
-      pattern: /^[a-z][a-z0-9_]+$/,
-      message: '鍵值必須以小寫字母開頭，只能包含小寫字母、數字和底線'
-    }
-  ],
   name: [
     { required: true, message: '請輸入節點名稱' },
     { min: 2, max: 50, message: '名稱長度需在 2-50 個字元之間' }

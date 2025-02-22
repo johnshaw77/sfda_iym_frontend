@@ -220,7 +220,7 @@ import {
 import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
-import { NODE_TYPES } from "./config/nodeTypes";
+import { getNodeDefinitions } from "@/api/modules/nodeDefinitions";
 import { EDGE_TYPES } from "./config/edgeTypes";
 import {
   Layout,
@@ -246,6 +246,9 @@ import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
 import { uploadWorkflowFile } from "@/api/modules/workflow";
 import FileNode from "./nodes/FileNode.vue";
+
+// 節點類型定義
+const NODE_TYPES = ref({});
 
 // 註冊自定義節點類型
 const nodeTypes = {
@@ -627,7 +630,7 @@ const generateMockData = () => {
   // 生成 5-10 個隨機節點
   const nodeCount = Math.floor(Math.random() * 6) + 5;
   const mockNodes = [];
-  const nodeTypes = Object.values(NODE_TYPES);
+  const nodeTypes = Object.values(NODE_TYPES.value);
 
   // 生成隨機節點
   for (let i = 0; i < nodeCount; i++) {
@@ -846,7 +849,16 @@ const handleKeyDown = (event) => {
 };
 
 // 監聽鍵盤事件
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const response = await getNodeDefinitions();
+    NODE_TYPES.value = response.data;
+  } catch (error) {
+    console.error("獲取節點類型定義失敗：", error);
+    ElMessage.error("獲取節點類型定義失敗");
+  }
+
+  // 其他初始化代碼...
   window.addEventListener("keydown", handleKeyDown);
 });
 

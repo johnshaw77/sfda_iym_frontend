@@ -35,22 +35,22 @@
       <el-table
         v-loading="loading"
         :data="filteredNodes"
+        border
         style="width: 100%"
-        v-if="!loading"
+        :max-height="800"
       >
-        <el-table-column prop="definitionKey" label="定義鍵值" width="200">
+        <el-table-column prop="name" label="名稱" width="200">
           <template #default="{ row }">
             <div class="flex items-center">
               <component
-                :is="getNodeIcon(row.category, row.definitionKey)"
+                :is="getNodeIcon(row.category)"
                 :size="16"
                 class="mr-2 flex-shrink-0"
               />
-              <span>{{ row.definitionKey }}</span>
+              <span>{{ row.name }}</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名稱" width="200" />
         <el-table-column prop="category" label="分類" width="150">
           <template #default="{ row }">
             <el-tag
@@ -71,90 +71,27 @@
           prop="componentPath"
           label="組件完整路徑名稱"
           width="400"
-        >
-          <template #default="{ row }">
-            <div class="flex items-center justify-between">
-              <span v-if="row.componentPath" class="text-gray-600">
-                <el-button
-                  type="primary"
-                  link
-                  size="small"
-                  class="ml-2"
-                  @click="handlePreviewComponent(row)"
-                >
-                  預覽節點
-                </el-button>
-                <el-tooltip
-                  :content="`@/components/flow-nodes/${row.componentPath}/${row.componentName}`"
-                  placement="top"
-                >
-                  /{{ row.componentPath }}/{{ row.componentName }}
-                </el-tooltip>
-              </span>
-              <span v-else class="text-gray-400 text-sm">-</span>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="API設定" width="300">
-          <template #default="{ row }">
-            <div
-              v-if="row.componentName?.startsWith('HttpRequestNode')"
-              class="space-y-1"
-            >
-              <div class="flex items-center space-x-2">
-                <el-tag size="small" type="info">{{ row.apiMethod }}</el-tag>
-                <span class="text-gray-600">{{ row.apiEndpoint }}</span>
-              </div>
-            </div>
-            <span v-else class="text-gray-400 text-sm">-</span>
-          </template>
-        </el-table-column>
-
-        <el-table-column prop="apiMethod" label="" width="80" v-if="false">
-        </el-table-column>
-
-        <el-table-column label="配置" width="100">
-          <template #default="{ row }">
-            <el-button
-              v-if="
-                row.componentName?.startsWith('Base') &&
-                Object.keys(row.config || {}).length > 0
-              "
-              type="primary"
-              link
-              size="small"
-              @click="handleShowConfig(row)"
-            >
-              查看配置
-            </el-button>
-            <span v-else class="text-gray-400 text-sm">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="200" />
-        <el-table-column label="操作" width="200" fixed="right">
+        />
+        <el-table-column prop="description" label="描述" min-width="300" />
+        <el-table-column fixed="right" label="操作" width="200">
           <template #default="{ row }">
             <el-button-group>
-              <el-tooltip content="編輯">
-                <el-button
-                  type="primary"
-                  size="small"
-                  :icon="Edit"
-                  @click="handleEdit(row)"
-                >
-                  編輯
-                </el-button>
-              </el-tooltip>
-              <el-tooltip content="刪除">
-                <el-button
-                  type="danger"
-                  size="small"
-                  :icon="Trash2"
-                  @click="handleDelete(row)"
-                >
-                  刪除
-                </el-button>
-              </el-tooltip>
+              <el-button
+                type="primary"
+                :icon="Edit"
+                @click="handleEdit(row)"
+                text
+              >
+                編輯
+              </el-button>
+              <el-button
+                type="danger"
+                :icon="Trash2"
+                @click="handleDelete(row)"
+                text
+              >
+                刪除
+              </el-button>
             </el-button-group>
           </template>
         </el-table-column>
@@ -583,14 +520,14 @@ const previewDialogVisible = ref(false);
 const vueFlowInstance = useVueFlow();
 
 // 使用 Flow Components composable
-const { 
-  components, 
-  getComponentName, 
-  loadComponents, 
-  previewComponent, 
+const {
+  components,
+  getComponentName,
+  loadComponents,
+  previewComponent,
   currentComponent,
   nodes,
-  closePreview 
+  closePreview,
 } = useFlowComponents();
 
 // 其他狀態
@@ -672,7 +609,6 @@ const filteredNodes = computed(() => {
   const query = searchQuery.value.toLowerCase();
   return nodeList.value.filter(
     (node) =>
-      node.definitionKey.toLowerCase().includes(query) ||
       node.name.toLowerCase().includes(query) ||
       node.description.toLowerCase().includes(query) ||
       (node.componentName &&
@@ -965,11 +901,11 @@ const handleGenerateKey = async () => {
   if (!formRef.value) return;
 
   // 先驗證必要欄位
-  await formRef.value.validateField(['category', 'name']);
-  const fields = await formRef.value.validateFields(['category', 'name']);
-  
+  await formRef.value.validateField(["category", "name"]);
+  const fields = await formRef.value.validateFields(["category", "name"]);
+
   if (!fields.valid) {
-    ElMessage.warning('請先填寫分類和名稱');
+    ElMessage.warning("請先填寫分類和名稱");
     return;
   }
 
@@ -979,28 +915,18 @@ const handleGenerateKey = async () => {
   );
 
   // 驗證生成的鍵值
-  await formRef.value.validateField('definitionKey');
-  const definitionKeyField = await formRef.value.validateFields(['definitionKey']);
-  
+  await formRef.value.validateField("definitionKey");
+  const definitionKeyField = await formRef.value.validateFields([
+    "definitionKey",
+  ]);
+
   if (definitionKeyField.valid) {
-    ElMessage.success('已生成新的節點定義鍵值');
+    ElMessage.success("已生成新的節點定義鍵值");
   }
 };
 
 // 修改表單驗證規則
 const formRules = {
-  definitionKey: [
-    { required: true, message: "請輸入節點定義鍵值" },
-    {
-      validator: (rule, value, callback) => {
-        if (value && (value.length < 5 || value.length > 100)) {
-          callback(new Error("鍵值長度需在 5-100 個字元之間"));
-        } else {
-          callback();
-        }
-      },
-    },
-  ],
   name: [
     { required: true, message: "請輸入節點名稱" },
     { min: 2, max: 50, message: "名稱長度需在 2-50 個字元之間" },
@@ -1043,26 +969,26 @@ const fullComponentPath = computed(() => {
 const handlePreviewComponent = async (row) => {
   try {
     if (!row.componentPath || !row.componentName) {
-      ElMessage.warning('請先填寫完整的組件路徑和名稱');
+      ElMessage.warning("請先填寫完整的組件路徑和名稱");
       return;
     }
 
     await previewComponent({
       componentPath: row.componentPath,
       componentName: row.componentName,
-      nodeData: row
+      nodeData: row,
     });
 
     previewDialogVisible.value = true;
   } catch (error) {
-    console.error('預覽組件失敗：', error);
+    console.error("預覽組件失敗：", error);
   }
 };
 
 // 處理表單中的預覽
 const handlePreviewFormComponent = async () => {
   if (!form.value.componentPath || !form.value.componentName) {
-    ElMessage.warning('請先填寫完整的組件路徑和名稱');
+    ElMessage.warning("請先填寫完整的組件路徑和名稱");
     return;
   }
 
@@ -1070,12 +996,12 @@ const handlePreviewFormComponent = async () => {
     await previewComponent({
       componentPath: form.value.componentPath,
       componentName: form.value.componentName,
-      nodeData: form.value
+      nodeData: form.value,
     });
 
     previewDialogVisible.value = true;
   } catch (error) {
-    console.error('預覽組件失敗：', error);
+    console.error("預覽組件失敗：", error);
   }
 };
 
@@ -1089,33 +1015,35 @@ watch(previewDialogVisible, (visible) => {
 // 新增 queryComponentSearch 函數
 const queryComponentSearch = (queryString, cb) => {
   const results = componentOptions.value
-    .filter(option => {
+    .filter((option) => {
       // 如果有選擇 componentPath，則只顯示對應路徑下的組件
       if (form.value.componentPath) {
-        return option.path.includes(`/${form.value.componentPath}/`) &&
-               option.label.toLowerCase().includes(queryString.toLowerCase());
+        return (
+          option.path.includes(`/${form.value.componentPath}/`) &&
+          option.label.toLowerCase().includes(queryString.toLowerCase())
+        );
       }
       // 否則顯示所有符合搜尋條件的組件
       return option.label.toLowerCase().includes(queryString.toLowerCase());
     })
-    .map(option => ({
-      value: option.label.replace('.vue', ''),
+    .map((option) => ({
+      value: option.label.replace(".vue", ""),
       path: option.path,
-      fullPath: option.value
+      fullPath: option.value,
     }));
-  
+
   cb(results);
 };
 
 // 新增 handleComponentNameSelect 函數
 const handleComponentNameSelect = (item) => {
   if (!item) {
-    form.value.componentName = '';
+    form.value.componentName = "";
     return;
   }
-  
+
   // 從完整路徑中提取必要資訊
-  const pathParts = item.path.split('components/flow-nodes/')[1].split('/');
+  const pathParts = item.path.split("components/flow-nodes/")[1].split("/");
   form.value.componentPath = pathParts[0];
   form.value.componentName = item.value;
 };

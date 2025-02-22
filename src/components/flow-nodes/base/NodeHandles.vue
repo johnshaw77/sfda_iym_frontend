@@ -106,25 +106,25 @@ onMounted(() => {
 }
 
 .handle {
-  @apply w-3 h-3 rounded-full bg-gray-400 border-2 border-white transition-all duration-200 pointer-events-auto;
+  @apply transition-all duration-200 pointer-events-auto;
 }
 
 .handle:hover {
-  @apply scale-125 bg-blue-500;
+  @apply scale-125 bg-gray-500;
 }
 
 .handle-connected {
   @apply bg-green-500;
 }
 
-/* 輸入連接點樣式（箭頭） */
+/* 輸入連接點樣式（方形） */
 .handle-input {
-  @apply bg-blue-500;
+  @apply !h-8 bg-gray-500 rounded-none;
 }
 
 /* 輸出連接點樣式（圓形） */
 .handle-output {
-  @apply bg-green-500;
+  @apply !w-4 !h-4 bg-gray-500 rounded-full;
 }
 
 /* 位置相關樣式 */

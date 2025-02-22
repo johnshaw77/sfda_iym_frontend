@@ -11,11 +11,9 @@
       <div class="form-group">
         <label>節點類型</label>
         <select v-model="nodeData.type" class="form-select">
-          <option value="input">數據輸入</option>
-          <option value="process">數據處理</option>
-          <option value="analysis">數據分析</option>
-          <option value="visualization">數據可視化</option>
-          <option value="output">輸出結果</option>
+          <option v-for="type in nodeTypes" :key="type.type" :value="type.type">
+            {{ type.label }}
+          </option>
         </select>
       </div>
 
@@ -71,7 +69,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { Upload, X } from "lucide-vue-next";
+import { getNodeDefinitions } from "@/api/modules/nodeDefinitions";
+import { ElMessage } from "element-plus";
 
 const props = defineProps({
   selectedNode: {
@@ -83,6 +84,18 @@ const props = defineProps({
 const emit = defineEmits(["update:node", "close"]);
 
 const nodeData = ref({ ...props.selectedNode?.data });
+const nodeTypes = ref([]);
+
+// 在組件掛載時獲取節點類型定義
+onMounted(async () => {
+  try {
+    const response = await getNodeDefinitions();
+    nodeTypes.value = Object.values(response.data);
+  } catch (error) {
+    console.error("獲取節點類型定義失敗：", error);
+    ElMessage.error("獲取節點類型定義失敗");
+  }
+});
 
 const handleSave = () => {
   emit("update:node", {

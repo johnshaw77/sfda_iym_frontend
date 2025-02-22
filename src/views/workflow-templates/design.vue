@@ -519,6 +519,7 @@ import "@vue-flow/minimap/dist/style.css";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 import { getTemplateById, updateTemplate, publishTemplate } from "@/api";
+import { getNodeDefinitions } from "@/api/modules/nodeDefinitions";
 import { useTemplateStore } from "@/stores/template";
 import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
 import HttpRequestNode from "@/components/flow-nodes/business/HttpRequestNode.vue";
@@ -531,40 +532,42 @@ const router = useRouter();
 const templateStore = useTemplateStore();
 
 //#region 節點類型定義
-const inputNodes = [
-  {
-    type: "custom-input",
-    componentName: "ComplaintSelectorNode",
-    label: "客訴單號選擇",
-    icon: FileInput,
-    description: "用於選擇客訴單號進行分析",
-  },
-  // 未來可以添加更多輸入節點
-];
+const inputNodes = ref([]);
+const processNodes = ref([]);
 
-const processNodes = [
-  {
-    type: "custom-process",
-    componentName: "TopDefectsNode",
-    label: "前五大不良分析",
-    icon: BarChart,
-    description: "分析並顯示前五大不良項目",
-  },
-  {
-    type: "statistic-process",
-    componentName: "StatisticProcessNode",
-    label: "卡方圖分析 4M1E",
-    icon: BarChart2,
-    description: "使用卡方分析方法進行 4M1E 分析",
-  },
-  {
-    type: "api-request",
-    componentName: "ApiRequestNode",
-    label: "API 呼叫",
-    icon: Braces,
-    description: "呼叫外部 API 服務",
-  },
-];
+// 從資料庫載入節點定義
+const loadNodeDefinitions = async () => {
+  try {
+    const response = await getNodeDefinitions();
+    const definitions = response.data;
+
+    // 將節點定義分類
+    inputNodes.value = Object.values(definitions)
+      .filter((node) => node.category === "business-input")
+      .map((node) => ({
+        type: node.nodeType,
+        componentName: node.componentName,
+        label: node.name,
+        icon: node.icon,
+        description: node.description,
+      }));
+
+    processNodes.value = Object.values(definitions)
+      .filter((node) =>
+        ["business-process", "statistical-analysis"].includes(node.category)
+      )
+      .map((node) => ({
+        type: node.nodeType,
+        componentName: node.componentName,
+        label: node.name,
+        icon: node.icon,
+        description: node.description,
+      }));
+  } catch (error) {
+    console.error("載入節點定義失敗：", error);
+    ElMessage.error("載入節點定義失敗");
+  }
+};
 
 // const outputNodes = [
 //   { type: "dataOutput", label: "檔案輸出", icon: FileOutput, disabled: true },
@@ -684,7 +687,7 @@ const nodeTypes = {
   // 基礎節點類型
   custom: HttpRequestNode, // TODO: remove this
   default: BaseNode,
-
+  HttpRequestNode,
   // 業務輸入節點
   ComplaintSelectorNode, // 客訴單號選擇器
 
@@ -698,17 +701,17 @@ const nodeTypes = {
 
 // 處理節點拖拽開始
 const handleDragStart = (event, node) => {
+  console.log("handleDragStart", node.type, node.componentName);
   event.dataTransfer.setData(
     "application/vueflow",
     JSON.stringify({
-      type: node.type,
+      type: node.componentName.replace(".vue", ""),
       componentName: node.componentName,
       label: node.label,
       icon: node.icon,
       description: node.description,
     })
   );
-  console.log("handleDragStart", node.type, node.componentName);
   event.dataTransfer.effectAllowed = "move";
 };
 
@@ -733,19 +736,20 @@ const handleDrop = (event) => {
     position.y = Math.round(position.y / 20) * 20;
   }
 
-  // 創建新節點，使用 componentName 作為節點類型
+  console.log("nodeData", nodeData);
+
+  // 創建新節點
   const newNode = {
     id: `node_${Date.now()}`,
-    type: nodeData.componentName, // 使用 componentName 作為節點類型
+    type: nodeData.componentName.replace(".vue", ""), // 使用 componentName 作為節點類型
     position,
     data: {
-      label: nodeData.label,
+      label: nodeData.name,
       type: nodeData.type,
       icon: nodeData.icon,
-      componentName: nodeData.componentName,
-      description: nodeData.description || "",
+      description: nodeData.description,
       status: "idle",
-      config: getInitialConfig(nodeData.type, nodeData.componentName),
+      config: getInitialConfig(nodeData.type),
     },
   };
 
@@ -810,44 +814,38 @@ const handleDragOver = (event) => {
   event.dataTransfer.dropEffect = "move";
 };
 
-// 獲取節點初始配置 TODO: 需要改成從節點的 component 中獲取
-const getInitialConfig = (type, componentName) => {
-  const baseConfig = {
-    timeout: 60,
-    retryCount: 0,
-    errorHandler: "stop",
-  };
-
-  switch (type) {
+// 獲取節點初始配置
+const getInitialConfig = (nodeType) => {
+  // 根據節點類型返回對應的初始配置
+  switch (nodeType) {
     case "custom-input":
       return {
-        ...baseConfig,
-        selectedComplaint: null,
-        componentName,
+        dataSource: "",
+        validation: {
+          required: true,
+        },
       };
     case "custom-process":
+      return {
+        operations: [],
+        filters: [],
+        transformations: [],
+      };
     case "statistic-process":
       return {
-        ...baseConfig,
-        componentName,
-        apiEndpoint: "",
-        apiMethod: "POST",
-        params: {},
+        analysisType: "",
+        parameters: {},
+        modelType: "",
       };
-    case "api-request":
+    case "http-request":
       return {
-        ...baseConfig,
-        componentName,
-        apiEndpoint: "",
-        apiMethod: "POST",
+        method: "GET",
+        endpoint: "",
         headers: {},
-        params: {},
+        body: {},
       };
     default:
-      return {
-        ...baseConfig,
-        componentName,
-      };
+      return {};
   }
 };
 
@@ -1094,6 +1092,7 @@ const handlePanelCollapse = () => {
 
 onMounted(() => {
   loadTemplate();
+  loadNodeDefinitions(); // 載入節點定義
   // 添加瀏覽器原生的離開提示
   window.addEventListener("beforeunload", handleBeforeUnload);
   // 添加路由守衛
