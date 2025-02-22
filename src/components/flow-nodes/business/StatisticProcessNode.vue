@@ -1,7 +1,7 @@
 <template>
   <BaseNode
     :id="id"
-    type="statistic-process"
+    nodeType="statistic-process"
     :title="title"
     :description="description"
     :icon="icon"
@@ -10,7 +10,6 @@
     :header-bg-color="headerBgColor"
     :header-border-color="headerBorderColor"
     :handles="handles"
-    :minHeight="640"
     :minWidth="660"
     @click="handleNodeClick"
     @handle-connect="handleConnect"

@@ -1,7 +1,7 @@
 <template>
   <BaseNode
     :id="id"
-    type="custom-process"
+    nodeType="custom-process"
     :title="title"
     :description="description"
     :icon="icon"
@@ -10,8 +10,6 @@
     :header-bg-color="headerBgColor"
     :header-border-color="headerBorderColor"
     :handles="handles"
-    :minHeight="600"
-    :minWidth="400"
     @click="handleNodeClick"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"

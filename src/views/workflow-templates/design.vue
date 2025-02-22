@@ -509,7 +509,7 @@ import {
   PanelRightOpen,
   PanelLeftOpen,
 } from "lucide-vue-next";
-import CustomNode from "./components/CustomNode.vue";
+//import CustomNode from "./components/CustomNode.vue";
 import CustomEdge from "./components/CustomEdge.vue";
 import EdgeWithButton from "./components/EdgeWithButton.vue";
 import "@vue-flow/core/dist/style.css";
@@ -520,6 +520,8 @@ import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 import { getTemplateById, updateTemplate, publishTemplate } from "@/api";
 import { useTemplateStore } from "@/stores/template";
+import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
+import HttpRequestNode from "@/components/flow-nodes/business/HttpRequestNode.vue";
 import ComplaintSelectorNode from "@/components/flow-nodes/business/ComplaintSelectorNode.vue";
 import TopDefectsNode from "@/components/flow-nodes/business/TopDefectsNode.vue";
 import StatisticProcessNode from "@/components/flow-nodes/business/StatisticProcessNode.vue";
@@ -644,14 +646,13 @@ const handleRouteChange = async (to, from, next) => {
 const loadTemplate = async () => {
   try {
     const templateId = route.params.id;
-    console.log("正在載入範本，ID:", templateId);
+    //console.log("正在載入範本，ID:", templateId);
     const response = await getTemplateById(templateId);
-    console.log("API 回傳資料:", response.data);
-
+    //console.log("API 回傳資料:", response.data);
     if (response.data) {
       // 使用 Pinia store 設置範本名稱
       templateStore.setTemplateName(response.data.templateName);
-      console.log("範本名稱已更新:", response.data.templateName);
+      //console.log("範本名稱已更新:", response.data.templateName);
 
       if (response.data.config) {
         try {
@@ -681,8 +682,8 @@ const loadTemplate = async () => {
 // 註冊自定義節點類型
 const nodeTypes = {
   // 基礎節點類型
-  custom: CustomNode,
-  default: CustomNode,
+  custom: HttpRequestNode, // TODO: remove this
+  default: BaseNode,
 
   // 業務輸入節點
   ComplaintSelectorNode, // 客訴單號選擇器
@@ -692,7 +693,7 @@ const nodeTypes = {
   StatisticProcessNode, // 統計分析節點
 
   // API 請求節點
-  ApiRequestNode: CustomNode, // TODO:暫時使用 CustomNode 作為 API 請求節點的基礎
+  ApiRequestNode: HttpRequestNode, // TODO:暫時使用 CustomNode 作為 API 請求節點的基礎
 };
 
 // 處理節點拖拽開始
@@ -960,13 +961,13 @@ const onNodeDragStop = (event) => {
 
 // 節點變化事件
 const onNodesChange = (changes) => {
-  console.log("Nodes changed:", changes);
+  // console.log("Nodes changed:", changes);
   hasUnsavedChanges.value = true;
 };
 
 // 邊線變化事件
 const onEdgesChange = (changes) => {
-  console.log("Edges changed:", changes);
+  //console.log("Edges changed:", changes);
   hasUnsavedChanges.value = true;
 };
 

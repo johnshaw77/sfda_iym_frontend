@@ -47,7 +47,7 @@
 
 <script setup>
 import { Handle } from "@vue-flow/core";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useVueFlow } from "@vue-flow/core";
 
 const props = defineProps({
@@ -92,6 +92,12 @@ const isHandleConnected = (handleId) => {
       (edge.target === props.nodeId && edge.targetHandle === handleId)
   );
 };
+
+onMounted(() => {
+  console.log(props.nodeType);
+  console.log(props.inputs);
+  console.log(props.outputs);
+});
 </script>
 
 <style scoped>

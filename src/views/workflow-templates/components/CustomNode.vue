@@ -1,3 +1,4 @@
+/** TODO: Remove this file */
 <template>
   <div
     :class="[

@@ -1,7 +1,7 @@
 <template>
   <BaseNode
     :id="id"
-    type="http-request"
+    nodeType="http-request"
     :title="title"
     :description="description"
     :icon="icon"
@@ -34,9 +34,9 @@
         </div>
 
         <!-- 響應結果顯示區域 -->
-        <div 
+        <div
           class="mt-4 rounded-lg overflow-hidden"
-          :class="{'bg-gray-100': !httpResult}"
+          :class="{ 'bg-gray-100': !httpResult }"
         >
           <!-- 預覽模式 -->
           <div
@@ -53,8 +53,8 @@
           <div v-else class="p-4 bg-white rounded-lg border border-gray-200">
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center space-x-2">
-                <el-tag 
-                  :type="getStatusTagType(httpResult.status)" 
+                <el-tag
+                  :type="getStatusTagType(httpResult.status)"
                   size="small"
                 >
                   {{ httpResult.status }}
@@ -63,16 +63,14 @@
                   {{ formatTimestamp(httpResult.timestamp) }}
                 </span>
               </div>
-              <el-button
-                type="text"
-                size="small"
-                @click="handleCopyResult"
-              >
+              <el-button type="text" size="small" @click="handleCopyResult">
                 複製
               </el-button>
             </div>
             <div class="overflow-auto max-h-48">
-              <pre class="text-xs text-gray-700">{{ formatResponse(httpResult.data) }}</pre>
+              <pre class="text-xs text-gray-700">{{
+                formatResponse(httpResult.data)
+              }}</pre>
             </div>
           </div>
         </div>
@@ -172,9 +170,7 @@ const getStatusTagType = (status) => {
 // 複製結果
 const handleCopyResult = async () => {
   try {
-    await navigator.clipboard.writeText(
-      formatResponse(httpResult.value.data)
-    );
+    await navigator.clipboard.writeText(formatResponse(httpResult.value.data));
     ElMessage.success("已複製到剪貼簿");
   } catch (error) {
     ElMessage.error("複製失敗");
@@ -185,7 +181,7 @@ const handleCopyResult = async () => {
 const processData = async (inputData) => {
   try {
     status.value = "running";
-    
+
     const response = await fetch(endpoint.value, {
       method: method.value,
       headers: {
@@ -195,13 +191,13 @@ const processData = async (inputData) => {
     });
 
     const data = await response.json();
-    
+
     httpResult.value = {
       status: response.status,
       data: data,
       timestamp: new Date().toISOString(),
     };
-    
+
     status.value = "completed";
     emit("update:data", {
       id: props.id,
@@ -235,4 +231,4 @@ pre {
   white-space: pre-wrap;
   word-wrap: break-word;
 }
-</style> 
+</style>

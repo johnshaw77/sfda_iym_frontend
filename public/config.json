@@ -1,0 +1,15 @@
+{
+  "axiosBaseUrl": "http://localhost:3001/api",
+  "nodeTypes": [
+    { "value": "custom-input", "label": "自定義輸入節點(custom-input)" },
+    { "value": "custom-process", "label": "自定義處理節點(custom-process)" },
+    { "value": "statistic-process", "label": "統計分析節點(statistic-process)" },
+    { "value": "http-request", "label": "HTTP請求節點(http-request)" }
+  ],
+  "nodeCategories": [
+    { "value": "business-input", "label": "業務輸入類" },
+    { "value": "business-process", "label": "業務處理類" },
+    { "value": "statistical-analysis", "label": "統計分析類" }
+  ],
+  "siteTitle": "我的網站"
+} 

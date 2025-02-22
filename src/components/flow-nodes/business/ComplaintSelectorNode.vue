@@ -1,7 +1,7 @@
 <template>
   <BaseNode
     :title="title"
-    type="custominput2"
+    nodeType="custom-input"
     :description="description"
     :icon="icon"
     :status="status"
@@ -11,7 +11,7 @@
     @handle-disconnect="handleDisconnect"
   >
     <!-- 主要內容區域 -->
-    <div class="p-10 space-y-4">
+    <div class="p-0 space-y-4">
       <!-- 單號選擇 -->
       <el-form-item label="客訴單號">
         <el-select
@@ -55,9 +55,10 @@
 <script setup>
 import { ref, computed } from "vue";
 import { TextCursorInput, Box } from "lucide-vue-next";
-import BaseNode from "../base/BaseNode.vue";
+import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
 
 // 節點基本屬性
+// Color 先保留(現在都先強制改灰色)
 const headerBgColor = ref("#ebebeb"); // 淺藍色背景
 const headerBorderColor = ref("#cfcfcf"); // 淺藍色邊框
 
@@ -84,16 +85,16 @@ const props = defineProps({
   },
 });
 
-// 連接點配置
-const handles = {
-  inputs: [],
-  outputs: [
-    {
-      id: "data",
-      description: "選擇的客訴單號資料",
-    },
-  ],
-};
+// // 連接點配置
+// const handles = {
+//   inputs: [],
+//   outputs: [
+//     {
+//       id: "data",
+//       description: "選擇的客訴單號資料",
+//     },
+//   ],
+// };
 
 // 節點狀態
 const status = ref("default");

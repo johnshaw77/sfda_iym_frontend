@@ -1,7 +1,7 @@
 <template>
   <BaseNode
     :id="id"
-    :type="type"
+    :nodeType="nodeType"
     :title="title"
     :description="description"
     :icon="icon"
@@ -126,7 +126,7 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  type: {
+  nodeType: {
     type: String,
     default: "statistic-process",
   },

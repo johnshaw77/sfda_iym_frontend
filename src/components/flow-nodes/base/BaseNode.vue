@@ -7,11 +7,9 @@
       'cursor-pointer': !disabled,
       'opacity-50 cursor-not-allowed': disabled,
     }"
-    :style="{ width: '100%', height: '100%' }"
+    :style="{ width: '100%' }"
   >
     <NodeResizer
-      :minWidth="minWidth"
-      :minHeight="minHeight"
       :isVisible="selected"
       class="!border-blue-400"
       :lineStyle="{ borderWidth: '1px' }"
@@ -28,19 +26,33 @@
       class="node-header bg-opacity-30 text-red-700"
       :class="[
         customHeaderClass ||
-          headerClasses[type] ||
+          headerClasses[nodeType] ||
           'bg-gray-50 border-gray-100',
         { 'cursor-grab': !disabled },
       ]"
       :style="customHeaderStyle"
     >
-      <div class="flex items-center space-x-2">
-        <component
-          :is="icon"
-          :class="[iconClasses[type] || 'text-gray-600']"
-          :size="16"
-        />
-        <span class="text-sm font-medium text-gray-700">{{ title }}</span>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <component
+            :is="icon"
+            :class="[iconClasses[nodeType] || 'text-gray-600']"
+            :size="16"
+          />
+          <span class="text-sm font-medium text-gray-700">{{ title }}</span>
+        </div>
+        <!-- 展開時的摺疊按鈕 -->
+        <button
+          v-if="isExpanded"
+          class="p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
+          @click="handleToggleExpand"
+        >
+          <component
+            :is="ChevronUp"
+            class="text-gray-400 hover:text-gray-600"
+            :size="20"
+          />
+        </button>
       </div>
       <div v-if="description" class="mt-1 text-xs text-gray-500">
         {{ description }}
@@ -48,8 +60,30 @@
     </div>
 
     <!-- 節點內容 -->
-    <div class="node-content">
-      <slot></slot>
+    <div class="node-content relative" :style="contentStyle">
+      <!-- 大圖示區域 -->
+      <div
+        v-show="!isExpanded"
+        ref="iconAreaRef"
+        class="icon-area"
+        :class="{ 'icon-area-collapsed': !isExpanded }"
+        @click="handleToggleExpand"
+      >
+        <component
+          :is="icon"
+          :class="[iconClasses[nodeType] || 'text-gray-600']"
+          :size="64"
+        />
+      </div>
+
+      <!-- 可展開的內容區域 -->
+      <div
+        ref="expandableContentRef"
+        class="expandable-content"
+        :class="{ 'expandable-content-expanded': isExpanded }"
+      >
+        <slot></slot>
+      </div>
     </div>
 
     <!-- 節點狀態 -->
@@ -69,7 +103,7 @@
     <!-- 使用 NodeHandles 組件 -->
     <NodeHandles
       :node-id="id"
-      :node-type="type"
+      :node-type="nodeType"
       :inputs="defaultHandles.inputs"
       :outputs="defaultHandles.outputs"
       :show-labels="showHandleLabels"
@@ -80,9 +114,9 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, computed, onMounted, watch, nextTick, onUnmounted } from "vue";
 import NodeHandles from "./NodeHandles.vue";
-import { Box } from "lucide-vue-next";
+import { Box, ChevronUp } from "lucide-vue-next";
 import { NodeResizer } from "@vue-flow/node-resizer";
 import "@vue-flow/node-resizer/dist/style.css";
 
@@ -92,14 +126,11 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  // 節點類型 (!TODO: check this)
-  type: {
+  nodeType: {
     type: String,
     default: "http-request",
     validator: (value) =>
-      ["custom-input", "custom-process", "http-request"].includes(
-        value
-      ),
+      ["custom-input", "custom-process", "http-request"].includes(value),
   },
   title: {
     type: String,
@@ -156,17 +187,6 @@ const props = defineProps({
     type: Number,
     default: 120,
   },
-  apiEndpoint: {
-    type: String,
-    default: "",
-  },
-  apiMethod: {
-    type: String,
-    default: "POST",
-    validator: (value) => {
-      return ["GET", "POST", "PUT", "DELETE"].includes(value);
-    },
-  },
 });
 
 // 定義事件
@@ -186,7 +206,7 @@ const headerClasses = {
   "api-request": "bg-orange-50 border-orange-100",
 };
 
-// 圖標顏色映射
+// 圖標顏色映射 TODO:modify this
 const iconClasses = {
   "complaint-selector": "text-blue-600",
   "data-input": "text-blue-600",
@@ -229,39 +249,53 @@ const handleDisconnect = (data) => {
 
 const defaultHandles = computed(() => {
   // 如果有傳入 handles，優先使用傳入的設定
-  console.log("props.handles", props.handles);
-  console.log("props.type", props.type);
   if (props.handles.inputs?.length > 0 || props.handles.outputs?.length > 0) {
     return props.handles;
   }
 
   const baseHandles = {
     inputs: [
-      { id: "right", position: "right", type: "target" },
-      { id: "bottom", position: "bottom", type: "target" },
+      {
+        id: "input",
+        position: "left",
+        type: "target",
+        label: "輸入",
+      },
     ],
     outputs: [
-      { id: "left", position: "left", type: "source" },
-      { id: "top", position: "top", type: "source" },
+      {
+        id: "output",
+        position: "right",
+        type: "source",
+        label: "輸出",
+      },
     ],
   };
 
   // 根據節點類型決定顯示哪些連接點
-  switch (props.type) {
+  switch (props.nodeType) {
     case "input":
     case "custom-input":
       return {
         inputs: [],
         outputs: [
-          { id: "right", position: "right", type: "source" },
-          { id: "bottom", position: "bottom", type: "source" },
+          {
+            id: "output",
+            position: "right",
+            type: "source",
+            label: "輸出",
+          },
         ],
       };
     case "output":
       return {
         inputs: [
-          { id: "left", position: "left", type: "target" },
-          { id: "top", position: "top", type: "target" },
+          {
+            id: "input",
+            position: "left",
+            type: "target",
+            label: "輸入",
+          },
         ],
         outputs: [],
       };
@@ -291,36 +325,60 @@ const customHeaderClass = computed(() => {
   return "";
 });
 
-// API 相關的處理方法
-const handleApiCall = async (data) => {
-  if (!props.apiEndpoint) {
-    return null;
-  }
+// 展開狀態
+const isExpanded = ref(false);
 
-  try {
-    const response = await fetch(props.apiEndpoint, {
-      method: props.apiMethod,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: props.apiMethod !== "GET" ? JSON.stringify(data) : undefined,
-    });
+// 參考元素
+const iconAreaRef = ref(null);
+const expandableContentRef = ref(null);
+const contentHeight = ref(0);
 
-    if (!response.ok) {
-      throw new Error("API 呼叫失敗");
+// 計算內容區域高度
+const updateContentHeight = () => {
+  if (isExpanded.value) {
+    const expandedContent = expandableContentRef.value;
+    if (expandedContent) {
+      contentHeight.value = expandedContent.scrollHeight;
     }
-
-    return await response.json();
-  } catch (error) {
-    console.error("API 呼叫錯誤:", error);
-    throw error;
+  } else {
+    const iconArea = iconAreaRef.value;
+    if (iconArea) {
+      contentHeight.value = iconArea.scrollHeight;
+    }
   }
 };
+
+// 監聽展開狀態變化
+watch(isExpanded, () => {
+  nextTick(() => {
+    updateContentHeight();
+  });
+});
+
+// 計算內容樣式
+const contentStyle = computed(() => ({
+  height: `${contentHeight.value}px`,
+  transition: "height 0.3s ease-in-out",
+}));
+
+// 處理展開/摺疊
+const handleToggleExpand = () => {
+  isExpanded.value = !isExpanded.value;
+};
+
+onMounted(() => {
+  updateContentHeight();
+  // 監聽視窗大小變化
+  window.addEventListener("resize", updateContentHeight);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateContentHeight);
+});
 
 // 暴露方法
 defineExpose({
   // ... existing code ...
-  handleApiCall,
 });
 </script>
 
@@ -347,10 +405,37 @@ defineExpose({
 }
 
 .node-content {
-  @apply p-3;
+  @apply relative overflow-hidden;
 }
 
 .node-status {
   @apply px-3 py-2 border-t bg-gray-50 rounded-b-lg;
+}
+
+.icon-area {
+  @apply flex items-center justify-center p-4 transition-all duration-300 ease-in-out cursor-pointer hover:bg-gray-50;
+  min-height: 160px;
+}
+
+.icon-area:hover {
+  @apply border-gray-300 bg-gray-50;
+}
+
+.icon-area-collapsed {
+  @apply transform scale-100;
+}
+
+.expandable-content {
+  @apply absolute top-0 left-0 w-full bg-white opacity-0 invisible transition-all duration-300 ease-in-out p-4;
+  transform: translateY(10px);
+}
+
+.expandable-content-expanded {
+  @apply opacity-100 visible static;
+  transform: translateY(0);
+}
+
+.collapse-button {
+  @apply absolute bottom-2 right-2 p-1 rounded-full hover:bg-gray-100 transition-colors duration-200;
 }
 </style>

@@ -225,7 +225,19 @@
         @submit.prevent
       >
         <div class="flex items-start space-x-4">
-          <el-form-item label="分類" prop="category" class="flex-1">
+          <el-form-item class="flex-1">
+            <template #label>
+              <div class="flex items-center">
+                <span>分類(Category)</span>
+                <el-tooltip
+                  content="主要提供給系統識別用"
+                  placement="top"
+                  effect="light"
+                >
+                  <Info class="ml-1" :size="14" />
+                </el-tooltip>
+              </div>
+            </template>
             <el-select
               v-model="form.category"
               class="w-full"
