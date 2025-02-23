@@ -161,20 +161,8 @@
       <Teleport to="#header-actions">
         <div v-if="showHeaderContent" class="flex items-center space-x-2">
           <el-button-group>
-            <el-tooltip content="復原">
-              <el-button :icon="icons.Undo2" />
-            </el-tooltip>
-            <el-tooltip content="重做">
-              <el-button :icon="icons.Redo2" />
-            </el-tooltip>
-            <el-tooltip content="放大">
-              <el-button :icon="icons.ZoomIn" />
-            </el-tooltip>
-            <el-tooltip content="縮小">
-              <el-button :icon="icons.ZoomOut" />
-            </el-tooltip>
-            <el-tooltip content="重置">
-              <el-button :icon="icons.LayoutGrid" />
+            <el-tooltip content="清空畫布">
+              <el-button :icon="icons.LayoutGrid" @click="handleReset" />
             </el-tooltip>
             <el-tooltip content="縮圖預覽">
               <el-button :icon="icons.Camera" @click="handlePreviewThumbnail" />
@@ -302,8 +290,8 @@
         >
           <Background pattern="lines" :gap="20" :size="1" />
 
-          <!-- <Controls />
-          <MiniMap :pannable="true" :zoomable="true" /> -->
+          <Controls />
+          <!-- <MiniMap :pannable="true" :zoomable="true" /> -->
 
           <Panel position="top-right" class="!bg-transparent !border-0">
             <div class="bg-white p-2 rounded shadow-lg">
@@ -315,12 +303,40 @@
     </div>
 
     <!-- 右側屬性面板 -->
-    <div class="border-l border-gray-200 w-80 h-full flex flex-col bg-white">
-      <div class="p-3.5 border-b border-gray-200 bg-slate-50">
-        <h3 class="text-sm font-medium text-gray-700">基本屬性</h3>
+    <div
+      class="border-l border-gray-200 h-full flex flex-col bg-white transition-all duration-300"
+      :class="[isRightCollapsed ? 'w-12' : 'w-96']"
+    >
+      <div
+        class="p-2.5 border-b border-gray-200 bg-slate-50 flex items-center space-x-1"
+      >
+        <div class="flex items-center">
+          <el-tooltip
+            :content="isRightCollapsed ? '展開面板' : '收合面板'"
+            placement="left"
+          >
+            <div
+              class="p-1 rounded hover:bg-gray-100 cursor-pointer"
+              @click="handleRightPanelCollapse"
+            >
+              <component
+                :is="isRightCollapsed ? 'PanelRightOpen' : 'PanelRightClose'"
+                class="text-gray-500"
+                :size="16"
+              />
+            </div>
+          </el-tooltip>
+        </div>
+        <h3
+          v-show="!isRightCollapsed"
+          class="text-sm font-medium text-gray-700"
+        >
+          基本屬性
+        </h3>
       </div>
+
       <div class="flex-1 overflow-y-auto">
-        <div class="p-4 space-y-4">
+        <div v-show="!isRightCollapsed" class="p-2 space-y-4">
           <!-- 基本屬性 -->
           <div class="space-y-2">
             <!-- 表單 -->
@@ -341,9 +357,11 @@
                   placeholder="請選擇範本類型"
                   :fit-input-width="true"
                 >
-                  <el-option label="流程範本" value="flow" />
-                  <el-option label="報表範本" value="report" />
+                  <el-option label="business" value="business" />
                 </el-select>
+                <el-tag type="info"
+                  >先暫時固定 business (未來會有流程類型)</el-tag
+                >
               </el-form-item>
 
               <el-form-item label="範本名稱" prop="name">
@@ -370,15 +388,22 @@
                 </el-radio-group>
               </el-form-item>
 
-              <el-form-item label="元數據(not used)" prop="description">
+              <el-form-item label="元數據">
                 <el-input
                   v-model="flowTemplate.metadata"
                   type="textarea"
                   :rows="5"
                 />
+                <el-tag type="info"> 暫時沒使用，備著 </el-tag>
               </el-form-item>
             </el-form>
           </div>
+        </div>
+        <div
+          v-show="isRightCollapsed"
+          class="p-4 text-sm writing-vertical-lr text-gray-700"
+        >
+          基本屬性
         </div>
       </div>
     </div>
@@ -551,9 +576,13 @@ const handleRouteChange = async (to, from, next) => {
 };
 
 const flowTemplate = ref(null);
+const handleFitView = () => {
+  setTimeout(() => {
+    fitView({ padding: 0.2 });
+  }, 400);
+};
 // 載入範本資料
 const loadTemplate = async () => {
-  console.log("loadTemplate");
   try {
     const templateId = route.params.id;
     const response = await getFlowTemplateById(templateId);
@@ -579,6 +608,10 @@ const loadTemplate = async () => {
         //     layoutGraph();
         //   }, 100);
         //}
+        handleFitView();
+        setTimeout(() => {
+          hasUnsavedChanges.value = false;
+        }, 400);
       } catch (e) {
         console.error("解析範本配置失敗:", e);
         elements.value = [];
@@ -851,13 +884,14 @@ const onNodeDragStop = (event) => {
 
 // 節點變化事件
 const onNodesChange = (changes) => {
-  // console.log("Nodes changed:", changes);
+  console.log("Nodes changed:", changes);
   hasUnsavedChanges.value = true;
 };
 
 // 邊線變化事件
 const onEdgesChange = (changes) => {
   //console.log("Edges changed:", changes);
+  // TODO: 會與從資料庫載入的打架
   hasUnsavedChanges.value = true;
 };
 //#endregion
@@ -870,6 +904,12 @@ const updateNodeData = () => {
     el.id === selectedNode.value.id ? selectedNode.value : el
   );
   hasUnsavedChanges.value = true;
+};
+
+const handleReset = () => {
+  // 重置畫布
+  setNodes([]);
+  setEdges([]);
 };
 
 // JSON 顯示
@@ -955,17 +995,13 @@ const layoutGraph = (direction = "LR") => {
 
   // 只有當有多個節點時才執行 fitView
   if (nodes.value.length > 1) {
-    setTimeout(() => {
-      fitView({ padding: 0.2 });
-    }, 100);
+    handleFitView();
   }
 };
 
 const formRules = {
   name: [{ required: true, message: "請輸入範本名稱" }],
   description: [{ required: true, message: "請輸入範本描述" }],
-  status: [{ required: true, message: "請選擇範本狀態" }],
-  type: [{ required: true, message: "請選擇範本類型" }],
 };
 // 處理儲存
 const handleSave = async () => {
@@ -976,6 +1012,7 @@ const handleSave = async () => {
     console.log("handleSave", nodes, edges);
     // 在這裡添加儲存邏輯
     await updateFlowTemplate(route.params.id, {
+      ...flowTemplate.value,
       config: JSON.stringify({ elements: elements.value }),
       nodes: nodes,
       edges: edges,
@@ -1028,10 +1065,16 @@ const handlePreviewThumbnail = async () => {
 
 // 面板摺疊狀態
 const isCollapsed = ref(false);
-
+const isRightCollapsed = ref(false);
 // 處理面板摺疊
 const handlePanelCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
+  handleFitView();
+};
+
+const handleRightPanelCollapse = () => {
+  isRightCollapsed.value = !isRightCollapsed.value;
+  handleFitView();
 };
 
 onMounted(() => {

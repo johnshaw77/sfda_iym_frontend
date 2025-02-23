@@ -522,7 +522,7 @@ import { getTemplateById, updateTemplate, publishTemplate } from "@/api";
 import { getNodeDefinitions } from "@/api/modules/nodeDefinitions";
 import { useTemplateStore } from "@/stores/template";
 import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
-import HttpRequestNode from "@/components/flow-nodes/business/HttpRequestNode.vue";
+import HttpRequestNode from "@/components/flow-nodes/base/HttpRequestNode.vue";
 import ComplaintSelectorNode from "@/components/flow-nodes/business/ComplaintSelectorNode.vue";
 import TopDefectsNode from "@/components/flow-nodes/business/TopDefectsNode.vue";
 import StatisticProcessNode from "@/components/flow-nodes/business/StatisticProcessNode.vue";

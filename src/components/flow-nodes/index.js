@@ -1,7 +1,7 @@
 import ComplaintSelectorNode from "./business/ComplaintSelectorNode.vue";
 import TopDefectsNode from "./business/TopDefectsNode.vue";
 import StatisticProcessNode from "./business/StatisticProcessNode.vue";
-import HttpRequestNode from "./business/HttpRequestNode.vue";
+import HttpRequestNode from "./base/HttpRequestNode.vue";
 
 // 註冊所有節點
 export const registerNodes = (vueFlow) => {
