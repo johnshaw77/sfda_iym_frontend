@@ -277,7 +277,8 @@ onDeactivated(() => {
 const fetchProjects = async () => {
   try {
     loading.value = true;
-    projects.value = await getProjects();
+    const response = await getProjects();
+    projects.value = response.data;
   } catch (error) {
     console.error("獲取專案列表失敗:", error);
     ElMessage.error("獲取專案列表失敗");

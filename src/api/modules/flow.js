@@ -1,14 +1,14 @@
 import request from "@/api/request";
 
 // FlowNodeDefinition API
-export const getNodeDefinitions = () => {
+export const getFlowNodeDefinitions = () => {
   return request({
     url: '/flow-node-definitions',
     method: 'get'
   })
 }
 
-export const createNodeDefinition = (data) => {
+export const createFlowNodeDefinition = (data) => {
   return request({
     url: '/flow-node-definitions',
     method: 'post',
@@ -16,7 +16,7 @@ export const createNodeDefinition = (data) => {
   })
 }
 
-export const updateNodeDefinition = (id, data) => {
+export const updateFlowNodeDefinition = (id, data) => {
   return request({
     url: `/flow-node-definitions/${id}`,
     method: 'put',
@@ -24,7 +24,7 @@ export const updateNodeDefinition = (id, data) => {
   })
 }
 
-export const deleteNodeDefinition = (id) => {
+export const deleteFlowNodeDefinition = (id) => {
   return request({
     url: `/flow-node-definitions/${id}`,
     method: 'delete'
@@ -35,6 +35,13 @@ export const deleteNodeDefinition = (id) => {
 export const getFlowTemplates = () => {
   return request({
     url: '/flow-templates',
+    method: 'get'
+  })
+}
+
+export const getFlowTemplateById = (id) => {
+  return request({
+    url: `/flow-templates/${id}`,
     method: 'get'
   })
 }
@@ -61,3 +68,11 @@ export const deleteFlowTemplate = (id) => {
     method: 'delete'
   })
 } 
+
+/**
+ * 發布工作流程範本
+ * @param {string} id - 範本 ID
+ * @returns {Promise<Object>} - 發布後的範本
+ */
+export const publishFlowTemplate = (id) =>
+  request.put(`/flow-templates/${id}/publish`);

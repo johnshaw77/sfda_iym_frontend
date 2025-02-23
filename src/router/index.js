@@ -2,7 +2,8 @@
  * @fileoverview 路由配置
  * @version 1.0.0
  * @since 2025-02-14
- * @description !!注意: meta 的 showContentHeader 除了影響 content-header 的顯示外，如果子頁面有用到 Teleport 就一定要設成 true
+ * @description !!注意: meta 的 showContentHeader 除了影響 content-header 的顯示外，
+ * 如果子頁面有用到 Teleport 就一定要設成 true
  */
 
 import { createRouter, createWebHistory } from "vue-router";
@@ -64,57 +65,6 @@ const routes = [
       title: "工作流程",
       icon: "GitGraph",
       showContentHeader: true,
-    },
-  },
-  {
-    path: "/workflow-templates",
-    name: "WorkflowTemplates",
-    component: () => import("@/views/workflow-templates/index.vue"),
-    meta: {
-      keepAlive: true,
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: "工作流程範本",
-      icon: "Workflow",
-      showContentHeader: true,
-    },
-  },
-  {
-    path: "/node-definitions",
-    name: "NodeDefinitions",
-    component: () => import("@/views/node-definitions/index.vue"),
-    meta: {
-      title: "節點定義管理",
-      icon: "Component",
-      requiresAuth: true,
-      requiresAdmin: true,
-      showContentHeader: true,
-    },
-  },
-  {
-    path: "/node-definitions2",
-    name: "NodeDefinitions2",
-    component: () => import("@/views/node-definitions/index2.vue"),
-    meta: {
-      title: "節點定義管理2",
-      icon: "Component",
-      requiresAuth: true,
-      requiresAdmin: true,
-      showContentHeader: true,
-    },
-  },
-  {
-    path: "/workflow-templates/:id/design",
-    name: "WorkflowTemplateDesign",
-    component: () => import("@/views/workflow-templates/design.vue"),
-    meta: {
-      keepAlive: true,
-      requiresAuth: true,
-      requiresAdmin: true,
-      title: "工作流程範本設計",
-      icon: "Workflow",
-      showContentHeader: true,
-      hidden: true,
     },
   },
   {
@@ -210,7 +160,7 @@ const routes = [
   {
     path: '/flow-node-definitions',
     name: 'FlowNodeDefinitions',
-    component: () => import('@/views/flow/NodeDefinitionList.vue'),
+    component: () => import('@/views/flow/FlowNodeDefinitionList.vue'),
     meta: {
       title: "節點定義管理",
       icon: "Component",
@@ -222,7 +172,7 @@ const routes = [
   {
     path: "/flow-templates",
     name: "FlowTemplates",
-    component: () => import("@/views/flow/TemplateList.vue"),
+    component: () => import("@/views/flow/FlowTemplateList.vue"),
     meta: {
       title: "流程模板管理",
       icon: "Workflow",
@@ -231,15 +181,19 @@ const routes = [
       showContentHeader: true,
     },
   },
-
-  // {
-  //   path: "/workflow-test",
-  //   name: "WorkflowTest",
-  //   component: () => import("./views/workflow-test/index.vue"),
-  //   meta: {
-  //     keepAlive: true,
-  //   },
-  // },
+  {
+    path: "/flow-templates/:id/design",
+    name: "FlowTemplateDesign",
+    component: () => import("@/views/flow/FlowTemplateDesign.vue"),
+    meta: {
+      title: "流程模板設計",
+      icon: "Workflow",
+      requiresAuth: true,
+      requiresAdmin: true,
+      showContentHeader: true,
+      hidden: true,
+    },
+  },
 ];
 
 const router = createRouter({

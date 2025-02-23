@@ -189,7 +189,7 @@ import { ref } from "vue";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { request } from "@/api/request";
 import { testExternalApi } from "@/api/modules/external";
-import { useFlowComponents } from "@/composables/useFlowComponents";
+import { useFlowComponents } from "@/composables/useFlowNodeComponents";
 
 const activeTab = ref("users");
 const uploadResult = ref(null);
@@ -309,8 +309,8 @@ const {
   currentComponent,
   getComponentName,
   previewComponent,
-  closePreview
-} = useFlowComponents();
+  closePreview,
+} = useFlowNodeComponents();
 </script>
 
 <style scoped>

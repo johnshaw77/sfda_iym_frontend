@@ -19,50 +19,6 @@ NProgress.configure({
   minimum: 0.3,
 });
 
-// 引入 Lucide Icons
-import {
-  // 導航/選單圖標
-  LineChart,
-  FileText,
-  Settings,
-  GitGraph,
-  Workflow,
-  WalletCards,
-  KeyRound,
-  Cog,
-  Home,
-  Component,
-
-  // 通用操作圖標
-  Plus,
-  Upload,
-  Download,
-  Trash,
-  Eye,
-  X,
-  Edit,
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-  User,
-  UserCircle,
-  Table,
-  ClipboardCheck,
-  Shield,
-  LogOut,
-  FolderKanban,
-  Search,
-  Edit2,
-  Send,
-  Archive,
-  Trash2,
-  Pencil,
-  RotateCw,
-  MoreVertical,
-  Tag,
-  Calendar,
-} from "lucide-vue-next";
-
 // 創建應用實例
 const app = createApp(App);
 
@@ -90,53 +46,12 @@ app.use(ElementPlus, {
   locale: zhTw,
 });
 
-// 註冊 Lucide Icons
-const icons = {
-  // 導航/選單圖標
-  LineChart,
-  FileText,
-  Settings,
-  GitGraph,
-  Workflow,
-  WalletCards,
-  KeyRound,
-  Cog,
-  Home,
-  Component,
-
-  // 通用操作圖標
-  Plus,
-  Upload,
-  Download,
-  Trash,
-  Eye,
-  X,
-  Edit,
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-  User,
-  UserCircle,
-  Table,
-  ClipboardCheck,
-  Shield,
-  LogOut,
-  FolderKanban,
-  Search,
-  Edit2,
-  Send,
-  Archive,
-  Trash2,
-  Pencil,
-  RotateCw,
-  MoreVertical,
-  Tag,
-  Calendar,
-};
-
-Object.entries(icons).forEach(([name, component]) => {
-  app.component(name, component);
-});
+import * as LucideIcons from "lucide-vue-next";
+// 註冊所有圖示
+// 全局註冊的方式只允許在 template 中使用元件標籤（如 <Save />），但不能直接作為值傳遞
+Object.entries(LucideIcons).forEach(([name, component]) => {
+  app.component(name, component)
+})
 
 // 使用路由
 app.use(router);

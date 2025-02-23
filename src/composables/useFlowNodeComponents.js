@@ -2,8 +2,8 @@ import { ref, shallowRef, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
 // 工作流程組件 (主要使用於節點定義管理，使其能動態載入所有節點的組件)
-export function useFlowComponents() {
-  const components = ref({});
+export function useFlowNodeComponents() {
+  const flowNodeComponents = ref({});
   const showPreview = ref(false);
   const currentComponent = shallowRef(null);
   const previewNodeData = ref(null);
@@ -100,18 +100,18 @@ export function useFlowComponents() {
   };
 
   // 載入所有組件
-  const loadComponents = async () => {
+  const loadFlowNodeComponents = async () => {
     const modules = import.meta.glob("@/components/flow-nodes/**/*.vue", { eager: true });
-    components.value = modules;
+    flowNodeComponents.value = modules;
   };
 
   // 在組件掛載時載入
   onMounted(() => {
-    loadComponents();
+    loadFlowNodeComponents();
   });
 
   return {
-    components,
+    flowNodeComponents,
     showPreview,
     currentComponent,
     previewNodeData,
@@ -120,6 +120,6 @@ export function useFlowComponents() {
     loadComponent,
     previewComponent,
     closePreview,
-    loadComponents
+    loadFlowNodeComponents
   };
 } 

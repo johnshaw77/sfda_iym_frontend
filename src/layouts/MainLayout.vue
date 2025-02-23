@@ -23,7 +23,7 @@
             <el-breadcrumb
               v-if="breadcrumbs.length > 0"
               class="ml-0"
-              separator="/"
+              :separator-icon="ArrowRight"
             >
               <el-breadcrumb-item
                 v-for="item in breadcrumbs"
@@ -59,13 +59,14 @@ import { computed, ref, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import AppSidebar from "@/components/AppSidebar.vue";
 import AppHeader from "@/components/AppHeader.vue";
-import { Settings } from "lucide-vue-next";
-import { useTemplateStore } from "@/stores/template";
+import { ArrowRight } from "@element-plus/icons-vue";
+
+import { useFlowTemplateStore } from "@/stores/flowTemplate";
 
 const route = useRoute();
 const router = useRouter();
 const sidebarRef = ref(null);
-const templateStore = useTemplateStore();
+const flowTemplateStore = useFlowTemplateStore();
 const templateName = ref("");
 
 const sidebarCollapsed = computed(() => sidebarRef.value?.isCollapse || false);
@@ -88,19 +89,6 @@ const cachedViews = computed(() => {
     .map((route) => route.name);
 });
 
-// 監聽路由參數變化
-// watch(
-//   () => route.params,
-//   (newParams) => {
-//     console.log("路由參數變化:", newParams);
-//     if (newParams.templateName) {
-//       templateName.value = newParams.templateName;
-//       console.log("更新 templateName 為:", templateName.value);
-//     }
-//   },
-//   { immediate: true, deep: true }
-// );
-
 // 生成麵包屑
 const breadcrumbs = computed(() => {
   const matched = route.matched;
@@ -109,16 +97,15 @@ const breadcrumbs = computed(() => {
 
   matched.forEach((route) => {
     // 優先處理工作流程範本設計頁面
-    if (route.name === "WorkflowTemplateDesign") {
+    if (route.name === "FlowTemplateDesign") {
       result.push({
-        path: "/workflow-templates",
+        path: "/flow-templates",
         title: "工作流程範本",
       });
       result.push({
         path: route.path,
-        title: templateStore.templateName || "載入中...",
+        title: flowTemplateStore.templateName || "載入中...",
       });
-      //console.log("工作流程範本設計頁面麵包屑:", result);
     }
     // 其他一般路由的處理
     else if (!route.meta?.hidden) {

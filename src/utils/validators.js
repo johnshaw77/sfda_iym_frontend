@@ -71,6 +71,7 @@ export const nodeDefinitionValidators = {
   ]
 };
 
+/**
 // 格式化節點定義鍵值
 export const formatDefinitionKey = (value) => {
   if (!value) return '';
@@ -112,3 +113,4 @@ export const isValidDefinitionKeyInput = (event) => {
 
   return true;
 };
+*/

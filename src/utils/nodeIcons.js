@@ -1,11 +1,5 @@
-import {
-  Component,
-  TextCursorInput,
-  Filter,
-  Calculator,
-  BarChart,
-  FileInput,
-} from "lucide-vue-next";
+import { useIcons } from "@/composables/useIcons";
+const { icons } = useIcons();
 
 /**
  * 根據節點類別獲取對應的圖標
@@ -15,13 +9,13 @@ import {
 export const getNodeIcon = (category) => {
   switch (category) {
     case "business-input":
-      return TextCursorInput;
+      return icons.TextCursorInput;
     case "business-process":
-      return Filter;
+      return icons.Filter;
     case "statistical-analysis":
-      return BarChart;
+      return icons.BarChart;
     default:
-      return Component;
+      return icons.Component;
   }
 };
 
@@ -33,12 +27,12 @@ export const getNodeIcon = (category) => {
 export const getCategoryIcon = (category) => {
   switch (category) {
     case "business-input":
-      return FileInput;
+      return icons.FileInput;
     case "business-process":
-      return Filter;
+      return icons.Filter;
     case "statistical-analysis":
-      return BarChart;
+      return icons.BarChart;
     default:
-      return Component;
+      return icons.Component;
   }
 };

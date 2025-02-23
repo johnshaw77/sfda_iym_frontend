@@ -93,11 +93,7 @@ const isHandleConnected = (handleId) => {
   );
 };
 
-onMounted(() => {
-  console.log(props.nodeType);
-  console.log(props.inputs);
-  console.log(props.outputs);
-});
+onMounted(() => {});
 </script>
 
 <style scoped>
@@ -119,7 +115,7 @@ onMounted(() => {
 
 /* 輸入連接點樣式（方形） */
 .handle-input {
-  @apply !h-8 bg-gray-500 rounded-none;
+  @apply !w-3 !h-8 bg-gray-500 rounded-none;
 }
 
 /* 輸出連接點樣式（圓形） */

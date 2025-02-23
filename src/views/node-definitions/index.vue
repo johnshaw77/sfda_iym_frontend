@@ -501,7 +501,7 @@ import {
   processNodeData,
   prepareNodeDataForSave,
 } from "@/utils/nodeUtils";
-import { useFlowComponents } from "@/composables/useFlowComponents";
+import { useFlowComponents } from "@/composables/useFlowNodeComponents";
 
 // 狀態
 const loading = ref(false);

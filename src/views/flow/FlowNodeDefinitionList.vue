@@ -3,7 +3,12 @@
 <template>
   <div class="p-0">
     <Teleport to="#header-actions" v-if="showHeaderContent">
-      <el-button plain @click="fetchData" :loading="loading" title="重新整理">
+      <el-button
+        plain
+        @click="handleRefresh"
+        :loading="loading"
+        title="重新整理"
+      >
         <RotateCw class="mr-1" :size="14" />
         重整
       </el-button>
@@ -23,6 +28,11 @@
         align="center"
         sortable
       />
+      <el-table-column prop="icon" label="圖示" width="60">
+        <template #default="{ row }">
+          <component :is="icons[row.icon]" class="w-4 h-4" />
+        </template>
+      </el-table-column>
       <el-table-column prop="category" label="分類" width="120" sortable>
         <template #default="{ row }">
           <el-tag :type="getCategoryType(row.category)">
@@ -30,8 +40,15 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="名稱" width="180" sortable />
-
+      <el-table-column label="名稱" width="200" sortable>
+        <template #default="{ row }">
+          <div class="flex items-center gap-2">
+            <!-- 圖示 -->
+            <!-- <component :is="icons[row.icon]" class="w-4 h-4" /> -->
+            <span>{{ row.name }}</span>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column prop="description" label="描述" />
 
       <el-table-column
@@ -127,6 +144,9 @@
             type="textarea"
             placeholder="請輸入描述"
           />
+        </el-form-item>
+        <el-form-item label="圖示" prop="icon">
+          <IconPicker v-model="form.icon" />
         </el-form-item>
         <el-form-item label="組件名稱" prop="componentName">
           <el-input v-model="form.componentName" placeholder="請輸入組件名稱" />
@@ -232,7 +252,7 @@
     <!-- 節點預覽對話框 -->
     <el-dialog
       v-model="previewDialogVisible"
-      title="節點預覽"
+      title="節點預覽(出現的位置待修正)"
       width="1200px"
       top="5vh"
       :fullscreen="false"
@@ -282,11 +302,12 @@ import {
 } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { formatTimestamp } from "@/utils/dateUtils";
+import IconPicker from "@/components/IconPicker.vue";
 import {
-  getNodeDefinitions,
-  createNodeDefinition,
-  updateNodeDefinition,
-  deleteNodeDefinition,
+  getFlowNodeDefinitions,
+  createFlowNodeDefinition,
+  updateFlowNodeDefinition,
+  deleteFlowNodeDefinition,
 } from "@/api/modules/flow";
 import {
   DEFAULT_UI_CONFIG,
@@ -297,10 +318,13 @@ import {
   processNodeData,
   prepareNodeDataForSave,
 } from "@/utils/nodeUtils";
-import { useFlowComponents } from "@/composables/useFlowComponents";
+import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import JsonViewer from "vue-json-viewer";
 import { VueFlow } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
+import * as LucideIcons from "lucide-vue-next";
+
+const icons = LucideIcons;
 
 // 數據
 const loading = ref(false);
@@ -321,14 +345,14 @@ onDeactivated(() => {
 });
 // 使用 Flow Components composable
 const {
-  components,
+  flowNodeComponents,
   getComponentName,
-  loadComponents,
+  loadFlowNodeComponents,
   previewComponent,
   currentComponent,
   nodes,
   closePreview,
-} = useFlowComponents();
+} = useFlowNodeComponents();
 
 const formRef = ref(null);
 
@@ -428,25 +452,30 @@ const getCategoryLabel = (category) => {
 
 // 將 components 轉換為下拉選單選項
 const componentOptions = computed(() => {
-  console.log("components value:", components.value);
+  console.log("flowNodeComponents value:", flowNodeComponents.value);
 
   // 檢查 components.value 是否為空
-  if (!components.value || Object.keys(components.value).length === 0) {
+  if (
+    !flowNodeComponents.value ||
+    Object.keys(flowNodeComponents.value).length === 0
+  ) {
     console.log("No components loaded");
     return [];
   }
 
-  const options = Object.entries(components.value).map(([path, component]) => {
-    // 移除前面的 '@' 符號
-    const cleanPath = path.startsWith(".") ? path.slice(2) : path;
-    console.log("Processing path:", path, "-> clean path:", cleanPath);
+  const options = Object.entries(flowNodeComponents.value).map(
+    ([path, component]) => {
+      // 移除前面的 '@' 符號
+      const cleanPath = path.startsWith(".") ? path.slice(2) : path;
+      console.log("Processing path:", path, "-> clean path:", cleanPath);
 
-    return {
-      value: path,
-      label: getComponentName(path),
-      path: cleanPath,
-    };
-  });
+      return {
+        value: path,
+        label: getComponentName(path),
+        path: cleanPath,
+      };
+    }
+  );
 
   console.log("Processed options:", options);
   return options;
@@ -522,11 +551,11 @@ watch(previewDialogVisible, (visible) => {
   }
 });
 
-const fetchData = async () => {
+const handleRefresh = async () => {
   loading.value = true;
   try {
-    const response = await getNodeDefinitions();
-    nodeDefinitions.value = response;
+    const response = await getFlowNodeDefinitions();
+    nodeDefinitions.value = response.data;
   } catch (error) {
     ElMessage.error("獲取數據失敗");
   } finally {
@@ -581,9 +610,9 @@ const handleDelete = async (row) => {
     await ElMessageBox.confirm("確定要刪除這個節點定義嗎？", "提示", {
       type: "warning",
     });
-    await deleteNodeDefinition(row.id);
+    await deleteFlowNodeDefinition(row.id);
     ElMessage.success("刪除成功");
-    fetchData();
+    handleRefresh();
   } catch (error) {
     if (error !== "cancel") {
       ElMessage.error("刪除失敗");
@@ -605,14 +634,14 @@ const handleSubmit = async () => {
         };
 
         if (isEdit.value) {
-          await updateNodeDefinition(form.value.id, submitData);
+          await updateFlowNodeDefinition(form.value.id, submitData);
           ElMessage.success("更新成功");
         } else {
-          await createNodeDefinition(submitData);
+          await createFlowNodeDefinition(submitData);
           ElMessage.success("創建成功");
         }
         dialogVisible.value = false;
-        fetchData();
+        handleRefresh();
       } catch (error) {
         ElMessage.error(isEdit.value ? "更新失敗" : "創建失敗");
       }
@@ -622,7 +651,7 @@ const handleSubmit = async () => {
 
 // 生命週期
 onMounted(() => {
-  fetchData();
+  handleRefresh();
 });
 </script>
 
