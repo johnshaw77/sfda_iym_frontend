@@ -586,9 +586,7 @@ const loadTemplate = async () => {
   try {
     const templateId = route.params.id;
     const response = await getFlowTemplateById(templateId);
-    console.log("response", response.data);
     flowTemplate.value = response.data;
-    console.log("flowTemplate", flowTemplate.value);
 
     if (response.data) {
       // 使用 Pinia store 設置範本名稱
@@ -600,12 +598,10 @@ const loadTemplate = async () => {
 
         elements.value = [...nodes, ...edges];
 
-        console.log("elements", elements.value);
-
         // // 只有當有節點時才執行自動布局
         // if (elements.value.length > 0) {
         //   setTimeout(() => {
-        //     layoutGraph();
+        //     handleLayoutGraph();
         //   }, 100);
         //}
         handleFitView();
@@ -650,7 +646,6 @@ Object.entries(flowNodeComponents.value).forEach(([key, value]) => {
 
 // 處理節點拖拽開始
 const handleDragStart = (event, node) => {
-  console.log("handleDragStart", node, node.componentName);
   event.dataTransfer.setData(
     "application/vueflow",
     JSON.stringify({
@@ -847,9 +842,7 @@ const onConnect = (params) => {
 };
 
 // 邊線點擊事件
-const onEdgeClick = (event) => {
-  console.log("Edge clicked:", event);
-};
+const onEdgeClick = (event) => {};
 
 // 邊線更新事件
 const onEdgeUpdate = (oldEdge, newConnection) => {
@@ -884,7 +877,6 @@ const onNodeDragStop = (event) => {
 
 // 節點變化事件
 const onNodesChange = (changes) => {
-  console.log("Nodes changed:", changes);
   hasUnsavedChanges.value = true;
 };
 
@@ -906,6 +898,7 @@ const updateNodeData = () => {
   hasUnsavedChanges.value = true;
 };
 
+// 處理重置畫布(清空)
 const handleReset = () => {
   // 重置畫布
   setNodes([]);
@@ -925,11 +918,11 @@ const handleLayoutDirectionChange = (direction) => {
 
 // 處理重新布局
 const handleLayout = () => {
-  layoutGraph(layoutSettings.value.direction);
+  handleLayoutGraph(layoutSettings.value.direction);
 };
 
 // 自動布局函數
-const layoutGraph = (direction = "LR") => {
+const handleLayoutGraph = (direction = "LR") => {
   if (!nodes.value || nodes.value.length === 0) return;
 
   const { spacing, nodeWidth, nodeHeight } = layoutSettings.value;
@@ -1003,13 +996,13 @@ const formRules = {
   name: [{ required: true, message: "請輸入範本名稱" }],
   description: [{ required: true, message: "請輸入範本描述" }],
 };
+
 // 處理儲存
 const handleSave = async () => {
   try {
     // 從 elements 中的，取出 nodes (沒有屬性 sourceHandle 的)
     const nodes = elements.value.filter((el) => !el.sourceHandle);
     const edges = elements.value.filter((el) => el.sourceHandle);
-    console.log("handleSave", nodes, edges);
     // 在這裡添加儲存邏輯
     await updateFlowTemplate(route.params.id, {
       ...flowTemplate.value,
@@ -1059,8 +1052,14 @@ const handlePreviewThumbnail = async () => {
     console.warn("VueFlow element not found");
     return;
   }
+  const data = await capture(vueFlowRef.value, { shouldDownload: false });
 
-  capture(vueFlowRef.value, { shouldDownload: true });
+  flowTemplate.value.thumbnail = data;
+
+  //TODO: base64 太大了，先不儲存
+  // handleSave();
+
+  return capture(vueFlowRef.value, { shouldDownload: false });
 };
 
 // 面板摺疊狀態

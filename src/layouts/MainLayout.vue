@@ -62,12 +62,13 @@ import AppHeader from "@/components/AppHeader.vue";
 import { ArrowRight } from "@element-plus/icons-vue";
 
 import { useFlowTemplateStore } from "@/stores/flowTemplate";
+import { useFlowInstanceStore } from "@/stores/flowInstance";
 
 const route = useRoute();
 const router = useRouter();
 const sidebarRef = ref(null);
 const flowTemplateStore = useFlowTemplateStore();
-const templateName = ref("");
+const flowInstanceStore = useFlowInstanceStore();
 
 const sidebarCollapsed = computed(() => sidebarRef.value?.isCollapse || false);
 
@@ -103,8 +104,20 @@ const breadcrumbs = computed(() => {
         title: "工作流程範本",
       });
       result.push({
-        path: route.path,
-        title: flowTemplateStore.templateName || "載入中...",
+        //path: route.path,
+        title: flowTemplateStore.templateName + " 設計" || "載入中...",
+      });
+    }
+    // 優先處理工作流程實例詳情頁面
+    else if (route.name === "FlowInstanceDetail") {
+      console.log("FlowInstanceDetailPath", route);
+      result.push({
+        path: "/flow-instances",
+        title: "工作流程實例",
+      });
+      result.push({
+        //path: route.path,
+        title: flowInstanceStore.projectName || "載入中...",
       });
     }
     // 其他一般路由的處理

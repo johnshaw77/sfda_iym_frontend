@@ -10,7 +10,7 @@
     :header-bg-color="headerBgColor"
     :header-border-color="headerBorderColor"
     :handles="handles"
-    :minWidth="660"
+    :minWidth="320"
     @click="handleNodeClick"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
@@ -85,7 +85,7 @@ const props = defineProps({
 });
 
 // 視覺相關設定
-const headerBgColor = ref("#ebebeb"); // 淺綠色背景
+const headerBgColor = ref("#ff704d"); // 淺綠色背景
 const headerBorderColor = ref("#cfcfcf"); // 淺紅色邊框
 const icon = BarChart2;
 

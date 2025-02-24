@@ -7,9 +7,11 @@
       'cursor-pointer': !disabled,
       'opacity-50 cursor-not-allowed': disabled,
     }"
-    :style="{ width: '100%' }"
+    :style="{ width: `${nodeWidth}px`, height: `${nodeHeight}px` }"
   >
+    <!-- 顯示 resize 手柄 -->
     <NodeResizer
+      v-if="showResizer"
       :isVisible="selected"
       class="!border-blue-400"
       :lineStyle="{ borderWidth: '1px' }"
@@ -27,7 +29,7 @@
       :class="[
         customHeaderClass ||
           headerClasses[nodeType] ||
-          'bg-gray-50 border-gray-100',
+          'bg-gray-50 border-gray-50',
         { 'cursor-grab': !disabled },
       ]"
       :style="customHeaderStyle"
@@ -39,7 +41,7 @@
             :class="[iconClasses[nodeType] || 'text-gray-600']"
             :size="16"
           />
-          <span class="text-sm font-medium text-gray-700">{{ title }}</span>
+          <span class="text-lg font-medium text-gray-900">{{ title }}</span>
         </div>
         <!-- 展開時的摺疊按鈕 -->
         <button
@@ -54,7 +56,7 @@
           />
         </button>
       </div>
-      <div v-if="description" class="mt-1 text-xs text-gray-500">
+      <div v-if="description" class="mt-1 text-xs text-gray-900">
         {{ description }}
       </div>
     </div>
@@ -83,6 +85,7 @@
         :class="{ 'expandable-content-expanded': isExpanded }"
       >
         <slot></slot>
+        <el-divider />
       </div>
     </div>
 
@@ -90,13 +93,24 @@
     <div v-if="status" class="node-status">
       <div class="flex items-center justify-between text-xs">
         <span class="text-gray-500">狀態</span>
-        <el-tag
-          :type="statusType"
-          size="small"
-          :class="{ 'animate-pulse': status === 'running' }"
-        >
-          {{ statusText }}
-        </el-tag>
+        <div class="flex items-center space-x-2">
+          <el-button
+            type="success"
+            size="small"
+            @click="handleRun"
+            :loading-icon="Refresh"
+            :loading="running"
+            >測試執行</el-button
+          >
+
+          <el-tag
+            :type="statusType"
+            size="small"
+            :class="{ 'animate-pulse': status === 'running' }"
+          >
+            {{ statusText }}
+          </el-tag>
+        </div>
       </div>
     </div>
 
@@ -163,6 +177,14 @@ const props = defineProps({
       outputs: [],
     }),
   },
+  nodeWidth: {
+    type: Number,
+    default: 360,
+  },
+  height: {
+    type: Number,
+    default: 400,
+  },
   style: {
     type: Object,
     default: () => ({}),
@@ -187,8 +209,14 @@ const props = defineProps({
     type: Number,
     default: 120,
   },
+  // 是否顯示 resize 手柄
+  showResizer: {
+    type: Boolean,
+    default: false,
+  },
 });
 
+const running = ref(false);
 // 定義事件
 const emit = defineEmits([
   "click",
@@ -346,6 +374,17 @@ const updateContentHeight = () => {
       contentHeight.value = iconArea.scrollHeight;
     }
   }
+};
+
+// 測試執行
+const handleRun = () => {
+  console.log("測試執行");
+  running.value = true;
+  props.status = "running";
+  setTimeout(() => {
+    running.value = false;
+    props.status = "completed";
+  }, 3000);
 };
 
 // 監聽展開狀態變化

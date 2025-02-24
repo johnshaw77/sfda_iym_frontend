@@ -5,10 +5,10 @@ import request from "@/api/request";
  */
 
 /**
- * 獲取專案列表
- * @returns {Promise<Array>} 返回專案列表
+ * 獲取所有專案列表
+ * @returns {Promise} 專案列表
  */
-export function getProjects() {
+export function getAllProjects() {
   return request({
     url: "/projects",
     method: "get",
@@ -16,13 +16,29 @@ export function getProjects() {
 }
 
 /**
- * 獲取特定專案
- * @param {string} id - 專案ID
- * @returns {Promise<Object>} 返回專案詳情
+ * 根據專案 ID 獲取專案詳情
+ * @param {string} id - 專案 ID
+ * @returns {Promise} 專案詳情
  */
-export function getProject(id) {
+export function getProjectById(id) {
   return request({
     url: `/projects/${id}`,
+    method: "get",
+  });
+}
+
+/**
+ * 根據專案 ID 獲取專案的工作流程實例列表
+ * @param {string} projectId - 專案 ID
+ * @returns {Promise} 工作流程實例列表
+ * @throws {Error} 如果 projectId 為空
+ */
+export function getProjectInstances(projectId) {
+  if (!projectId) {
+    return Promise.reject(new Error("專案 ID 不能為空"));
+  }
+  return request({
+    url: `/projects/${projectId}/instances`,
     method: "get",
   });
 }

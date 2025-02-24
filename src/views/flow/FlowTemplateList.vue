@@ -1,6 +1,6 @@
 <!-- 流程模板管理頁面 -->
 <template>
-  <div class="p-0">
+  <div class="p-2">
     <Teleport to="#header-actions" v-if="showHeaderContent">
       <div v-if="showHeaderContent" class="flex items-center space-x-4">
         <el-radio-group v-model="viewMode">
@@ -46,7 +46,7 @@
           重整
         </el-button>
 
-        <el-button type="primary" @click="handleAdd">
+        <el-button type="primary" @click="handleAddTemplate">
           <Plus class="mr-1" :size="16" />
           新增流程模板
         </el-button>
@@ -180,7 +180,7 @@
               <div class="flex items-center text-sm text-gray-500">
                 <Calendar :size="16" class="mr-2" />
                 <span class="text-xs"
-                  >更新於 {{ formatDate(template.updatedAt) }}</span
+                  >更新於 {{ formatTimestamp(template.updatedAt) }}</span
                 >
               </div>
             </div>
@@ -384,6 +384,7 @@ import {
 } from "@/api/modules/flow";
 import { useUserStore } from "@/stores/user";
 import { formatTimestamp } from "@/utils/dateUtils";
+
 // 數據
 const loading = ref(false);
 const templates = ref([]);
@@ -411,6 +412,7 @@ onDeactivated(() => {
   showHeaderContent.value = false;
 });
 
+//TODO: remove this (這是給dialog用的)
 const form = ref({
   name: "",
   type: "business",
@@ -542,10 +544,7 @@ const getStatusLabel = (status) => {
   return labels[status] || status;
 };
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleString("zh-TW");
-};
-
+// 處理刷新(取得所有範本)
 const handleRefresh = async () => {
   loading.value = true;
   try {
@@ -558,7 +557,8 @@ const handleRefresh = async () => {
   }
 };
 
-const resetForm = () => {
+// 處理重置表單
+const handleResetForm = () => {
   form.value = {
     name: "",
     type: "business",
@@ -574,12 +574,14 @@ const resetForm = () => {
   }
 };
 
-const handleAdd = () => {
+// 處理新增範本
+const handleAddTemplate = () => {
   isEdit.value = false;
-  resetForm();
+  handleResetForm();
   dialogVisible.value = true;
 };
 
+// 處理編輯範本
 const handleEditTemplate = (row) => {
   isEdit.value = true;
   form.value = {
@@ -602,10 +604,13 @@ const handleEditTemplate = (row) => {
 
 import { useRouter } from "vue-router";
 const router = useRouter();
+
 // 處理設計範本
 const handleDesignTemplate = (template) => {
   router.push(`/flow-templates/${template.id}/design`);
 };
+
+// 處理狀態切換(for table)
 const handleToggleStatus = async (row) => {
   try {
     const newStatus = row.status === "active" ? "inactive" : "active";
@@ -617,6 +622,7 @@ const handleToggleStatus = async (row) => {
   }
 };
 
+// 處理刪除(for table)
 const handleDelete = async (row) => {
   try {
     await ElMessageBox.confirm("確定要刪除這個流程模板嗎？", "提示", {
@@ -632,6 +638,7 @@ const handleDelete = async (row) => {
   }
 };
 
+// 處理提交(for dialog)
 const handleSubmit = async () => {
   if (!formRef.value) return;
 
@@ -670,3 +677,70 @@ onMounted(() => {
   handleRefresh();
 });
 </script>
+
+<style scoped>
+.line-clamp-2 {
+  display: -webkit-box;
+  /* -webkit-line-clamp: 2; */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 專案卡片狀態邊框 */
+.bg-white {
+  border-top: 3px solid var(--el-color-info);
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* 新增專案卡片 */
+.bg-white.border-dashed {
+  border-top-style: dashed;
+  border-top-color: var(--el-border-color);
+  transition: all 0.3s ease;
+}
+.bg-white.border-dashed:hover {
+  border-top: 2px dashed var(--el-color-primary);
+}
+
+/* 草稿狀態 */
+.bg-white:has(.el-tag--info) {
+  border-top-color: var(--el-color-info);
+}
+
+/* 進行中狀態 */
+.bg-white:has(.el-tag--warning) {
+  border-top-color: var(--el-color-warning);
+}
+
+/* 已完成狀態 */
+.bg-white:has(.el-tag--success) {
+  border-top-color: var(--el-color-success);
+}
+
+/* 已取消狀態 */
+.bg-white:has(.el-tag--danger) {
+  border-top-color: var(--el-color-danger);
+}
+
+/* 專案卡片動畫效果 */
+.transform {
+  transform-origin: center;
+  backface-visibility: hidden;
+  will-change: transform;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 移除原有的旋轉效果，改用放大效果 */
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+/* 確保卡片懸停時顯示在其他卡片上方 */
+.bg-white {
+  position: relative;
+  border-top: 3px solid var(--el-color-info);
+}
+</style>

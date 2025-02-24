@@ -71,7 +71,7 @@
 <script setup>
 import { computed } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { getNodeDefinition } from "@/api/modules/nodeDefinitions";
+import { getFlowNodeDefinition } from "@/api";
 
 const props = defineProps({
   id: {
@@ -91,7 +91,7 @@ const props = defineProps({
 // 獲取節點配置
 const nodeConfig = computed(async () => {
   try {
-    const response = await getNodeDefinition(props.data.type.toUpperCase());
+    const response = await getFlowNodeDefinition(props.data.type.toUpperCase());
     return response.data;
   } catch (error) {
     console.error("獲取節點配置失敗：", error);

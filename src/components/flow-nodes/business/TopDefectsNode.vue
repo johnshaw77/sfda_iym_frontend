@@ -83,7 +83,7 @@ const props = defineProps({
 });
 
 // 視覺相關設定
-const headerBgColor = ref("#ebebeb"); // 淺綠色背景
+const headerBgColor = ref("#9898e6"); // 淺綠色背景
 const headerBorderColor = ref("#cfcfcf"); // 淺綠色邊框
 const icon = BarChart3;
 

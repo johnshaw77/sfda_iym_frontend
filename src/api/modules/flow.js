@@ -76,3 +76,56 @@ export const deleteFlowTemplate = (id) => {
  */
 export const publishFlowTemplate = (id) =>
   request.put(`/flow-templates/${id}/publish`);
+
+// FlowInstance API
+export const getFlowInstances = (params) => {
+  return request({
+    url: '/flow-instances',
+    method: 'get',
+    params
+  })
+}
+
+export const getFlowInstanceById = (id) => {
+  return request({
+    url: `/flow-instances/${id}`,
+    method: 'get'
+  })
+}
+
+export const createFlowInstance = (data) => {
+  return request({
+    url: '/flow-instances',
+    method: 'post',
+    data
+  })
+}
+
+export const updateFlowInstance = (id, data) => {
+  return request({
+    url: `/flow-instances/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+export const deleteFlowInstance = (id) => {
+  return request({
+    url: `/flow-instances/${id}`,
+    method: 'delete'
+  })
+}
+
+export const startFlowInstance = (id) => {
+  return request({
+    url: `/flow-instances/${id}/start`,
+    method: 'put'
+  })
+}
+
+export const stopFlowInstance = (id) => {
+  return request({
+    url: `/flow-instances/${id}/stop`,
+    method: 'put'
+  })
+}

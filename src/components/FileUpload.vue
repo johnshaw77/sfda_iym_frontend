@@ -87,7 +87,7 @@ import {
   uploadWorkflowFile,
   deleteWorkflowFile,
   downloadWorkflowFile,
-} from "@/api/modules/workflow";
+} from "@/api";
 
 const props = defineProps({
   // 是否允許多檔案上傳

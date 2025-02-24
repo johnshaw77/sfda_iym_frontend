@@ -153,9 +153,9 @@
                 >
                   {{ project.systemCode }}
                 </div>
-                <span class="text-xs font-semibold text-gray-500">{{
-                  project.projectNumber
-                }}</span>
+                <span class="text-xs font-semibold text-gray-500">
+                  {{ project.projectNumber }} - {{ project.id }}</span
+                >
               </div>
             </div>
 
@@ -221,7 +221,7 @@ import { ref, onMounted, onActivated, onDeactivated, computed } from "vue";
 import { Plus, MoreVertical, Calendar, User, RefreshCw } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
-  getProjects,
+  getAllProjects,
   createProject,
   updateProject,
   deleteProject,
@@ -277,7 +277,7 @@ onDeactivated(() => {
 const fetchProjects = async () => {
   try {
     loading.value = true;
-    const response = await getProjects();
+    const response = await getAllProjects();
     projects.value = response.data;
   } catch (error) {
     console.error("獲取專案列表失敗:", error);

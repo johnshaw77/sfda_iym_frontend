@@ -23,12 +23,12 @@
         :edges-selectable="true"
         :select-nodes-on-drag="false"
         :connect-on-click="false"
-        :snap-to-grid="true"
+        :snap-to-grid="snapToGrid"
         :snap-grid="[20, 20]"
         :connection-mode="ConnectionMode.Loose"
         :delete-key-code="['Backspace', 'Delete']"
         :elevate-edges-on-select="true"
-        :fit-view-on-init="true"
+        :fit-view-on-init="false"
         :prevent-scrolling="true"
         :enable-pan-over-edges="true"
         :enable-edge-updates="true"
@@ -53,10 +53,14 @@
         @nodeDragStop="onNodeDragStop"
         @nodesChange="onNodesChange"
         @edgesChange="onEdgesChange"
+        @dragover="handleDragOver"
+        @drop="handleDrop"
+        @nodes-initialized="() => {}"
       >
-        <Background pattern-color="#aaa" gap="8" />
-        <MiniMap />
+        <Background pattern="lines" :gap="20" :size="1" />
+
         <Controls />
+        <MiniMap :pannable="true" :zoomable="true" />
         <Panel position="top-right" class="bg-white p-2 rounded shadow-md">
           <div class="flex flex-wrap gap-2">
             <el-button
@@ -92,15 +96,7 @@
               />
               自動布局
             </el-button>
-            <el-button size="small" @click="generateMockData">
-              <component
-                :is="Database"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1"
-              />
-              模擬數據
-            </el-button>
+
             <el-button size="small" @click="showJsonDrawer = true">
               <component
                 :is="FileJson"
@@ -161,50 +157,16 @@
             ><code>{{ JSON.stringify(elements, null, 2) }}</code></pre>
           </div>
         </el-drawer>
-
-        <!-- 線條刪除按鈕 -->
-        <!-- <template #edge-label="props">
-          <div
-            class="edge-button-wrapper"
-            :class="{ 'opacity-100': props.selected }"
-          >
-            <el-button
-              circle
-              size="large"
-              type="danger"
-              class="edge-delete-button"
-              @click="deleteEdge(props.id)"
-              @mousedown.stop
-              @click.stop
-            >
-              <X :size="16" />
-            </el-button>
-          </div>
-        </template> -->
-
-        <template #edge-button="buttonEdgeProps">
-          <EdgeWithButton
-            v-bind="buttonEdgeProps"
-            :source="buttonEdgeProps.source"
-            :target="buttonEdgeProps.target"
-            :selected="buttonEdgeProps.selected"
-            :animated="buttonEdgeProps.animated"
-            :label="buttonEdgeProps.label"
-          />
-        </template>
-        <template #edge-custom="props">
-          <CustomEdge v-bind="props" />
-        </template>
       </VueFlow>
     </div>
 
-    <NodeConfigPanel
+    <!-- <NodeConfigPanel
       v-if="selectedNode"
       :selected-node="selectedNode"
       @update:node="updateNode"
       @close="selectedNode = null"
       class="border-l"
-    />
+    /> -->
   </div>
 </template>
 
@@ -220,7 +182,6 @@ import {
 import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
-import { getFlowNodeDefinitions } from "@/api";
 import { EDGE_TYPES } from "./config/edgeTypes";
 import {
   Layout,
@@ -232,38 +193,55 @@ import {
   Undo2,
   Redo2,
 } from "lucide-vue-next";
-import dagre from "@dagrejs/dagre";
+import dagre from "@dagrejs/dagre"; // 自動布局
 import { ElMessageBox, ElMessage } from "element-plus";
 
-import CustomNode from "./nodes/CustomNode.vue";
-import StickyNote from "./nodes/StickyNote.vue";
-import NodeConfigPanel from "./NodeConfigPanel.vue";
-import CustomEdge from "./nodes/CustomEdge.vue";
-import EdgeWithButton from "./nodes/EdgeWithButton.vue";
+import StickyNote from "./StickyNote.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
 import { uploadWorkflowFile } from "@/api/modules/workflow";
-import FileNode from "./nodes/FileNode.vue";
+
+import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
+import FileNode from "./FileNode.vue";
 
 // 節點類型定義
 const NODE_TYPES = ref({});
 
+const props = defineProps({
+  flowInstance: {
+    type: Object,
+    required: true,
+  },
+});
+
 // 註冊自定義節點類型
 const nodeTypes = {
-  custom: CustomNode,
+  //custom: CustomNode,
   sticky: StickyNote,
   file: FileNode,
 };
 
+// 註冊自定義節點類型(!TODO: 改, 要視載入的節點而定)
+const { flowNodeComponents, loadFlowNodeComponents } = useFlowNodeComponents();
+
+loadFlowNodeComponents();
+
+Object.entries(flowNodeComponents.value).forEach(([key, value]) => {
+  const componentName = key
+    .replace("/src/components/flow-nodes/business/", "")
+    .replace(".vue", "");
+  nodeTypes[componentName] = value.default || value;
+});
+
 // 當前工作流程 ID（這裡先用預設值）
 const currentWorkflowId = ref("69f40f6e-6718-4588-881f-373444fe5ecb");
 
-// 註冊自定義邊線類型
+// 註冊自定義邊線類型(!TODO: 改)
 const edgeTypes = {
-  button: EdgeWithButton,
-  custom: CustomEdge,
+  button: "smoothstep",
+  custom: "smoothstep",
 };
 
 // 設置默認的連接線選項
@@ -283,7 +261,11 @@ const defaultEdgeOptions = {
   },
 };
 
-const elements = ref([]);
+const elements = ref([
+  ...props.flowInstance?.nodes,
+  ...props.flowInstance?.edges,
+]);
+
 const {
   project,
   fitView,
@@ -567,133 +549,11 @@ const onEdgeUpdateEnd = (event) => {
 };
 
 // 線條更新事件(Cursor 原本給的答案是錯的)
-const onEdgeUpdate = ({ edge, connection }) => {
-  console.log("update??", edge, connection);
-  if (!edge || !connection) {
-    console.warn("更新線條時缺少必要參數");
-    return;
-  }
-
-  //console.log("Updating edge:", { oldEdge, newConnection });
-
-  try {
-    // 直接使用 updateEdge 方法
-    const success = updateEdge(edge, connection);
-
-    if (success) {
-      // 更新成功後，更新本地狀態
-      elements.value = elements.value.map((el) => {
-        if (el.id === edge.id) {
-          return {
-            ...el,
-            source: connection.source,
-            target: connection.target,
-            sourceHandle: connection.sourceHandle,
-            targetHandle: connection.targetHandle,
-          };
-        }
-        return el;
-      });
-
-      // 記錄更新操作
-      recordAction(ActionTypes.EDGE_UPDATED, {
-        oldEdge: edge,
-        newEdge: elements.value.find((el) => el.id === edge.id),
-      });
-
-      ElMessage({
-        type: "success",
-        message: "已更新連線位置",
-      });
-    } else {
-      throw new Error("更新邊線失敗");
-    }
-  } catch (error) {
-    console.error("更新邊線時發生錯誤:", error);
-    ElMessage({
-      type: "error",
-      message: "更新連線失敗",
-    });
-  }
-};
+const onEdgeUpdate = ({ edge, connection }) => {};
 
 // 線條點擊事件
 const onEdgeClick = (event) => {
   // 可以在這裡添加其他線條點擊相關的邏輯
-};
-
-// 生成隨機節點數據
-const generateMockData = () => {
-  // 清空現有數據
-  elements.value = [];
-
-  // 生成 5-10 個隨機節點
-  const nodeCount = Math.floor(Math.random() * 6) + 5;
-  const mockNodes = [];
-  const nodeTypes = Object.values(NODE_TYPES.value);
-
-  // 生成隨機節點
-  for (let i = 0; i < nodeCount; i++) {
-    const type = nodeTypes[Math.floor(Math.random() * nodeTypes.length)];
-    const node = {
-      id: `node_${Date.now()}_${i}`,
-      type: "custom",
-      data: {
-        type: type.type,
-        content: `${type.label}_${Math.floor(Math.random() * 1000)}`,
-        status: "IDLE",
-        config: { ...type.defaultConfig },
-      },
-      position: {
-        x: Math.random() * 800,
-        y: Math.random() * 600,
-      },
-    };
-    mockNodes.push(node);
-  }
-
-  // 生成隨機連接線
-  const mockEdges = [];
-  // const edgeCount = Math.floor(Math.random() * (nodeCount - 2)) + 2;
-  const edgeCount = nodeCount - 1;
-  console.log("edgeCount", edgeCount);
-  for (let i = 0; i < edgeCount; i++) {
-    const sourceNode = mockNodes[Math.floor(Math.random() * mockNodes.length)];
-    const targetNode = mockNodes[Math.floor(Math.random() * mockNodes.length)];
-
-    //const edgeTypes = ["step", "button"];
-    const edgeTypes = Object.values(EDGE_TYPES);
-    const edgeType = edgeTypes[Math.floor(Math.random() * edgeTypes.length)];
-    console.log("edgeType", edgeType);
-    // 避免自己連接自己
-    if (sourceNode.id !== targetNode.id) {
-      const edge = {
-        id: `edge_${Date.now()}_${i}`,
-        source: sourceNode.id,
-        target: targetNode.id,
-        label: edgeType,
-        class: "normal-edge",
-        type: edgeType,
-        animated: true,
-        markerEnd: defaultEdgeOptions.markerEnd,
-      };
-      mockEdges.push(edge);
-    }
-  }
-
-  // 更新畫布
-  elements.value = [...mockNodes, ...mockEdges];
-
-  // 自動布局
-  setTimeout(() => {
-    autoLayout();
-  }, 100);
-
-  // 顯示提示
-  ElMessage({
-    type: "success",
-    message: `已生成 ${mockNodes.length} 個節點和 ${mockEdges.length} 條連接線`,
-  });
 };
 
 // 複製 JSON 到剪貼簿
@@ -709,13 +569,15 @@ const copyJson = () => {
 
 // 修改適應工作區功能
 const handleFitView = () => {
-  fitView({
-    padding: 50,
-    maxZoom: 1,
-    minZoom: 0.8,
-    duration: 150,
-    includeHiddenNodes: true,
-  });
+  setTimeout(() => {
+    fitView({
+      padding: 0.2,
+      maxZoom: 1,
+      minZoom: 0.8,
+      duration: 150,
+      includeHiddenNodes: true,
+    });
+  }, 100);
 };
 
 // 修改撤銷功能
@@ -850,13 +712,13 @@ const handleKeyDown = (event) => {
 
 // 監聽鍵盤事件
 onMounted(async () => {
-  try {
-    const response = await getFlowNodeDefinitions();
-    NODE_TYPES.value = response.data;
-  } catch (error) {
-    console.error("獲取節點類型定義失敗：", error);
-    ElMessage.error("獲取節點類型定義失敗");
-  }
+  // try {
+  //   const response = await getFlowNodeDefinitions();
+  //   NODE_TYPES.value = response.data;
+  // } catch (error) {
+  //   console.error("獲取節點類型定義失敗：", error);
+  //   ElMessage.error("獲取節點類型定義失敗");
+  // }
 
   // 其他初始化代碼...
   window.addEventListener("keydown", handleKeyDown);
@@ -972,12 +834,12 @@ const handleDrop = async (event) => {
       }
 
       // 上傳檔案
-      console.log("currentWorkflowId.value", currentWorkflowId.value);
+      //console.log("currentWorkflowId.value", currentWorkflowId.value);
       const result = await uploadWorkflowFile(file, currentWorkflowId.value);
-      console.log("result", result);
+      //console.log("result", result);
       // 更新節點資訊
       const node = nodes.value.find((n) => n.id === nodeId);
-      console.log("nodenodenode", result);
+      //console.log("nodenodenode", result);
       if (node) {
         node.data = {
           ...node.data,

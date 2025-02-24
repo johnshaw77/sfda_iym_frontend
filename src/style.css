@@ -122,3 +122,41 @@ button:focus-visible {
 #nprogress .peg {
   box-shadow: 0 0 10px #007AFF, 0 0 5px #007AFF !important;
 }
+
+
+/* JSON Viewer 自定義樣式 */
+.custom-json-viewer {
+  background-color: #f9fafb !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.custom-json-viewer .jv-container {
+  background: none !important;
+}
+
+.custom-json-viewer .jv-container .jv-code {
+  padding: 0 !important;
+  background: none !important;
+}
+
+.custom-json-viewer .jv-container .jv-key {
+  color: #2563eb !important;
+}
+
+.custom-json-viewer .jv-container .jv-item.jv-string {
+  color: #059669 !important;
+}
+
+.custom-json-viewer .jv-container .jv-item.jv-number {
+  color: #d97706 !important;
+}
+
+.custom-json-viewer .jv-container .jv-item.jv-boolean {
+  color: #7c3aed !important;
+}
+
+.custom-json-viewer .jv-container .jv-item.jv-null {
+  color: #dc2626 !important;
+}
