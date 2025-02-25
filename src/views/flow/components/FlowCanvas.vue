@@ -54,7 +54,6 @@
         @nodesChange="onNodesChange"
         @edgesChange="onEdgesChange"
         @dragover="handleDragOver"
-        @drop="handleDrop"
         @nodes-initialized="() => {}"
       >
         <Background pattern="lines" :gap="20" :size="1" />
@@ -201,7 +200,7 @@ import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
-import { uploadWorkflowFile } from "@/api/modules/workflow";
+import { uploadDocument } from "@/api/modules/flowDocument";
 
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import FileNode from "./FileNode.vue";
@@ -797,6 +796,7 @@ const handleDrop = async (event) => {
   });
 
   // 處理每個檔案
+  console.log(files.length);
   for (const file of files) {
     try {
       console.log("file", file);
@@ -833,9 +833,19 @@ const handleDrop = async (event) => {
         updateProgress(progress);
       }
 
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("projectId", props.flowInstance.projectId);
+      formData.append("instanceId", props.flowInstance.id);
+
+      formData.append("docType", file.type);
+
+      //try {
+      const result = await uploadDocument(formData);
+
       // 上傳檔案
       //console.log("currentWorkflowId.value", currentWorkflowId.value);
-      const result = await uploadWorkflowFile(file, currentWorkflowId.value);
+      //const result = await uploadDocument(file, currentWorkflowId.value);
       //console.log("result", result);
       // 更新節點資訊
       const node = nodes.value.find((n) => n.id === nodeId);
@@ -844,8 +854,8 @@ const handleDrop = async (event) => {
         node.data = {
           ...node.data,
           fileId: result.data.id,
-          fileUrl: result.data.fileUrl,
-          fileName: result.data.fileName,
+          fileUrl: result.data.url,
+          fileName: result.data.name,
           uploadProgress: 100,
         };
         console.log("nodenodenode", node.data);
