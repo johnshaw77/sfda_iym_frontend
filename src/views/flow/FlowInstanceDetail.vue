@@ -192,7 +192,7 @@ onDeactivated(() => {
 
 import { useFlowInstanceStore } from "@/stores/flowInstance";
 const flowInstanceStore = useFlowInstanceStore();
-
+console.log("flowInstanceStore", flowInstanceStore);
 const viewFlowMode = ref(true); // 默認為流程圖模式
 const route = useRoute();
 const router = useRouter();

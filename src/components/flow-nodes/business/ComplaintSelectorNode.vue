@@ -1,17 +1,19 @@
 <template>
   <BaseNode
+    :id="id"
     :title="title"
     nodeType="custom-input"
     :description="description"
     :icon="icon"
     :status="status"
     :selected="selected"
+    header-bg-color="#fee08b"
     @click="handleNodeClick"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
   >
     <!-- 主要內容區域 -->
-    <div class="p-0 space-y-4">
+    <div class="p-4 space-y-4">
       <!-- 單號選擇 -->
       <el-form-item label="客訴單號">
         <el-select
@@ -20,6 +22,7 @@
           clearable
           filterable
           class="w-full"
+          :loading="loading"
           @change="handleComplaintChange"
         >
           <el-option
@@ -32,35 +35,163 @@
       </el-form-item>
 
       <!-- 已選擇的單號資訊 -->
-      <div v-if="selectedComplaint" class="bg-gray-50 p-2 rounded text-sm">
-        <div class="flex items-center justify-between text-gray-500 mb-1">
+      <div
+        v-if="selectedComplaint && complaintDetail"
+        class="bg-gray-50 p-3 rounded text-sm"
+      >
+        <div class="flex items-center justify-between text-gray-500 mb-2">
           <span>單號資訊</span>
           <el-tag size="small" type="info">{{ selectedComplaint }}</el-tag>
         </div>
-        <div class="space-y-1">
+        <div class="space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-gray-500">建立日期</span>
-            <span>2024-03-22</span>
+            <span>{{ complaintDetail.createdAt || "2024-03-22" }}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-gray-500">狀態</span>
-            <el-tag size="small" type="success">處理中</el-tag>
+            <el-tag size="small" :type="getStatusType(complaintDetail.status)">
+              {{ complaintDetail.statusText || "處理中" }}
+            </el-tag>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-gray-500">產品</span>
+            <span>{{ complaintDetail.product || "產品A" }}</span>
           </div>
         </div>
+      </div>
+
+      <!-- 錯誤信息展示 -->
+      <div
+        v-if="errorMessage"
+        class="bg-red-50 p-3 rounded text-sm border border-red-200"
+      >
+        <div class="flex items-center justify-between text-red-500 mb-2">
+          <div class="flex items-center">
+            <i class="el-icon-warning mr-1"></i>
+            <span>執行錯誤</span>
+          </div>
+          <el-button type="text" size="small" @click="toggleErrorDetails">
+            {{ showErrorDetails ? "隱藏詳情" : "查看詳情" }}
+          </el-button>
+        </div>
+        <p class="text-red-600">{{ formatErrorMessage(errorMessage) }}</p>
+
+        <!-- 錯誤詳情 -->
+        <div
+          v-if="showErrorDetails && errorDetails"
+          class="mt-2 pt-2 border-t border-red-200"
+        >
+          <div v-if="errorDetails.suggestion" class="text-orange-600 mb-2">
+            {{ errorDetails.suggestion }}
+          </div>
+
+          <div
+            v-if="errorDetails.retryCount"
+            class="flex justify-between text-xs mb-1"
+          >
+            <span class="text-gray-600">重試次數:</span>
+            <span>{{ errorDetails.retryCount }}</span>
+          </div>
+
+          <div
+            v-if="errorDetails.timestamp"
+            class="flex justify-between text-xs mb-1"
+          >
+            <span class="text-gray-600">發生時間:</span>
+            <span>{{ formatTime(errorDetails.timestamp) }}</span>
+          </div>
+
+          <!-- 顯示完整錯誤信息 -->
+          <div v-if="errorDetails.message" class="mt-2">
+            <div class="text-xs text-gray-600 mb-1">完整錯誤信息:</div>
+            <div
+              class="text-xs text-red-600 p-2 bg-red-50 rounded overflow-auto max-h-24"
+            >
+              {{ errorDetails.message }}
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-2 flex justify-end space-x-2">
+          <el-button type="danger" size="small" plain @click="clearError">
+            清除錯誤
+          </el-button>
+          <el-button type="warning" size="small" @click="executeNode">
+            重試執行
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 執行歷史記錄 -->
+      <div
+        v-if="executionHistory.length > 0"
+        class="bg-gray-50 p-3 rounded text-sm mt-3"
+      >
+        <div class="flex items-center justify-between text-gray-500 mb-2">
+          <span>執行歷史</span>
+          <el-button
+            type="text"
+            size="small"
+            @click="showHistory = !showHistory"
+          >
+            {{ showHistory ? "隱藏" : "顯示" }}
+          </el-button>
+        </div>
+        <div v-if="showHistory" class="space-y-2">
+          <div
+            v-for="(record, index) in executionHistory"
+            :key="index"
+            class="text-xs p-1 border-b border-gray-200"
+          >
+            <div class="flex justify-between">
+              <span>{{ formatTime(record.timestamp) }}</span>
+              <el-tag
+                size="small"
+                :type="record.success ? 'success' : 'danger'"
+              >
+                {{ record.success ? "成功" : "失敗" }}
+              </el-tag>
+            </div>
+            <div v-if="!record.success" class="text-red-500 mt-1">
+              {{ record.error }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 執行按鈕 -->
+      <div class="flex justify-end space-x-2">
+        <el-button
+          v-if="status === 'error'"
+          type="warning"
+          size="small"
+          :disabled="!selectedComplaint || executing"
+          @click="executeNode"
+        >
+          重試執行
+        </el-button>
+        <el-button
+          type="primary"
+          size="small"
+          :disabled="!selectedComplaint || executing"
+          :loading="executing"
+          @click="executeNode"
+        >
+          {{ status === "success" ? "重新執行" : "確認選擇" }}
+        </el-button>
       </div>
     </div>
   </BaseNode>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, inject } from "vue";
 import { TextCursorInput, Box } from "lucide-vue-next";
 import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
-
-// 節點基本屬性
-// Color 先保留(現在都先強制改灰色)
-const headerBgColor = ref("#ebebeb"); // 淺藍色背景
-const headerBorderColor = ref("#cfcfcf"); // 淺藍色邊框
+import { ElMessage } from "element-plus";
+import { useFlowInstanceStore } from "@/stores/flowInstance";
+import { storeToRefs } from "pinia";
 
 const props = defineProps({
   id: {
@@ -85,20 +216,21 @@ const props = defineProps({
   },
 });
 
-// // 連接點配置
-// const handles = {
-//   inputs: [],
-//   outputs: [
-//     {
-//       id: "data",
-//       description: "選擇的客訴單號資料",
-//     },
-//   ],
-// };
+// 獲取流程實例 store
+const flowInstanceStore = useFlowInstanceStore();
+const { currentInstance } = storeToRefs(flowInstanceStore);
 
 // 節點狀態
 const status = ref("default");
 const selectedComplaint = ref(null);
+const complaintDetail = ref(null);
+const loading = ref(false);
+const executing = ref(false);
+const errorMessage = ref("");
+const errorDetails = ref(null);
+const executionHistory = ref([]);
+const showHistory = ref(false);
+const showErrorDetails = ref(false);
 
 // 模擬的客訴單號選項
 const complaintOptions = [
@@ -124,21 +256,258 @@ const handleDisconnect = (data) => {
   emit("disconnect", { id: props.id, ...data });
 };
 
-const handleComplaintChange = (value) => {
-  // 更新節點狀態
-  status.value = value ? "success" : "default";
-
-  // 發送數據更新事件
-  emit("update:data", {
-    id: props.id,
-    data: value
-      ? {
-          complaintId: value,
-          timestamp: new Date().toISOString(),
-        }
-      : null,
-  });
+// 獲取狀態對應的類型
+const getStatusType = (status) => {
+  const statusMap = {
+    pending: "warning",
+    processing: "primary",
+    resolved: "success",
+    rejected: "danger",
+    default: "info",
+  };
+  return statusMap[status] || statusMap.default;
 };
+
+// 處理客訴單號變更
+const handleComplaintChange = async (value) => {
+  if (!value) {
+    complaintDetail.value = null;
+    status.value = "default";
+    return;
+  }
+
+  try {
+    loading.value = true;
+    // 模擬API調用獲取客訴單詳情
+    // 實際項目中應該調用真實API
+    // const response = await getComplaintDetail(value);
+    // complaintDetail.value = response.data;
+
+    // 模擬數據
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    complaintDetail.value = {
+      id: value,
+      createdAt: "2024-03-22",
+      status: "processing",
+      statusText: "處理中",
+      product: value.includes("A")
+        ? "產品A"
+        : value.includes("B")
+        ? "產品B"
+        : value.includes("C")
+        ? "產品C"
+        : value.includes("D")
+        ? "產品D"
+        : "產品E",
+      description: `${value} 問題描述`,
+    };
+
+    status.value = "info";
+  } catch (error) {
+    ElMessage.error("獲取客訴單詳情失敗");
+    console.error("獲取客訴單詳情失敗:", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 切換錯誤詳情顯示
+const toggleErrorDetails = () => {
+  showErrorDetails.value = !showErrorDetails.value;
+};
+
+// 清除錯誤信息
+const clearError = async () => {
+  errorMessage.value = "";
+  errorDetails.value = null;
+
+  if (status.value === "error") {
+    status.value = "default";
+
+    // 如果有流程實例，更新節點狀態
+    if (currentInstance.value?.id) {
+      try {
+        await flowInstanceStore.updateNodeState(
+          currentInstance.value.id,
+          props.id,
+          { status: "idle", error: null, errorDetails: null }
+        );
+      } catch (error) {
+        console.error("清除錯誤狀態失敗:", error);
+      }
+    }
+  }
+};
+
+// 格式化時間
+const formatTime = (timestamp) => {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+};
+
+// 格式化錯誤信息，使其更簡潔友好
+const formatErrorMessage = (message) => {
+  if (!message) return "未知錯誤";
+
+  // 如果錯誤信息包含堆棧跟踪，只顯示第一行
+  if (message.includes("\n")) {
+    return message.split("\n")[0];
+  }
+
+  // 如果錯誤信息太長，截斷它
+  if (message.length > 100) {
+    return message.substring(0, 100) + "...";
+  }
+
+  // 處理特定類型的錯誤信息
+  if (message.includes("不支持的節點類型")) {
+    return "節點類型不支持，請聯繫系統管理員";
+  }
+
+  return message;
+};
+
+// 執行節點
+const executeNode = async () => {
+  if (!selectedComplaint.value || !complaintDetail.value) {
+    ElMessage.warning("請先選擇客訴單號");
+    return;
+  }
+
+  try {
+    executing.value = true;
+    status.value = "running";
+    errorMessage.value = ""; // 清除之前的錯誤信息
+    errorDetails.value = null;
+
+    // 準備節點輸入數據
+    const inputData = {
+      complaintId: selectedComplaint.value,
+      complaintDetail: complaintDetail.value,
+      timestamp: new Date().toISOString(),
+      // 添加節點類型信息，幫助後端識別
+      nodeType: "ComplaintSelectorNode",
+    };
+
+    // 調用流程實例 store 的執行節點方法
+    if (currentInstance.value?.id) {
+      console.log("準備執行節點，輸入數據:", inputData);
+
+      // 首先更新節點數據，確保 complaintId 和 nodeType 被保存到節點的 data 中
+      await flowInstanceStore.updateNodeData(
+        currentInstance.value.id,
+        props.id,
+        {
+          complaintId: selectedComplaint.value,
+          complaintDetail: complaintDetail.value,
+          type: "ComplaintSelectorNode",
+        }
+      );
+
+      console.log("節點數據已更新，準備執行節點");
+
+      // 然後執行節點
+      const result = await flowInstanceStore.executeNode(
+        currentInstance.value.id,
+        props.id,
+        inputData
+      );
+
+      console.log("節點執行結果:", result);
+
+      // 檢查節點執行結果
+      const nodeState = result.nodeStates?.[props.id];
+      if (nodeState?.status === "completed") {
+        status.value = "success";
+        ElMessage.success("客訴單號選擇成功");
+
+        // 添加成功記錄到執行歷史
+        executionHistory.value.unshift({
+          timestamp: new Date().toISOString(),
+          success: true,
+          data: inputData,
+        });
+      } else if (nodeState?.status === "failed") {
+        // 節點執行失敗，但允許用戶重新嘗試
+        status.value = "error";
+        errorMessage.value = nodeState.error || "未知錯誤";
+
+        // 保存錯誤詳情
+        errorDetails.value = {
+          ...nodeState.errorDetails,
+          suggestion: nodeState.suggestion,
+          retryCount: nodeState.retryCount,
+          timestamp: new Date().toISOString(),
+          message: nodeState.error,
+        };
+
+        ElMessage.error(`執行失敗: ${formatErrorMessage(errorMessage.value)}`);
+
+        // 添加失敗記錄到執行歷史
+        executionHistory.value.unshift({
+          timestamp: new Date().toISOString(),
+          success: false,
+          error: errorMessage.value,
+          data: inputData,
+          details: errorDetails.value,
+        });
+      }
+    } else {
+      throw new Error("當前沒有活動的流程實例");
+    }
+  } catch (error) {
+    status.value = "error";
+    errorMessage.value = error.message || "未知錯誤";
+
+    // 設置基本錯誤詳情
+    errorDetails.value = {
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      suggestion: "請檢查網絡連接或聯繫系統管理員",
+    };
+
+    ElMessage.error(`執行失敗: ${formatErrorMessage(errorMessage.value)}`);
+    console.error("節點執行失敗:", error);
+
+    // 添加失敗記錄到執行歷史
+    executionHistory.value.unshift({
+      timestamp: new Date().toISOString(),
+      success: false,
+      error: errorMessage.value,
+      data: { complaintId: selectedComplaint.value },
+      details: errorDetails.value,
+    });
+  } finally {
+    executing.value = false;
+  }
+};
+
+// 組件掛載時初始化
+onMounted(() => {
+  // 檢查節點上下文，如果已有數據則恢復狀態
+  const nodeContext = flowInstanceStore.getNodeContext(props.id);
+  if (nodeContext && nodeContext.output) {
+    selectedComplaint.value = nodeContext.output.complaintId;
+    complaintDetail.value = nodeContext.output.complaintDetail;
+    status.value = "success";
+  }
+
+  // 檢查節點狀態，如果有錯誤則顯示
+  const nodeState = flowInstanceStore.getNodeState(props.id);
+  if (nodeState.status === "failed" && nodeState.error) {
+    status.value = "error";
+    errorMessage.value = nodeState.error;
+
+    // 設置錯誤詳情
+    errorDetails.value = {
+      ...nodeState.errorDetails,
+      suggestion: nodeState.suggestion,
+      retryCount: nodeState.retryCount,
+      timestamp: nodeState.endTime || new Date().toISOString(),
+    };
+  }
+});
 </script>
 
 <style scoped>

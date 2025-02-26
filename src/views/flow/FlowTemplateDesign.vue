@@ -443,7 +443,7 @@ import {
   getFlowTemplateById,
   updateFlowTemplate,
   publishFlowTemplate,
-} from "@/api";
+} from "@/api/modules/flow";
 
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 

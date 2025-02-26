@@ -55,19 +55,19 @@ const routes = [
       showContentHeader: true,
     },
   },
+
   {
-    path: "/workflow",
-    name: "Workflow",
-    component: () => import("@/views/workflow/index.vue"),
+    path: "/flow-instances",
+    name: "FlowInstances",
+    component: () => import("@/views/flow/FlowInstanceList.vue"),
     meta: {
-      keepAlive: false,
+      title: "流程實例管理",
+      icon: "GitBranch",
+      keepAlive: true,
       requiresAuth: true,
-      title: "工作流程",
-      icon: "GitGraph",
       showContentHeader: true,
     },
   },
-
   {
     path: "/flow-node-definitions",
     name: "FlowNodeDefinitions",
@@ -103,18 +103,6 @@ const routes = [
       requiresAdmin: true,
       showContentHeader: true,
       hidden: true,
-    },
-  },
-  {
-    path: "/flow-instances",
-    name: "FlowInstances",
-    component: () => import("@/views/flow/FlowInstanceList.vue"),
-    meta: {
-      title: "流程實例管理",
-      icon: "GitBranch",
-      keepAlive: true,
-      requiresAuth: true,
-      showContentHeader: true,
     },
   },
   {

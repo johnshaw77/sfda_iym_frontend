@@ -86,6 +86,9 @@ import FileUpload from "@/components/FileUpload.vue";
 import { FileText, Settings, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
+import { useFlowStateStore } from "@/stores/flowState";
+const flowStateStore = useFlowStateStore();
+
 const props = defineProps({
   flowInstance: {
     type: Object,
@@ -161,6 +164,11 @@ const handleFileDeleted = (file) => {
 onUnmounted(() => {
   document.removeEventListener("mousemove", handleResizeMove);
   document.removeEventListener("mouseup", handleResizeEnd);
+});
+
+onMounted(() => {
+  console.log("flowInstance", props.flowInstance);
+  flowStateStore.setCurrentInstance(props.flowInstance);
 });
 </script>
 
