@@ -5,7 +5,9 @@
       <FlowCanvas :flowInstance="flowInstance" />
       <el-card>
         Flow Diagram
-        <JsonViewer :value="flowInstance" :expand-depth="5" />
+        <JsonViewer
+          :value="flowInstance"
+          :expand-depth="5" />
       </el-card>
     </div>
 
@@ -16,34 +18,36 @@
         'panel-collapsed': isPanelCollapsed,
         'panel-fixed': !isPanelCollapsed,
       }"
-      :style="!isPanelCollapsed ? { width: panelWidth + 'px' } : {}"
-    >
+      :style="!isPanelCollapsed ? { width: panelWidth + 'px' } : {}">
       <!-- 拖動條 -->
       <div
         v-show="!isPanelCollapsed"
         class="resize-handle"
-        @mousedown="handleResizeStart"
-      ></div>
+        @mousedown="handleResizeStart"></div>
 
-      <div class="panel-toggle" @click="handleTogglePanel">
+      <div
+        class="panel-toggle"
+        @click="handleTogglePanel">
         <component
           :is="isPanelCollapsed ? ChevronLeft : ChevronRight"
           :size="16"
           class="toggle-icon"
-          :class="{ 'icon-collapsed': isPanelCollapsed }"
-        />
+          :class="{ 'icon-collapsed': isPanelCollapsed }" />
       </div>
 
       <div
         class="panel-content"
-        :style="{ width: isPanelCollapsed ? '0' : '100%' }"
-      >
-        <el-tabs tab-position="top" v-show="!isPanelCollapsed">
+        :style="{ width: isPanelCollapsed ? '0' : '100%' }">
+        <el-tabs
+          tab-position="top"
+          v-show="!isPanelCollapsed">
           <!-- 檔案上傳面板 -->
           <el-tab-pane class="flex-1 overflow-hidden">
             <template #label>
               <div class="flex items-center">
-                <FileText :size="16" class="mr-1" />
+                <FileText
+                  :size="16"
+                  class="mr-1" />
                 檔案
               </div>
             </template>
@@ -54,8 +58,7 @@
                 :multiple="true"
                 accept=".pdf,.jpg,.png,.xlsx,.csv,.ppt,.pptx,.xls,.xlsx"
                 @file-uploaded="handleFileUploaded"
-                @file-deleted="handleFileDeleted"
-              />
+                @file-deleted="handleFileDeleted" />
             </div>
           </el-tab-pane>
 
@@ -63,13 +66,17 @@
           <el-tab-pane class="flex-1 overflow-hidden">
             <template #label>
               <div class="flex items-center">
-                <Settings :size="16" class="mr-1" />
+                <Settings
+                  :size="16"
+                  class="mr-1" />
                 設定
               </div>
             </template>
             <div class="h-full overflow-y-auto p-4">
               <!-- <NodeConfigPanel /> -->
-              <JsonViewer :value="flowInstance" :expand-depth="5" />
+              <JsonViewer
+                :value="flowInstance"
+                :expand-depth="5" />
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -86,8 +93,8 @@ import FileUpload from "@/components/FileUpload.vue";
 import { FileText, Settings, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
-import { useFlowStateStore } from "@/stores/flowState";
-const flowStateStore = useFlowStateStore();
+import { useFlowStore } from "@/stores/flowStore";
+const flowStore = useFlowStore();
 
 const props = defineProps({
   flowInstance: {
@@ -97,7 +104,7 @@ const props = defineProps({
 });
 
 // 面板折疊狀態
-const isPanelCollapsed = ref(false);
+const isPanelCollapsed = ref(true);
 
 // 面板寬度
 const panelWidth = ref(360);
@@ -168,7 +175,7 @@ onUnmounted(() => {
 
 onMounted(() => {
   console.log("flowInstance", props.flowInstance);
-  flowStateStore.setCurrentInstance(props.flowInstance);
+  flowStore.setCurrentInstance(props.flowInstance);
 });
 </script>
 

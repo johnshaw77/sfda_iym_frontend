@@ -8,11 +8,12 @@
     :status="status"
     :selected="selected"
     header-bg-color="#f3e79b"
+    :node-width="400"
+    :node-height="700"
     :handles="handles"
     @click="handleNodeClick"
     @handle-connect="handleConnect"
-    @handle-disconnect="handleDisconnect"
-  >
+    @handle-disconnect="handleDisconnect">
     <!-- 主要內容區域 -->
     <div class="p-4 space-y-4">
       <!-- 不良率數據顯示 -->
@@ -24,8 +25,7 @@
           <div
             v-for="(defect, index) in topDefects"
             :key="index"
-            class="relative"
-          >
+            class="relative">
             <div class="flex items-center justify-between mb-1">
               <span class="text-sm text-gray-600">{{ defect.name }}</span>
               <span class="text-sm font-medium text-gray-700"
@@ -38,8 +38,7 @@
                 :style="{
                   width: `${defect.percentage}%`,
                   backgroundColor: getBarColor(index),
-                }"
-              ></div>
+                }"></div>
             </div>
           </div>
         </div>
@@ -47,8 +46,7 @@
 
       <!-- 總計資訊 -->
       <div
-        class="flex items-center justify-between text-sm p-2 bg-blue-50 rounded-lg"
-      >
+        class="flex items-center justify-between text-sm p-2 bg-blue-50 rounded-lg">
         <span class="text-gray-600">總不良數</span>
         <span class="font-medium text-gray-700">{{ totalDefects }}</span>
       </div>

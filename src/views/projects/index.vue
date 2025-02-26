@@ -2,7 +2,9 @@
   <div class="px-2 py-2">
     <!-- 專案列表內容 -->
     <!-- 使用 Teleport 將內容傳送到主佈局 -->
-    <Teleport to="#header-actions" v-if="showHeaderContent">
+    <Teleport
+      to="#header-actions"
+      v-if="showHeaderContent">
       <div class="flex items-center space-x-4">
         <!-- 狀態文字 -->
         <span class="text-gray-600 text-sm">
@@ -15,12 +17,19 @@
           placeholder="篩選狀態"
           clearable
           size="small"
-          class="!w-24"
-        >
-          <el-option label="草稿" value="draft" />
-          <el-option label="進行中" value="active" />
-          <el-option label="已完成" value="completed" />
-          <el-option label="已取消" value="cancelled" />
+          class="!w-24">
+          <el-option
+            label="草稿"
+            value="draft" />
+          <el-option
+            label="進行中"
+            value="active" />
+          <el-option
+            label="已完成"
+            value="completed" />
+          <el-option
+            label="已取消"
+            value="cancelled" />
         </el-select>
 
         <!-- 重整按鈕 -->
@@ -28,9 +37,10 @@
           type="default"
           class="flex items-center"
           :loading="loading"
-          @click="handleRefresh"
-        >
-          <RefreshCw class="mr-1" :size="16" />
+          @click="handleRefresh">
+          <RefreshCw
+            class="mr-1"
+            :size="16" />
           重整
         </el-button>
 
@@ -38,48 +48,58 @@
         <el-button
           type="primary"
           class="flex items-center"
-          @click="handleCreateProject"
-        >
-          <Plus class="mr-1" :size="16" />
+          @click="handleCreateProject">
+          <Plus
+            class="mr-1"
+            :size="16" />
           新增專案
         </el-button>
       </div>
     </Teleport>
     <div
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"
-    >
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
       <!-- Skeleton 載入效果 -->
       <template v-if="loading">
-        <div v-for="n in 8" :key="n" class="bg-white rounded-lg shadow-md p-6">
+        <div
+          v-for="n in 8"
+          :key="n"
+          class="bg-white rounded-lg shadow-md p-6">
           <el-skeleton animated>
             <template #template>
               <div class="flex items-start justify-between mb-4">
                 <div class="flex-1">
-                  <el-skeleton-item variant="h3" style="width: 50%" />
+                  <el-skeleton-item
+                    variant="h3"
+                    style="width: 50%" />
                   <div class="mt-2">
-                    <el-skeleton-item variant="text" style="width: 80%" />
-                    <el-skeleton-item variant="text" style="width: 60%" />
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 80%" />
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 60%" />
                   </div>
                 </div>
                 <el-skeleton-item
                   variant="circle"
-                  style="width: 20px; height: 20px"
-                />
+                  style="width: 20px; height: 20px" />
               </div>
               <div class="mt-4">
                 <div class="flex items-center mb-2">
                   <el-skeleton-item
                     variant="circle"
-                    style="width: 16px; height: 16px; margin-right: 8px"
-                  />
-                  <el-skeleton-item variant="text" style="width: 30%" />
+                    style="width: 16px; height: 16px; margin-right: 8px" />
+                  <el-skeleton-item
+                    variant="text"
+                    style="width: 30%" />
                 </div>
                 <div class="flex items-center">
                   <el-skeleton-item
                     variant="circle"
-                    style="width: 16px; height: 16px; margin-right: 8px"
-                  />
-                  <el-skeleton-item variant="text" style="width: 20%" />
+                    style="width: 16px; height: 16px; margin-right: 8px" />
+                  <el-skeleton-item
+                    variant="text"
+                    style="width: 20%" />
                 </div>
               </div>
             </template>
@@ -92,9 +112,10 @@
         <!-- 新增專案卡片 -->
         <div
           class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200 border-t-[3px] border-t-gray-300"
-          @click="handleCreateProject"
-        >
-          <Plus :size="32" class="text-gray-400" />
+          @click="handleCreateProject">
+          <Plus
+            :size="32"
+            class="text-gray-400" />
           <span class="mt-4 text-gray-600">新增專案</span>
         </div>
 
@@ -102,8 +123,7 @@
         <div
           v-for="project in filteredProjects"
           :key="project.id"
-          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer"
-        >
+          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer">
           <div class="p-6">
             <div class="flex items-start justify-between">
               <div>
@@ -117,8 +137,7 @@
               <el-dropdown trigger="click">
                 <MoreVertical
                   :size="20"
-                  class="text-gray-400 cursor-pointer hover:text-gray-600"
-                />
+                  class="text-gray-400 cursor-pointer hover:text-gray-600" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="handleEditProject(project)"
@@ -127,8 +146,7 @@
                     <el-dropdown-item
                       divided
                       @click="handleDeleteProject(project)"
-                      class="text-red-500"
-                    >
+                      class="text-red-500">
                       刪除
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -138,19 +156,22 @@
 
             <div class="mt-4">
               <div class="flex items-center text-sm text-gray-500">
-                <Calendar :size="16" class="mr-2" />
+                <Calendar
+                  :size="16"
+                  class="mr-2" />
                 <span>更新於 {{ formatDate(project.updatedAt) }}</span>
               </div>
               <div class="mt-2 flex items-center text-sm text-gray-500">
-                <User :size="16" class="mr-2" />
+                <User
+                  :size="16"
+                  class="mr-2" />
                 <span>{{ project.creator.username }}</span>
               </div>
               <!-- 添加專案號碼 -->
               <div class="flex items-center gap-2 mt-2">
                 <div
                   v-if="isAdmin"
-                  class="text-xs text-blue-500 rounded-sm bg-slate-100 p-1"
-                >
+                  class="text-xs text-blue-500 rounded-sm bg-slate-100 p-1">
                   {{ project.systemCode }}
                 </div>
                 <span class="text-xs font-semibold text-gray-500">
@@ -161,14 +182,15 @@
 
             <el-divider />
             <div class="mt-2 flex items-center justify-between">
-              <el-tag :type="getStatusType(project.status)" size="small">
+              <el-tag
+                :type="getStatusType(project.status)"
+                size="small">
                 {{ getStatusText(project.status) }}
               </el-tag>
               <el-button
                 type="primary"
                 link
-                @click="handleViewProject(project)"
-              >
+                @click="handleViewProject(project)">
                 開啟專案
               </el-button>
             </div>
@@ -181,33 +203,56 @@
       v-model="dialogVisible"
       :title="isEdit ? '編輯專案' : '新增專案'"
       width="500px"
-      destroy-on-close
-    >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="專案名稱" prop="name">
-          <el-input v-model="form.name" placeholder="請輸入專案名稱" />
+      destroy-on-close>
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="80px">
+        <el-form-item
+          label="專案名稱"
+          prop="name">
+          <el-input
+            v-model="form.name"
+            placeholder="請輸入專案名稱" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
+        <el-form-item
+          label="描述"
+          prop="description">
           <el-input
             v-model="form.description"
             type="textarea"
             :rows="3"
-            placeholder="請輸入專案描述"
-          />
+            placeholder="請輸入專案描述" />
         </el-form-item>
-        <el-form-item label="狀態" prop="status">
-          <el-select v-model="form.status" class="w-full">
-            <el-option label="草稿" value="draft" />
-            <el-option label="進行中" value="active" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="已取消" value="cancelled" />
+        <el-form-item
+          label="狀態"
+          prop="status">
+          <el-select
+            v-model="form.status"
+            class="w-full">
+            <el-option
+              label="草稿"
+              value="draft" />
+            <el-option
+              label="進行中"
+              value="active" />
+            <el-option
+              label="已完成"
+              value="completed" />
+            <el-option
+              label="已取消"
+              value="cancelled" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="loading" @click="handleSubmit">
+          <el-button
+            type="primary"
+            :loading="loading"
+            @click="handleSubmit">
             確定
           </el-button>
         </span>
@@ -225,9 +270,14 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  getProjectInstances,
 } from "@/api/modules/project";
 import { Teleport } from "vue";
 import { useUserStore } from "@/stores/user";
+import { useRouter } from "vue-router";
+
+// 路由
+const router = useRouter();
 
 // 狀態
 const loading = ref(false);
@@ -342,9 +392,25 @@ const handleEditProject = (project) => {
 };
 
 // 處理查看專案
-const handleViewProject = (project) => {
-  // TODO: 實現查看專案詳情
-  ElMessage.info("查看專案功能開發中");
+const handleViewProject = async (project) => {
+  try {
+    loading.value = true;
+    // 獲取專案的流程實例列表
+    const response = await getProjectInstances(project.id);
+    const instances = response.data;
+
+    if (instances && instances.length > 0) {
+      // 導航到第一個流程實例頁面
+      router.push(`/flow-instances/${instances[0].id}`);
+    } else {
+      ElMessage.info("此專案尚未建立流程實例");
+    }
+  } catch (error) {
+    console.error("獲取專案流程實例失敗:", error);
+    ElMessage.error("獲取專案流程實例失敗");
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 處理刪除專案

@@ -11,41 +11,40 @@
       <!-- 右側內容區 - 考慮左側導航欄的寬度 -->
       <el-container
         class="content-container overflow-hidden"
-        :class="sidebarCollapsed ? 'collapsed' : ''"
-      >
+        :class="sidebarCollapsed ? 'collapsed' : ''">
         <el-header
           v-if="showContentHeader"
-          class="content-header bg-white border-b !h-10 flex items-center justify-between px-6"
-        >
+          class="content-header bg-white border-b !h-10 flex items-center justify-between px-6">
           <div class="flex items-center">
             <!-- <h2 class="text-lg font-medium">{{ pageTitle }}</h2> -->
             <!-- 麵包屑 -->
             <el-breadcrumb
               v-if="breadcrumbs.length > 0"
               class="ml-0"
-              :separator-icon="ArrowRight"
-            >
+              :separator-icon="ArrowRight">
               <el-breadcrumb-item
                 v-for="item in breadcrumbs"
                 :key="item.path"
-                :to="item.path"
-              >
+                :to="item.path">
                 <h3 class="text-md font-medium text-gray-700">
                   {{ item.title }}
                 </h3>
               </el-breadcrumb-item>
             </el-breadcrumb>
           </div>
-          <div id="header-actions" class="flex items-center space-x-2"></div>
+          <div
+            id="header-actions"
+            class="flex items-center space-x-2"></div>
         </el-header>
 
         <el-main
           class="!p-0 bg-gray-100 main-content"
-          :class="{ 'has-header': showContentHeader }"
-        >
+          :class="{ 'has-header': showContentHeader }">
           <router-view v-slot="{ Component }">
             <keep-alive :include="cachedViews">
-              <component :is="Component" :key="$route.fullPath" />
+              <component
+                :is="Component"
+                :key="$route.fullPath" />
             </keep-alive>
           </router-view>
         </el-main>
@@ -62,13 +61,13 @@ import AppHeader from "@/components/AppHeader.vue";
 import { ArrowRight } from "@element-plus/icons-vue";
 
 import { useFlowTemplateStore } from "@/stores/flowTemplate";
-import { useFlowInstanceStore } from "@/stores/flowInstance";
+import { useFlowStore } from "@/stores/flowStore";
 
 const route = useRoute();
 const router = useRouter();
 const sidebarRef = ref(null);
 const flowTemplateStore = useFlowTemplateStore();
-const flowInstanceStore = useFlowInstanceStore();
+const flowStore = useFlowStore();
 
 const sidebarCollapsed = computed(() => sidebarRef.value?.isCollapse || false);
 
@@ -117,7 +116,7 @@ const breadcrumbs = computed(() => {
       });
       result.push({
         //path: route.path,
-        title: flowInstanceStore.projectName || "載入中...",
+        title: flowStore.projectName || "載入中...",
       });
     }
     // 其他一般路由的處理

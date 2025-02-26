@@ -1,0 +1,34 @@
+import { nodeTypes } from "@/views/flow/components/config/nodeTypes";
+import BaseNode from "./BaseNode.vue";
+import ComplaintSelectorNode from "./ComplaintSelectorNode.vue";
+import CorrelationAnalysisNode from "./CorrelationAnalysisNode.vue";
+import DataLoaderNode from "./DataLoaderNode.vue";
+import FileExportNode from "./FileExportNode.vue";
+import FileGatewayNode from "./FileGatewayNode.vue";
+import HttpRequestNode from "./HttpRequestNode.vue";
+import OcqNode from "./OcqNode.vue";
+import RepairOrderSelectorNode from "./RepairOrderSelectorNode.vue";
+import StatsNode from "./StatsNode.vue";
+import StickyNode from "./StickyNode.vue";
+import TableNode from "./TableNode.vue";
+import TextNode from "./TextNode.vue";
+import VisualizationNode from "./VisualizationNode.vue";
+import DecisionTreeAnalysisNode from "./DecisionTreeAnalysisNode.vue";
+
+export const registerNodeTypes = (vueFlow) => {
+  vueFlow.registerNode("base", BaseNode);
+  vueFlow.registerNode("file-export", FileExportNode);
+  vueFlow.registerNode("file-gateway", FileGatewayNode);
+  vueFlow.registerNode("http-request", HttpRequestNode);
+  vueFlow.registerNode("ocq", OcqNode);
+  vueFlow.registerNode("sticky", StickyNode);
+  vueFlow.registerNode("text", TextNode);
+  vueFlow.registerNode("table", TableNode);
+  vueFlow.registerNode("stats", StatsNode);
+  vueFlow.registerNode("data-loader", DataLoaderNode);
+  vueFlow.registerNode("visualization", VisualizationNode);
+  vueFlow.registerNode("complaint-selector", ComplaintSelectorNode);
+  vueFlow.registerNode("repair-order-selector", RepairOrderSelectorNode);
+  vueFlow.registerNode("correlation-analysis", CorrelationAnalysisNode);
+  vueFlow.registerNode("decision-tree-analysis", DecisionTreeAnalysisNode);
+};

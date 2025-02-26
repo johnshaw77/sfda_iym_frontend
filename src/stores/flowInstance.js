@@ -25,6 +25,23 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
     projectName.value = name;
   }
 
+  // 設置當前流程實例
+  function setCurrentInstance(instance) {
+    console.log("設置當前流程實例:", instance);
+    currentInstance.value = instance;
+
+    // 初始化節點狀態和數據
+    if (instance && !instance.nodeStates) {
+      instance.nodeStates = {};
+    }
+
+    if (instance && !instance.nodeData) {
+      instance.nodeData = {};
+    }
+
+    return instance;
+  }
+
   // 獲取流程實例
   async function fetchInstance(instanceId) {
     if (!instanceId) {
@@ -54,31 +71,40 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
    */
   const executeNode = async (instanceId, nodeId, input = {}) => {
     if (!instanceId) {
-      throw new Error("缺少流程實例ID");
-    }
-    if (!nodeId) {
-      throw new Error("缺少節點ID");
+      throw new Error("未提供實例ID");
     }
 
+    if (!nodeId) {
+      throw new Error("未提供節點ID");
+    }
+
+    // 檢查輸入數據是否為空
+    if (!input || Object.keys(input).length === 0) {
+      throw new Error("輸入數據不能為空");
+    }
+
+    console.log(`準備執行節點 - 實例ID: ${instanceId}, 節點ID: ${nodeId}`);
+    console.log("輸入數據:", JSON.stringify(input, null, 2));
+
     try {
+      executing.value = true;
+
       // 獲取當前實例
       const instance = currentInstance.value;
       if (!instance) {
-        throw new Error("找不到當前流程實例");
+        throw new Error(`找不到流程實例 ${instanceId}`);
       }
 
       // 獲取節點數據
       const nodeData = instance.nodeData?.[nodeId] || {};
-      console.log("執行節點前的節點數據:", nodeData);
+      console.log("節點數據:", JSON.stringify(nodeData, null, 2));
 
       // 合併節點數據和輸入數據
       const mergedInput = {
-        ...nodeData, // 包含節點已保存的數據
-        ...input, // 包含新的輸入數據
-        timestamp: new Date().toISOString(),
+        ...nodeData,
+        ...input,
       };
-
-      console.log("合併後的輸入數據:", mergedInput);
+      console.log("合併後的輸入數據:", JSON.stringify(mergedInput, null, 2));
 
       // 更新節點狀態為運行中
       const updatedNodeStates = {
@@ -87,11 +113,10 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
           ...instance.nodeStates?.[nodeId],
           status: "running",
           startTime: new Date().toISOString(),
-          retryCount: (instance.nodeStates?.[nodeId]?.retryCount || 0) + 1,
         },
       };
 
-      // 更新實例狀態
+      // 更新當前實例
       currentInstance.value = {
         ...instance,
         nodeStates: updatedNodeStates,
@@ -99,11 +124,12 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
 
       // 調用API執行節點
       const startTime = performance.now();
+      console.log(`開始調用執行節點API - ${new Date().toISOString()}`);
       const response = await executeNodeAPI(instanceId, nodeId, mergedInput);
       const endTime = performance.now();
       const executionTime = (endTime - startTime) / 1000; // 轉換為秒
 
-      console.log("節點執行API響應:", response);
+      console.log(`節點執行API響應 (${executionTime.toFixed(2)}秒):`, response);
 
       // 更新節點狀態
       const newNodeState = response.data.nodeStates?.[nodeId] || {};
@@ -112,6 +138,7 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
       if (newNodeState.status === "failed") {
         ElMessage.error(`節點執行失敗: ${newNodeState.error || "未知錯誤"}`);
         console.error("節點執行失敗:", newNodeState.error);
+        console.error("錯誤詳情:", newNodeState.errorDetails);
       }
 
       // 更新當前實例
@@ -129,6 +156,13 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
       return response.data;
     } catch (error) {
       console.error("執行節點時發生錯誤:", error);
+      console.error("錯誤詳情:", {
+        message: error.message,
+        stack: error.stack,
+        code: error.code,
+        name: error.name,
+        response: error.response?.data,
+      });
 
       // 更新節點狀態為錯誤
       const instance = currentInstance.value;
@@ -145,6 +179,7 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
               stack: error.stack,
               code: error.code,
               name: error.name,
+              response: error.response?.data,
             },
           },
         };
@@ -156,6 +191,8 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
       }
 
       throw error;
+    } finally {
+      executing.value = false;
     }
   };
 
@@ -196,6 +233,16 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
 
     const nodeStates = currentInstance.value.nodeStates || {};
     return nodeStates[nodeId] || { status: "default" };
+  }
+
+  // 獲取節點日誌
+  function getNodeLogs(nodeId) {
+    if (!currentInstance.value || !nodeId) {
+      return [];
+    }
+
+    const logs = currentInstance.value.logs || [];
+    return logs.filter((log) => log.nodeId === nodeId);
   }
 
   // 檢查節點是否已完成
@@ -322,6 +369,7 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
     }
   };
 
+  // 返回 store 的公共 API
   return {
     projectName,
     currentInstance,
@@ -329,14 +377,14 @@ export const useFlowInstanceStore = defineStore("flowInstance", () => {
     executing,
     instanceLogs,
     setProjectName,
+    setCurrentInstance,
     fetchInstance,
     executeNode,
-    fetchInstanceLogs,
-    getNodeContext,
-    getNodeState,
-    isNodeCompleted,
-    hasNodeError,
     updateNodeData,
     updateNodeState,
+    getNodeContext,
+    getNodeState,
+    getNodeLogs,
+    fetchInstanceLogs,
   };
 });

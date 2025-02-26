@@ -5,7 +5,7 @@
     @dragleave.prevent="handleDragLeave"
     @drop.prevent="handleDrop"
     :class="{ 'is-dragover': isDragOver }"
-  >
+    ref="flowCanvasRef">
     <div class="flex-1">
       <VueFlow
         v-model="elements"
@@ -54,84 +54,143 @@
         @nodesChange="onNodesChange"
         @edgesChange="onEdgesChange"
         @dragover="handleDragOver"
-        @nodes-initialized="() => {}"
-      >
-        <Background pattern="lines" :gap="20" :size="1" />
+        @nodes-initialized="() => {}">
+        <Background
+          pattern="lines"
+          :gap="20"
+          :size="1" />
 
         <Controls />
-        <MiniMap :pannable="true" :zoomable="true" />
-        <Panel position="top-right" class="bg-white p-2 rounded shadow-md">
+        <MiniMap
+          :pannable="true"
+          :zoomable="true" />
+        <Panel
+          position="top-right"
+          class="bg-white p-2 rounded shadow-md">
           <div class="flex flex-wrap gap-2">
             <el-button
               v-for="type in Object.values(NODE_TYPES)"
               :key="type.type"
               size="small"
-              @click="() => onAddNode(type)"
-            >
+              @click="() => onAddNode(type)">
               <component
                 :is="type.icon"
                 :size="16"
                 :stroke-width="1.5"
-                class="mr-1"
-              />
+                class="mr-1" />
               {{ type.label }}
             </el-button>
             <el-divider direction="vertical" />
-            <el-button size="small" @click="() => onAddNode('sticky')">
-              <component
-                :is="StickyNoteIcon"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1"
-              />
-              便利貼
-            </el-button>
-            <el-button size="small" @click="autoLayout">
-              <component
-                :is="Layout"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1"
-              />
-              自動布局
-            </el-button>
+            <el-tooltip
+              content="添加便利貼"
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                @click="() => onAddNode('sticky')">
+                <component
+                  :is="StickyNoteIcon"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                便利貼
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              content="自動排列節點"
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                @click="autoLayout">
+                <component
+                  :is="Layout"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                自動布局
+              </el-button>
+            </el-tooltip>
 
-            <el-button size="small" @click="showJsonDrawer = true">
-              <component
-                :is="FileJson"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1"
-              />
-              查看JSON
-            </el-button>
-            <el-button size="small" @click="handleFitView">
-              <component
-                :is="Maximize"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1"
-              />
-              適應工作區
-            </el-button>
-            <el-button size="small" @click="handleUndo">
-              <component
-                :is="Undo2"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1"
-              />
-              撤銷
-            </el-button>
-            <el-button size="small" @click="handleRedo">
-              <component
-                :is="Redo2"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1"
-              />
-              重做
-            </el-button>
+            <el-tooltip
+              content="查看工作流 JSON 數據"
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                @click="showJsonDrawer = true">
+                <component
+                  :is="FileJson"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                查看JSON
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              :content="
+                isFullscreen
+                  ? `退出全屏 (F11 或 ${ctrlOrCmd}${shiftSymbol}F)`
+                  : `全屏 (F11 或 ${ctrlOrCmd}${shiftSymbol}F)`
+              "
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                @click="toggleFullscreen">
+                <component
+                  :is="isFullscreen ? Minimize2 : Maximize2"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                {{ isFullscreen ? "退出全屏" : "全屏" }}
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              content="適應工作區大小"
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                @click="handleFitView">
+                <component
+                  :is="Maximize"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                適應工作區
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              :content="`撤銷 (${ctrlOrCmd}Z)`"
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                @click="handleUndo">
+                <component
+                  :is="Undo2"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                撤銷
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              :content="`重做 (${ctrlOrCmd}${shiftSymbol}Z)`"
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                @click="handleRedo">
+                <component
+                  :is="Redo2"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                重做
+              </el-button>
+            </el-tooltip>
           </div>
         </Panel>
 
@@ -140,20 +199,17 @@
           v-model="showJsonDrawer"
           title="工作流 JSON 數據"
           direction="rtl"
-          size="50%"
-        >
+          size="50%">
           <div class="p-4">
             <el-button
               size="small"
               type="primary"
               @click="copyJson"
-              class="mb-4"
-            >
+              class="mb-4">
               複製 JSON
             </el-button>
             <pre
-              class="bg-gray-50 p-4 rounded-lg overflow-auto max-h-[calc(100vh-200px)]"
-            ><code>{{ JSON.stringify(elements, null, 2) }}</code></pre>
+              class="bg-gray-50 p-4 rounded-lg overflow-auto max-h-[calc(100vh-200px)]"><code>{{ JSON.stringify(elements, null, 2) }}</code></pre>
           </div>
         </el-drawer>
       </VueFlow>
@@ -191,6 +247,8 @@ import {
   Maximize,
   Undo2,
   Redo2,
+  Maximize2,
+  Minimize2,
 } from "lucide-vue-next";
 import dagre from "@dagrejs/dagre"; // 自動布局
 import { ElMessageBox, ElMessage } from "element-plus";
@@ -201,6 +259,7 @@ import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
 import { uploadDocument } from "@/api/modules/flowDocument";
+import { updateFlowInstance } from "@/api/modules/flow";
 
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import FileNode from "./FileNode.vue";
@@ -341,6 +400,30 @@ const onNodeDragStop = (event) => {
       newPosition: { ...node.position },
     });
     dragStartPosition.value = null;
+
+    // 節點拖動後更新流程實例
+    updateFlowInstanceState();
+  }
+};
+
+// 更新流程實例狀態的共用函數
+const updateFlowInstanceState = async () => {
+  try {
+    // 準備要更新的數據
+    const updatedNodes = elements.value.filter((el) => !el.source);
+    const updatedEdges = elements.value.filter((el) => el.source);
+
+    // 調用 API 更新流程實例
+    await updateFlowInstance(props.flowInstance.id, {
+      nodes: updatedNodes,
+      edges: updatedEdges,
+    });
+
+    // 無需顯示提示，因為會打擾用戶體驗
+    console.log("流程實例已更新");
+  } catch (error) {
+    console.error("更新流程實例失敗", error);
+    ElMessage.warning("節點位置變更無法保存：" + (error.message || "未知錯誤"));
   }
 };
 
@@ -423,8 +506,18 @@ const autoLayout = () => {
     newElements: elements.value,
   });
 
-  setTimeout(handleFitView, 100);
+  setTimeout(() => {
+    handleFitView();
+    // 自動布局後更新流程實例 TODO: need update??
+    updateFlowInstanceState();
+  }, 100);
 };
+
+onMounted(() => {
+  setTimeout(() => {
+    handleFitView();
+  }, 100);
+});
 
 const onNodeClick = (event) => {
   selectedNode.value = event.node;
@@ -469,6 +562,9 @@ const onAddNode = (type) => {
 
   // 再更新畫布
   elements.value = [...elements.value, newNode];
+
+  // 添加節點後更新流程實例
+  updateFlowInstanceState();
 };
 
 const updateNode = (updatedNode) => {
@@ -481,6 +577,9 @@ const updateNode = (updatedNode) => {
       oldPosition: elements.value[index].position,
       newPosition: updatedNode.position,
     });
+
+    // 節點更新後更新流程實例
+    updateFlowInstanceState();
   }
 };
 
@@ -503,6 +602,9 @@ const onConnect = (params) => {
 
   elements.value = [...elements.value, newEdge];
   recordAction(ActionTypes.EDGE_ADDED, { edge: newEdge });
+
+  // 新增連線後更新流程實例
+  updateFlowInstanceState();
 };
 
 // 刪除線條
@@ -535,6 +637,9 @@ const deleteEdge = (edgeId) => {
         type: "success",
         message: "已刪除連接線",
       });
+
+      // 刪除線條後更新流程實例
+      updateFlowInstanceState();
     })
     .catch(() => {
       // 用戶取消刪除操作
@@ -572,7 +677,7 @@ const handleFitView = () => {
     fitView({
       padding: 0.2,
       maxZoom: 1,
-      minZoom: 0.8,
+      minZoom: 0.6,
       duration: 150,
       includeHiddenNodes: true,
     });
@@ -634,6 +739,9 @@ const handleUndo = () => {
     history.value.future.push(action);
   } finally {
     history.value.isRecording = true;
+
+    // 撤銷操作後更新流程實例
+    updateFlowInstanceState();
   }
 };
 
@@ -694,6 +802,9 @@ const handleRedo = () => {
     history.value.past.push(action);
   } finally {
     history.value.isRecording = true;
+
+    // 重做操作後更新流程實例
+    updateFlowInstanceState();
   }
 };
 
@@ -705,6 +816,17 @@ const handleKeyDown = (event) => {
     } else {
       handleUndo();
     }
+    event.preventDefault();
+  }
+
+  // 全屏快捷鍵 - F11 或 Ctrl+Shift+F
+  if (
+    event.key === "F11" ||
+    ((event.metaKey || event.ctrlKey) &&
+      event.shiftKey &&
+      event.key.toLowerCase() === "f")
+  ) {
+    toggleFullscreen();
     event.preventDefault();
   }
 };
@@ -764,6 +886,12 @@ const ALLOWED_FILE_TYPES = {
   "application/mspowerpoint": "PPT 檔案",
   "application/x-mspowerpoint": "PPT 檔案",
   "application/ppt": "PPT 檔案",
+  //word 相關
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "Word 檔案",
+  "application/word": "Word 檔案",
+  "application/x-word": "Word 檔案",
+  "application/vnd.ms-word": "Word 檔案",
 };
 
 const isFileTypeAllowed = (file) => {
@@ -859,9 +987,26 @@ const handleDrop = async (event) => {
           uploadProgress: 100,
         };
         console.log("nodenodenode", node.data);
-      }
 
-      ElMessage.success(`檔案 ${file.name} 上傳成功`);
+        // 確保節點被添加到 elements 陣列中
+        if (!elements.value.some((el) => el.id === nodeId)) {
+          elements.value = [...elements.value, node];
+        }
+
+        // 將更新後的節點保存到流程實例中
+        try {
+          // 使用共用的更新函數
+          await updateFlowInstanceState();
+          ElMessage.success(`檔案 ${file.name} 上傳並保存到流程實例成功`);
+        } catch (updateError) {
+          console.error("保存流程實例失敗", updateError);
+          ElMessage.warning(
+            `檔案已上傳，但保存到流程實例失敗：${
+              updateError.message || "未知錯誤"
+            }`
+          );
+        }
+      }
     } catch (error) {
       console.error("上傳檔案失敗", error);
       ElMessage.error(`檔案 ${file.name} 上傳失敗`);
@@ -873,6 +1018,46 @@ const handleDrop = async (event) => {
     }
   }
 };
+
+// 全屏狀態
+const isFullscreen = ref(false);
+const flowCanvasRef = ref(null);
+
+// 處理全屏切換
+const toggleFullscreen = () => {
+  if (!document.fullscreenElement) {
+    // 進入全屏
+    flowCanvasRef.value?.requestFullscreen();
+    isFullscreen.value = true;
+    // 進入全屏後自動適應視窗大小
+    setTimeout(() => {
+      handleFitView();
+    }, 300);
+  } else {
+    // 退出全屏
+    document.exitFullscreen();
+    isFullscreen.value = false;
+  }
+};
+
+// 監聽全屏變化事件
+onMounted(() => {
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("fullscreenchange", handleFullscreenChange);
+});
+
+// 全屏狀態變更處理
+const handleFullscreenChange = () => {
+  isFullscreen.value = !!document.fullscreenElement;
+};
+
+// 判斷是否為 Mac 平台
+const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+const ctrlOrCmd = isMac ? "⌘" : "Ctrl+";
+const shiftSymbol = isMac ? "⇧" : "Shift+";
 </script>
 
 <style scoped>
@@ -983,5 +1168,46 @@ const handleDrop = async (event) => {
 .is-dragover::after {
   content: "";
   @apply absolute inset-0 bg-blue-500 bg-opacity-10 border-2 border-dashed border-blue-500 pointer-events-none z-50;
+}
+
+.is-dragover {
+  background-color: rgba(0, 120, 212, 0.05);
+  border: 2px dashed rgba(0, 120, 212, 0.5);
+}
+
+/* 全屏狀態樣式 */
+:fullscreen {
+  background-color: white;
+  padding: 0;
+  overflow: hidden;
+}
+
+:fullscreen .vue-flow {
+  width: 100%;
+  height: 100%;
+}
+
+:fullscreen .vue-flow__panel {
+  z-index: 10;
+}
+
+:fullscreen .vue-flow__panel.top-right {
+  top: 10px;
+  right: 10px;
+}
+
+:fullscreen .vue-flow__controls {
+  bottom: 40px;
+}
+
+:fullscreen .vue-flow__minimap {
+  bottom: 40px;
+  right: 10px;
+}
+
+/* 全屏模式下按鈕懸停效果增強 */
+:fullscreen .vue-flow__panel button:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
 }
 </style>

@@ -3,6 +3,7 @@ import TopDefectsNode from "./business/TopDefectsNode.vue";
 import StatisticProcessNode from "./business/StatisticProcessNode.vue";
 import HttpRequestNode from "./base/HttpRequestNode.vue";
 import CorrelationAnalysisNode from "./business/CorrelationAnalysisNode.vue";
+import DecisionTreeAnalysisNode from "./business/DecisionTreeAnalysisNode.vue";
 
 // 註冊所有節點
 export const registerNodes = (vueFlow) => {
@@ -12,6 +13,7 @@ export const registerNodes = (vueFlow) => {
   vueFlow.addNode("statistic-process", StatisticProcessNode);
   vueFlow.addNode("http-request", HttpRequestNode);
   vueFlow.addNode("correlation-analysis", CorrelationAnalysisNode);
+  vueFlow.addNode("decision-tree-analysis", DecisionTreeAnalysisNode);
 };
 
 // 導出所有節點組件
@@ -21,6 +23,7 @@ export const nodes = {
   StatisticProcessNode,
   HttpRequestNode,
   CorrelationAnalysisNode,
+  DecisionTreeAnalysisNode,
 };
 
 export default {

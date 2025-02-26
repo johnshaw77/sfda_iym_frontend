@@ -8,37 +8,32 @@
     :selected="selected"
     :disabled="disabled"
     :node-width="nodeWidth"
-    :node-height="nodeHeight"
+    :node-height="800"
     :show-handle-labels="showHandleLabels"
     header-bg-color="#e6f598"
     :handles="handles"
     @handle-connect="handleConnect"
-    @handle-disconnect="handleDisconnect"
-  >
+    @handle-disconnect="handleDisconnect">
     <div class="p-4">
       <div class="mb-4">
-        <h3 class="text-sm font-medium text-gray-700 mb-2">
-          ANOVA 分析設定{{ flowInstanceStore }}
-        </h3>
-        <el-form label-position="top" size="small">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">ANOVA 分析設定</h3>
+        <el-form
+          label-position="top"
+          size="small">
           <el-form-item label="分析類型">
             <el-select
               v-model="formData.anovaType"
               placeholder="請選擇分析類型"
-              class="w-full"
-            >
+              class="w-full">
               <el-option
                 label="單因子變異數分析 (One-Way ANOVA)"
-                value="one-way"
-              />
+                value="one-way" />
               <el-option
                 label="雙因子變異數分析 (Two-Way ANOVA)"
-                value="two-way"
-              />
+                value="two-way" />
               <el-option
                 label="重複測量變異數分析 (RM-ANOVA)"
-                value="repeated-measures"
-              />
+                value="repeated-measures" />
             </el-select>
           </el-form-item>
 
@@ -49,20 +44,26 @@
               :max="0.1"
               :step="0.001"
               :precision="3"
-              class="w-full"
-            />
+              class="w-full" />
           </el-form-item>
 
           <el-form-item label="事後檢定方法">
             <el-select
               v-model="formData.postHocTest"
               placeholder="請選擇事後檢定方法"
-              class="w-full"
-            >
-              <el-option label="Tukey HSD" value="tukey" />
-              <el-option label="Bonferroni" value="bonferroni" />
-              <el-option label="Scheffe" value="scheffe" />
-              <el-option label="無需事後檢定" value="none" />
+              class="w-full">
+              <el-option
+                label="Tukey HSD"
+                value="tukey" />
+              <el-option
+                label="Bonferroni"
+                value="bonferroni" />
+              <el-option
+                label="Scheffe"
+                value="scheffe" />
+              <el-option
+                label="無需事後檢定"
+                value="none" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -70,7 +71,9 @@
 
       <div class="mb-4">
         <el-divider content-position="left">變數設定</el-divider>
-        <el-form label-position="top" size="small">
+        <el-form
+          label-position="top"
+          size="small">
           <el-form-item label="因子變數 (Factor)">
             <el-select
               v-model="formData.factors"
@@ -78,14 +81,12 @@
               :multiple-limit="formData.anovaType === 'one-way' ? 1 : 2"
               filterable
               placeholder="請選擇因子變數"
-              class="w-full"
-            >
+              class="w-full">
               <el-option
                 v-for="factor in availableFactors"
                 :key="factor"
                 :label="factor"
-                :value="factor"
-              />
+                :value="factor" />
             </el-select>
             <div class="text-xs text-gray-500 mt-1">
               {{
@@ -101,14 +102,12 @@
               v-model="formData.response"
               filterable
               placeholder="請選擇反應變數"
-              class="w-full"
-            >
+              class="w-full">
               <el-option
                 v-for="variable in availableResponses"
                 :key="variable"
                 :label="variable"
-                :value="variable"
-              />
+                :value="variable" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -119,8 +118,7 @@
           type="primary"
           @click="handleAnalyze"
           :loading="analyzing"
-          :disabled="!canAnalyze"
-        >
+          :disabled="!canAnalyze">
           執行變異數分析
         </el-button>
       </div>
@@ -131,32 +129,46 @@
           <!-- ANOVA 摘要表 -->
           <div class="mb-4">
             <h4 class="text-sm font-medium text-gray-700 mb-2">ANOVA 摘要表</h4>
-            <el-table :data="anovaResults.summary" stripe style="width: 100%">
-              <el-table-column prop="source" label="變異來源" />
-              <el-table-column prop="df" label="自由度" />
-              <el-table-column prop="sumSq" label="平方和">
+            <el-table
+              :data="anovaResults.summary"
+              stripe
+              style="width: 100%">
+              <el-table-column
+                prop="source"
+                label="變異來源" />
+              <el-table-column
+                prop="df"
+                label="自由度" />
+              <el-table-column
+                prop="sumSq"
+                label="平方和">
                 <template #default="scope">
                   {{ Number(scope.row.sumSq).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="meanSq" label="均方">
+              <el-table-column
+                prop="meanSq"
+                label="均方">
                 <template #default="scope">
                   {{ Number(scope.row.meanSq).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="fValue" label="F值">
+              <el-table-column
+                prop="fValue"
+                label="F值">
                 <template #default="scope">
                   {{ Number(scope.row.fValue).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="pValue" label="p值">
+              <el-table-column
+                prop="pValue"
+                label="p值">
                 <template #default="scope">
                   <span
                     :class="{
                       'text-red-500 font-bold':
                         scope.row.pValue < formData.alpha,
-                    }"
-                  >
+                    }">
                     {{
                       scope.row.pValue < 0.001
                         ? "< 0.001"
@@ -165,7 +177,9 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="significance" label="顯著性">
+              <el-table-column
+                prop="significance"
+                label="顯著性">
                 <template #default="scope">
                   <span
                     v-if="scope.row.pValue < formData.alpha"
@@ -181,36 +195,47 @@
           <!-- 事後檢定結果 -->
           <div
             v-if="anovaResults.postHoc && anovaResults.postHoc.length > 0"
-            class="mb-4"
-          >
+            class="mb-4">
             <h4 class="text-sm font-medium text-gray-700 mb-2">
               事後檢定結果 ({{ formData.postHocTest }})
             </h4>
-            <el-table :data="anovaResults.postHoc" stripe style="width: 100%">
-              <el-table-column prop="comparison" label="組別比較" />
-              <el-table-column prop="difference" label="均值差異">
+            <el-table
+              :data="anovaResults.postHoc"
+              stripe
+              style="width: 100%">
+              <el-table-column
+                prop="comparison"
+                label="組別比較" />
+              <el-table-column
+                prop="difference"
+                label="均值差異">
                 <template #default="scope">
                   {{ Number(scope.row.difference).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="lowerCI" label="信賴區間下限">
+              <el-table-column
+                prop="lowerCI"
+                label="信賴區間下限">
                 <template #default="scope">
                   {{ Number(scope.row.lowerCI).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="upperCI" label="信賴區間上限">
+              <el-table-column
+                prop="upperCI"
+                label="信賴區間上限">
                 <template #default="scope">
                   {{ Number(scope.row.upperCI).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="pValue" label="p值">
+              <el-table-column
+                prop="pValue"
+                label="p值">
                 <template #default="scope">
                   <span
                     :class="{
                       'text-red-500 font-bold':
                         scope.row.pValue < formData.alpha,
-                    }"
-                  >
+                    }">
                     {{
                       scope.row.pValue < 0.001
                         ? "< 0.001"
@@ -219,7 +244,9 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="significance" label="顯著性">
+              <el-table-column
+                prop="significance"
+                label="顯著性">
                 <template #default="scope">
                   <span
                     v-if="scope.row.pValue < formData.alpha"
@@ -238,26 +265,37 @@
             <el-table
               :data="anovaResults.groupStats"
               stripe
-              style="width: 100%"
-            >
-              <el-table-column prop="group" label="組別" />
-              <el-table-column prop="n" label="樣本數" />
-              <el-table-column prop="mean" label="平均值">
+              style="width: 100%">
+              <el-table-column
+                prop="group"
+                label="組別" />
+              <el-table-column
+                prop="n"
+                label="樣本數" />
+              <el-table-column
+                prop="mean"
+                label="平均值">
                 <template #default="scope">
                   {{ Number(scope.row.mean).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="std" label="標準差">
+              <el-table-column
+                prop="std"
+                label="標準差">
                 <template #default="scope">
                   {{ Number(scope.row.std).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="min" label="最小值">
+              <el-table-column
+                prop="min"
+                label="最小值">
                 <template #default="scope">
                   {{ Number(scope.row.min).toFixed(2) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="max" label="最大值">
+              <el-table-column
+                prop="max"
+                label="最大值">
                 <template #default="scope">
                   {{ Number(scope.row.max).toFixed(2) }}
                 </template>
@@ -274,15 +312,13 @@
                 <div
                   v-for="(stats, index) in anovaResults.groupStats"
                   :key="index"
-                  class="boxplot-item"
-                >
+                  class="boxplot-item">
                   <div
                     class="boxplot-bar"
                     :style="{
                       height: `${30 + stats.mean * 10}px`,
                       backgroundColor: getGroupColor(index),
-                    }"
-                  ></div>
+                    }"></div>
                   <div class="text-xs mt-1 text-center">{{ stats.group }}</div>
                 </div>
               </div>
@@ -291,7 +327,9 @@
 
           <!-- 解釋文字 -->
           <div class="bg-blue-50 p-3 rounded text-sm">
-            <p v-if="anovaResults.isSignificant" class="text-blue-800">
+            <p
+              v-if="anovaResults.isSignificant"
+              class="text-blue-800">
               <strong>結論：</strong>
               根據分析結果，有足夠的證據表明組間存在顯著差異 (p
               {{
@@ -301,7 +339,9 @@
               }})。
               {{ anovaResults.interpretation }}
             </p>
-            <p v-else class="text-blue-800">
+            <p
+              v-else
+              class="text-blue-800">
               <strong>結論：</strong>
               根據分析結果，沒有足夠的證據表明組間存在顯著差異 (p
               {{
@@ -318,12 +358,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { BotMessageSquare } from "lucide-vue-next";
 import BaseNode from "../base/BaseNode.vue";
 import { ElMessage } from "element-plus";
-import { useFlowStateStore } from "@/stores/flowState";
+import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
+import { useFlowInstance } from "@/composables/useFlowInstance";
 
 // 定義 props
 const props = defineProps({
@@ -379,11 +420,11 @@ const handleDisconnect = (data) => {
   emit("handle-disconnect", { id: props.id, ...data });
 };
 
-// 獲取 store
-const flowStateStore = useFlowStateStore();
-const { currentInstance } = storeToRefs(flowStateStore);
+// 使用流程實例 composable
+const { executeNode, clearNodeError, flowStore } = useFlowInstance();
+const { currentInstance } = storeToRefs(flowStore);
 
-console.log("385 currentInstance", flowStateStore.value);
+console.log("385 currentInstance", flowStore.value);
 // 表單數據
 const formData = ref({
   anovaType: "one-way",
@@ -456,58 +497,61 @@ const getGroupColor = (index) => {
   return colors[index % colors.length];
 };
 
-// 監聽上下文變化
-const nodeContext = computed(() => {
-  return flowStateStore.getNodeContext(props.id);
-});
+// 獲取節點上下文
+const getNodeContext = () => {
+  return flowStore.getNodeContextById(props.id);
+};
 
-// 執行變異數分析
+// 執行分析
 const handleAnalyze = async () => {
   if (!canAnalyze.value) {
-    if (formData.value.factors.length === 0) {
-      ElMessage.warning("請選擇因子變數");
-    } else if (!formData.value.response) {
-      ElMessage.warning("請選擇反應變數");
-    } else {
-      ElMessage.warning("請確保選擇了正確數量的因子變數");
-    }
+    ElMessage.warning("請先選擇必要的分析參數");
     return;
   }
 
   try {
     analyzing.value = true;
-    console.log("478 handleAnalyze", flowInstanceStore.value);
-    console.log(
-      "236 analyzing",
-      analyzing.value,
-      flowInstanceStore.value.id,
-      props.id
-    );
-    // 模擬分析過程
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // 生成模擬數據
-    generateSimulatedResults();
-
-    console.log("236 anovaResults", currentInstance.value.id, props.id);
-    // 更新節點上下文
-    await flowInstanceStore.executeNode(currentInstance.value.id, props.id, {
+    // 準備輸入數據
+    const inputData = {
       anovaType: formData.value.anovaType,
       alpha: formData.value.alpha,
       postHocTest: formData.value.postHocTest,
       factors: formData.value.factors,
       response: formData.value.response,
-      results: anovaResults.value,
+    };
+
+    // 使用 composable 執行節點
+    await executeNode(props.id, inputData, async (input) => {
+      // 模擬分析過程
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // 生成模擬結果
+      generateSimulatedResults();
+
+      return {
+        anovaType: input.anovaType,
+        alpha: input.alpha,
+        postHocTest: input.postHocTest,
+        factors: input.factors,
+        response: input.response,
+        results: anovaResults.value,
+        timestamp: new Date().toISOString(),
+      };
     });
 
-    showResults.value = true;
-    ElMessage.success("變異數分析完成");
+    ElMessage.success("ANOVA 分析完成");
   } catch (error) {
-    console.error("變異數分析失敗:", error);
+    console.error("ANOVA 分析失敗:", error);
     ElMessage.error(`分析失敗: ${error.message || "未知錯誤"}`);
   } finally {
     analyzing.value = false;
   }
+};
+
+// 清除錯誤
+const handleClearError = async () => {
+  await clearNodeError(props.id);
 };
 
 // 生成模擬的 ANOVA 結果
@@ -769,7 +813,7 @@ const generateSimulatedResults = () => {
 
 // 當節點連接到數據源時，自動獲取可用欄位
 watch(
-  () => nodeContext.value.input,
+  () => getNodeContext().input,
   (newInput) => {
     if (newInput && newInput.dataset) {
       if (newInput.dataset.categorical) {
@@ -798,8 +842,8 @@ watch(
 // 組件掛載時初始化
 onMounted(() => {
   // 如果已有上下文數據，則恢復表單狀態
-  if (nodeContext.value && nodeContext.value.input) {
-    const input = nodeContext.value.input;
+  if (getNodeContext() && getNodeContext().input) {
+    const input = getNodeContext().input;
     if (input.anovaType) formData.value.anovaType = input.anovaType;
     if (input.alpha) formData.value.alpha = input.alpha;
     if (input.postHocTest) formData.value.postHocTest = input.postHocTest;

@@ -11,8 +11,7 @@
       'flow-node--completed': status === 'completed',
       'flow-node--error': status === 'error' || status === 'failed',
     }"
-    :style="{ width: `${nodeWidth}px`, height: `${nodeHeight}px` }"
-  >
+    :style="{ width: `${nodeWidth}px`, height: `${nodeHeight}px` }">
     <!-- 顯示 resize 手柄 -->
     <NodeResizer
       v-if="showResizer"
@@ -25,8 +24,7 @@
         border: '2px solid white',
         transition: 'all 0.2s ease',
         zIndex: '1',
-      }"
-    />
+      }" />
     <!-- 節點標題 -->
     <div
       class="node-header bg-opacity-30 text-red-700"
@@ -36,60 +34,55 @@
           'bg-gray-50 border-gray-50',
         { 'cursor-grab': !disabled },
       ]"
-      :style="customHeaderStyle"
-    >
+      :style="customHeaderStyle">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2">
           <component
             :is="icon"
             :class="[iconClasses[nodeType] || 'text-gray-600']"
-            :size="16"
-          />
-          <span class="text-lg font-medium text-gray-900"
-            >{{ title }} {{ id }}</span
-          >
+            :size="32" />
+          <span class="text-lg font-medium text-gray-900">{{ title }}</span>
         </div>
         <!-- 展開時的摺疊按鈕 -->
         <button
           v-if="isExpanded"
           class="p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-          @click="handleToggleExpand"
-        >
+          @click="handleToggleExpand">
           <component
             :is="ChevronUp"
             class="text-gray-400 hover:text-gray-600"
-            :size="20"
-          />
+            :size="20" />
         </button>
       </div>
-      <div v-if="description" class="mt-1 text-xs text-gray-900">
+      <div
+        v-if="description"
+        class="mt-1 text-xs text-gray-900">
         {{ description }}
       </div>
     </div>
 
     <!-- 節點內容 -->
-    <div class="node-content relative" :style="contentStyle">
+    <div
+      class="node-content relative"
+      :style="contentStyle">
       <!-- 大圖示區域 -->
       <div
         v-show="!isExpanded"
         ref="iconAreaRef"
         class="icon-area"
         :class="{ 'icon-area-collapsed': !isExpanded }"
-        @click="handleToggleExpand"
-      >
+        @click="handleToggleExpand">
         <component
           :is="icon"
           :class="[iconClasses[nodeType] || 'text-gray-600']"
-          :size="64"
-        />
+          :size="64" />
       </div>
 
       <!-- 可展開的內容區域 -->
       <div
         ref="expandableContentRef"
         class="expandable-content"
-        :class="{ 'expandable-content-expanded': isExpanded }"
-      >
+        :class="{ 'expandable-content-expanded': isExpanded }">
         <!-- 節點內容區域 -->
         <slot></slot>
         <el-divider />
@@ -97,29 +90,28 @@
     </div>
 
     <!-- 節點狀態 -->
-    <div v-if="status" class="node-status">
+    <div
+      v-if="status"
+      class="node-status">
       <div class="flex items-center justify-between text-xs">
-        <span class="text-gray-500"
-          >狀態-{{ flowStateStore.currentInstance.id }}</span
-        >
+        <span class="text-gray-500">狀態</span>
         <div class="flex items-center space-x-2">
           <el-button
             type="success"
             size="small"
-            @click="handleRun"
+            @click="$emit('run')"
             :loading-icon="Refresh"
             :loading="running"
             :disabled="nodeState.status === 'running'"
-            >測試執行</el-button
+            >執行</el-button
           >
 
-          <el-tag
+          <!-- <el-tag
             :type="statusType"
             size="small"
-            :class="{ 'animate-pulse': nodeState.status === 'running' }"
-          >
+            :class="{ 'animate-pulse': nodeState.status === 'running' }">
             {{ statusText }}
-          </el-tag>
+          </el-tag> -->
         </div>
       </div>
     </div>
@@ -127,8 +119,7 @@
     <!-- 錯誤訊息顯示區域 -->
     <div
       v-if="nodeState.status === 'error' || nodeState.status === 'failed'"
-      class="error-message-container"
-    >
+      class="error-message-container">
       <div class="error-header">
         <i class="el-icon-warning-outline mr-1"></i>
         <span>執行錯誤</span>
@@ -136,8 +127,7 @@
           type="text"
           size="small"
           class="ml-auto"
-          @click="showErrorDetails = !showErrorDetails"
-        >
+          @click="showErrorDetails = !showErrorDetails">
           {{ showErrorDetails ? "隱藏詳情" : "查看詳情" }}
         </el-button>
       </div>
@@ -146,59 +136,83 @@
         {{ formatErrorMessage(nodeState.error) || "節點執行過程中發生錯誤" }}
       </div>
 
-      <div v-if="showErrorDetails" class="error-details">
-        <div v-if="nodeState.errorDetails" class="mt-2">
-          <div v-if="nodeState.errorDetails.code" class="error-detail-item">
+      <div
+        v-if="showErrorDetails"
+        class="error-details">
+        <div
+          v-if="nodeState.errorDetails"
+          class="mt-2">
+          <div
+            v-if="nodeState.errorDetails.code"
+            class="error-detail-item">
             <span class="error-detail-label">錯誤代碼:</span>
             <span class="error-detail-value">{{
               nodeState.errorDetails.code
             }}</span>
           </div>
-          <div v-if="nodeState.errorDetails.name" class="error-detail-item">
+          <div
+            v-if="nodeState.errorDetails.name"
+            class="error-detail-item">
             <span class="error-detail-label">錯誤類型:</span>
             <span class="error-detail-value">{{
               nodeState.errorDetails.name
             }}</span>
           </div>
-          <div v-if="nodeState.retryCount" class="error-detail-item">
+          <div
+            v-if="nodeState.retryCount"
+            class="error-detail-item">
             <span class="error-detail-label">重試次數:</span>
             <span class="error-detail-value">{{ nodeState.retryCount }}</span>
           </div>
-          <div v-if="nodeState.suggestion" class="error-detail-item">
+          <div
+            v-if="nodeState.suggestion"
+            class="error-detail-item">
             <span class="error-detail-label">建議:</span>
             <span class="error-detail-value">{{ nodeState.suggestion }}</span>
           </div>
         </div>
 
         <!-- 完整錯誤信息 -->
-        <div v-if="nodeState.error && showFullError" class="mt-2">
+        <div
+          v-if="nodeState.error && showFullError"
+          class="mt-2">
           <div class="flex justify-between items-center mb-1">
             <span class="text-xs text-gray-600">完整錯誤信息:</span>
-            <el-button type="text" size="small" @click="showFullError = false">
+            <el-button
+              type="text"
+              size="small"
+              @click="showFullError = false">
               隱藏
             </el-button>
           </div>
           <div
-            class="text-xs text-red-600 p-2 bg-red-50 rounded overflow-auto max-h-32 whitespace-pre-wrap"
-          >
+            class="text-xs text-red-600 p-2 bg-red-50 rounded overflow-auto max-h-32 whitespace-pre-wrap">
             {{ nodeState.error }}
           </div>
         </div>
 
         <div
           v-else-if="nodeState.error && nodeState.error.length > 100"
-          class="mt-2"
-        >
-          <el-button type="text" size="small" @click="showFullError = true">
+          class="mt-2">
+          <el-button
+            type="text"
+            size="small"
+            @click="showFullError = true">
             顯示完整錯誤信息
           </el-button>
         </div>
 
         <div class="error-actions mt-2">
-          <el-button type="primary" size="small" @click="handleRun">
+          <el-button
+            type="primary"
+            size="small"
+            @click="$emit('run')">
             重試執行
           </el-button>
-          <el-button type="info" size="small" @click="handleClearError">
+          <el-button
+            type="info"
+            size="small"
+            @click="handleClearError">
             清除錯誤
           </el-button>
         </div>
@@ -206,7 +220,9 @@
     </div>
 
     <!-- 執行時間顯示 -->
-    <div v-if="nodeContext.executionTime" class="execution-time">
+    <div
+      v-if="nodeContext.executionTime"
+      class="execution-time">
       執行時間：{{ formatExecutionTime(nodeContext.executionTime) }}
     </div>
 
@@ -218,15 +234,15 @@
       :outputs="defaultHandles.outputs"
       :show-labels="showHandleLabels"
       @connect="handleConnect"
-      @disconnect="handleDisconnect"
-    />
+      @disconnect="handleDisconnect" />
 
     <!-- 節點錯誤指示器 -->
     <div
       v-if="status === 'error' || status === 'failed'"
-      class="flow-node__error-indicator"
-    >
-      <el-tooltip :content="errorMessage || '節點執行失敗'" placement="top">
+      class="flow-node__error-indicator">
+      <el-tooltip
+        :content="errorMessage || '節點執行失敗'"
+        placement="top">
         <i class="el-icon-warning flow-node__error-icon"></i>
       </el-tooltip>
     </div>
@@ -235,13 +251,14 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick, onUnmounted } from "vue";
-import { useFlowStateStore } from "@/stores/flowState";
+import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import NodeHandles from "./NodeHandles.vue";
 import { Box, ChevronUp } from "lucide-vue-next";
 import { NodeResizer } from "@vue-flow/node-resizer";
 import "@vue-flow/node-resizer/dist/style.css";
 import { ElMessage } from "element-plus";
+import { useFlowInstance } from "@/composables/useFlowInstance";
 
 // 定義 props
 const props = defineProps({
@@ -249,10 +266,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  // 節點類型 目前只用到 custom-input, custom-process , 會影響連接點的顯示()
+  // TODO: nowork? 節點類型 目前只用到 custom-input, custom-process , 會影響連接點的顯示()
   nodeType: {
     type: String,
-    default: "http-request",
+    default: "custom-process",
     validator: (value) =>
       ["custom-input", "custom-process", "custom-output"].includes(value),
   },
@@ -333,14 +350,18 @@ const props = defineProps({
   },
 });
 
-const flowStateStore = useFlowStateStore();
-const { currentInstance } = storeToRefs(flowStateStore);
+const flowStore = useFlowStore();
+const { currentInstance } = storeToRefs(flowStore);
+
+// 使用流程實例 composable
+const { clearNodeError } = useFlowInstance();
 
 // 計算節點的實際狀態
 const nodeState = computed(() => {
-  return flowStateStore.getNodeState(props.id);
+  return flowStore.getNodeStateById(props.id);
 });
 console.log("241", nodeState.value);
+
 // 修改狀態類型映射
 const statusType = computed(() => {
   const typeMap = {
@@ -470,29 +491,20 @@ const customHeaderClass = computed(() => {
 
 // 獲取節點上下文數據
 const nodeContext = computed(() => {
-  return flowStateStore.getNodeContext(props.id);
+  return flowStore.getNodeContextById(props.id);
 });
 
 // 獲取節點日誌
 const nodeLogs = computed(() => {
-  return flowStateStore.getNodeLogs(props.id);
+  return flowStore.getNodeLogsById(props.id);
 });
 
 const running = ref(false);
-// 修改測試執行函數
+// 修改測試執行函數為空方法，讓子類別必須自行實作
 const handleRun = async () => {
-  try {
-    running.value = true;
-    await flowStateStore.executeNode(
-      currentInstance.value.id,
-      props.id,
-      nodeContext.value.input
-    );
-  } catch (error) {
-    ElMessage.error(error.message);
-  } finally {
-    running.value = false;
-  }
+  console.log("BaseNode handleRun 被調用，但這是一個空方法，應該由子類別實作");
+  // 不再拋出錯誤，而是提供一個默認的空實現
+  // 實際的執行邏輯應該由子類別通過監聽 run 事件來實現
 };
 
 // 定義事件
@@ -501,6 +513,7 @@ const emit = defineEmits([
   "handle-connect",
   "handle-disconnect",
   "update:data",
+  "run",
 ]);
 
 // 處理連接事件
@@ -514,7 +527,7 @@ const handleDisconnect = (data) => {
 };
 
 // 展開狀態
-const isExpanded = ref(false);
+const isExpanded = ref(true);
 
 // 參考元素
 const iconAreaRef = ref(null);
@@ -599,14 +612,16 @@ const handleClearError = async () => {
   try {
     // 更新節點狀態為默認
     if (currentInstance.value?.id) {
-      await flowStateStore.updateNodeState(currentInstance.value.id, props.id, {
-        status: "idle",
-        error: null,
-        errorDetails: null,
-      });
+      await clearNodeError(props.id);
+
+      // 重置本地狀態
+      status.value = "default";
+      errorMessage.value = "";
+      errorDetails.value = null;
       showErrorDetails.value = false;
       showFullError.value = false;
-      ElMessage.success("已清除錯誤狀態");
+
+      console.log(`已清除節點 ${props.id} 的錯誤狀態`);
     }
   } catch (error) {
     console.error("清除錯誤狀態失敗:", error);

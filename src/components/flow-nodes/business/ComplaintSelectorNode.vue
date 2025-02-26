@@ -11,7 +11,7 @@
     @click="handleNodeClick"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
-  >
+    @run="handleRun">
     <!-- 主要內容區域 -->
     <div class="p-4 space-y-4">
       <!-- 單號選擇 -->
@@ -23,25 +23,26 @@
           filterable
           class="w-full"
           :loading="loading"
-          @change="handleComplaintChange"
-        >
+          @change="handleComplaintChange">
           <el-option
             v-for="item in complaintOptions"
             :key="item.value"
             :label="item.label"
-            :value="item.value"
-          />
+            :value="item.value" />
         </el-select>
       </el-form-item>
 
       <!-- 已選擇的單號資訊 -->
       <div
         v-if="selectedComplaint && complaintDetail"
-        class="bg-gray-50 p-3 rounded text-sm"
-      >
+        class="bg-gray-50 p-3 rounded text-sm">
         <div class="flex items-center justify-between text-gray-500 mb-2">
           <span>單號資訊</span>
-          <el-tag size="small" type="info">{{ selectedComplaint }}</el-tag>
+          <el-tag
+            size="small"
+            type="info"
+            >{{ selectedComplaint }}</el-tag
+          >
         </div>
         <div class="space-y-2">
           <div class="flex items-center justify-between">
@@ -50,7 +51,9 @@
           </div>
           <div class="flex items-center justify-between">
             <span class="text-gray-500">狀態</span>
-            <el-tag size="small" :type="getStatusType(complaintDetail.status)">
+            <el-tag
+              size="small"
+              :type="getStatusType(complaintDetail.status)">
               {{ complaintDetail.statusText || "處理中" }}
             </el-tag>
           </div>
@@ -64,14 +67,16 @@
       <!-- 錯誤信息展示 -->
       <div
         v-if="errorMessage"
-        class="bg-red-50 p-3 rounded text-sm border border-red-200"
-      >
+        class="bg-red-50 p-3 rounded text-sm border border-red-200">
         <div class="flex items-center justify-between text-red-500 mb-2">
           <div class="flex items-center">
             <i class="el-icon-warning mr-1"></i>
             <span>執行錯誤</span>
           </div>
-          <el-button type="text" size="small" @click="toggleErrorDetails">
+          <el-button
+            type="text"
+            size="small"
+            @click="toggleErrorDetails">
             {{ showErrorDetails ? "隱藏詳情" : "查看詳情" }}
           </el-button>
         </div>
@@ -80,44 +85,51 @@
         <!-- 錯誤詳情 -->
         <div
           v-if="showErrorDetails && errorDetails"
-          class="mt-2 pt-2 border-t border-red-200"
-        >
-          <div v-if="errorDetails.suggestion" class="text-orange-600 mb-2">
+          class="mt-2 pt-2 border-t border-red-200">
+          <div
+            v-if="errorDetails.suggestion"
+            class="text-orange-600 mb-2">
             {{ errorDetails.suggestion }}
           </div>
 
           <div
             v-if="errorDetails.retryCount"
-            class="flex justify-between text-xs mb-1"
-          >
+            class="flex justify-between text-xs mb-1">
             <span class="text-gray-600">重試次數:</span>
             <span>{{ errorDetails.retryCount }}</span>
           </div>
 
           <div
             v-if="errorDetails.timestamp"
-            class="flex justify-between text-xs mb-1"
-          >
+            class="flex justify-between text-xs mb-1">
             <span class="text-gray-600">發生時間:</span>
             <span>{{ formatTime(errorDetails.timestamp) }}</span>
           </div>
 
           <!-- 顯示完整錯誤信息 -->
-          <div v-if="errorDetails.message" class="mt-2">
+          <div
+            v-if="errorDetails.message"
+            class="mt-2">
             <div class="text-xs text-gray-600 mb-1">完整錯誤信息:</div>
             <div
-              class="text-xs text-red-600 p-2 bg-red-50 rounded overflow-auto max-h-24"
-            >
+              class="text-xs text-red-600 p-2 bg-red-50 rounded overflow-auto max-h-24">
               {{ errorDetails.message }}
             </div>
           </div>
         </div>
 
         <div class="mt-2 flex justify-end space-x-2">
-          <el-button type="danger" size="small" plain @click="clearError">
+          <el-button
+            type="danger"
+            size="small"
+            plain
+            @click="handleClearError">
             清除錯誤
           </el-button>
-          <el-button type="warning" size="small" @click="executeNode">
+          <el-button
+            type="warning"
+            size="small"
+            @click="handleRun">
             重試執行
           </el-button>
         </div>
@@ -126,34 +138,34 @@
       <!-- 執行歷史記錄 -->
       <div
         v-if="executionHistory.length > 0"
-        class="bg-gray-50 p-3 rounded text-sm mt-3"
-      >
+        class="bg-gray-50 p-3 rounded text-sm mt-3">
         <div class="flex items-center justify-between text-gray-500 mb-2">
           <span>執行歷史</span>
           <el-button
             type="text"
             size="small"
-            @click="showHistory = !showHistory"
-          >
+            @click="showHistory = !showHistory">
             {{ showHistory ? "隱藏" : "顯示" }}
           </el-button>
         </div>
-        <div v-if="showHistory" class="space-y-2">
+        <div
+          v-if="showHistory"
+          class="space-y-2">
           <div
             v-for="(record, index) in executionHistory"
             :key="index"
-            class="text-xs p-1 border-b border-gray-200"
-          >
+            class="text-xs p-1 border-b border-gray-200">
             <div class="flex justify-between">
               <span>{{ formatTime(record.timestamp) }}</span>
               <el-tag
                 size="small"
-                :type="record.success ? 'success' : 'danger'"
-              >
+                :type="record.success ? 'success' : 'danger'">
                 {{ record.success ? "成功" : "失敗" }}
               </el-tag>
             </div>
-            <div v-if="!record.success" class="text-red-500 mt-1">
+            <div
+              v-if="!record.success"
+              class="text-red-500 mt-1">
               {{ record.error }}
             </div>
           </div>
@@ -167,8 +179,7 @@
           type="warning"
           size="small"
           :disabled="!selectedComplaint || executing"
-          @click="executeNode"
-        >
+          @click="handleRun">
           重試執行
         </el-button>
         <el-button
@@ -176,8 +187,7 @@
           size="small"
           :disabled="!selectedComplaint || executing"
           :loading="executing"
-          @click="executeNode"
-        >
+          @click="handleRun">
           {{ status === "success" ? "重新執行" : "確認選擇" }}
         </el-button>
       </div>
@@ -190,8 +200,10 @@ import { ref, computed, onMounted, inject } from "vue";
 import { TextCursorInput, Box } from "lucide-vue-next";
 import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
 import { ElMessage } from "element-plus";
-import { useFlowInstanceStore } from "@/stores/flowInstance";
+import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
+import { createFlowInstance } from "@/api/modules/flow";
+import { useFlowInstance } from "@/composables/useFlowInstance";
 
 const props = defineProps({
   id: {
@@ -217,8 +229,18 @@ const props = defineProps({
 });
 
 // 獲取流程實例 store
-const flowInstanceStore = useFlowInstanceStore();
-const { currentInstance } = storeToRefs(flowInstanceStore);
+const flowStore = useFlowStore();
+const { currentInstance, projectId } = storeToRefs(flowStore);
+
+// 使用流程實例 composable
+const {
+  ensureFlowInstance,
+  executeNode,
+  clearNodeError,
+  updateSharedData,
+  getSharedData,
+  updateGlobalVariable,
+} = useFlowInstance();
 
 // 節點狀態
 const status = ref("default");
@@ -316,29 +338,6 @@ const toggleErrorDetails = () => {
   showErrorDetails.value = !showErrorDetails.value;
 };
 
-// 清除錯誤信息
-const clearError = async () => {
-  errorMessage.value = "";
-  errorDetails.value = null;
-
-  if (status.value === "error") {
-    status.value = "default";
-
-    // 如果有流程實例，更新節點狀態
-    if (currentInstance.value?.id) {
-      try {
-        await flowInstanceStore.updateNodeState(
-          currentInstance.value.id,
-          props.id,
-          { status: "idle", error: null, errorDetails: null }
-        );
-      } catch (error) {
-        console.error("清除錯誤狀態失敗:", error);
-      }
-    }
-  }
-};
-
 // 格式化時間
 const formatTime = (timestamp) => {
   if (!timestamp) return "";
@@ -368,145 +367,107 @@ const formatErrorMessage = (message) => {
   return message;
 };
 
-// 執行節點
-const executeNode = async () => {
-  if (!selectedComplaint.value || !complaintDetail.value) {
-    ElMessage.warning("請先選擇客訴單號");
+// 實作 handleRun 方法，覆蓋 BaseNode 的空方法
+const handleRun = async () => {
+  console.log("ComplaintSelectorNode handleRun 被調用");
+
+  // 防止重複點擊
+  if (status.value === "running" || window._nodeRunningPromise) {
+    console.log("節點正在執行中，忽略重複點擊");
     return;
   }
 
   try {
-    executing.value = true;
+    // 設置狀態為運行中
     status.value = "running";
-    errorMessage.value = ""; // 清除之前的錯誤信息
+    errorMessage.value = "";
     errorDetails.value = null;
 
-    // 準備節點輸入數據
+    // 檢查是否選擇了客訴單號
+    if (!selectedComplaint.value) {
+      throw new Error("請先選擇客訴單號");
+    }
+
+    // 準備輸入數據
     const inputData = {
       complaintId: selectedComplaint.value,
       complaintDetail: complaintDetail.value,
-      timestamp: new Date().toISOString(),
-      // 添加節點類型信息，幫助後端識別
-      nodeType: "ComplaintSelectorNode",
     };
 
-    // 調用流程實例 store 的執行節點方法
-    if (currentInstance.value?.id) {
-      console.log("準備執行節點，輸入數據:", inputData);
+    // 使用防抖機制執行節點
+    window._nodeRunningPromise = executeNode(
+      props.id,
+      inputData,
+      async (input) => {
+        // 模擬處理過程
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // 首先更新節點數據，確保 complaintId 和 nodeType 被保存到節點的 data 中
-      await flowInstanceStore.updateNodeData(
-        currentInstance.value.id,
-        props.id,
-        {
-          complaintId: selectedComplaint.value,
-          complaintDetail: complaintDetail.value,
-          type: "ComplaintSelectorNode",
-        }
-      );
-
-      console.log("節點數據已更新，準備執行節點");
-
-      // 然後執行節點
-      const result = await flowInstanceStore.executeNode(
-        currentInstance.value.id,
-        props.id,
-        inputData
-      );
-
-      console.log("節點執行結果:", result);
-
-      // 檢查節點執行結果
-      const nodeState = result.nodeStates?.[props.id];
-      if (nodeState?.status === "completed") {
-        status.value = "success";
-        ElMessage.success("客訴單號選擇成功");
-
-        // 添加成功記錄到執行歷史
-        executionHistory.value.unshift({
-          timestamp: new Date().toISOString(),
-          success: true,
-          data: inputData,
-        });
-      } else if (nodeState?.status === "failed") {
-        // 節點執行失敗，但允許用戶重新嘗試
-        status.value = "error";
-        errorMessage.value = nodeState.error || "未知錯誤";
-
-        // 保存錯誤詳情
-        errorDetails.value = {
-          ...nodeState.errorDetails,
-          suggestion: nodeState.suggestion,
-          retryCount: nodeState.retryCount,
-          timestamp: new Date().toISOString(),
-          message: nodeState.error,
+        // 返回處理結果
+        return {
+          complaintId: input.complaintId,
+          complaintDetail: input.complaintDetail,
+          processedAt: new Date().toISOString(),
+          status: "processed",
+          message: `客訴單號 ${input.complaintId} 已成功處理`,
         };
-
-        ElMessage.error(`執行失敗: ${formatErrorMessage(errorMessage.value)}`);
-
-        // 添加失敗記錄到執行歷史
-        executionHistory.value.unshift({
-          timestamp: new Date().toISOString(),
-          success: false,
-          error: errorMessage.value,
-          data: inputData,
-          details: errorDetails.value,
-        });
       }
-    } else {
-      throw new Error("當前沒有活動的流程實例");
-    }
-  } catch (error) {
-    status.value = "error";
-    errorMessage.value = error.message || "未知錯誤";
+    );
 
-    // 設置基本錯誤詳情
+    const result = await window._nodeRunningPromise;
+    window._nodeRunningPromise = null;
+
+    // 將選擇的客訴單號保存到共享數據和全域變數中
+    await updateSharedData("selectedComplaint", {
+      id: selectedComplaint.value,
+      detail: complaintDetail.value,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+    });
+
+    // 設置全域變數，方便其他節點使用
+    await updateGlobalVariable("complaintId", selectedComplaint.value);
+    await updateGlobalVariable("complaintDetail", complaintDetail.value);
+
+    // 更新狀態
+    status.value = "success";
+    ElMessage.success(`客訴單號 ${selectedComplaint.value} 處理成功`);
+
+    return result;
+  } catch (error) {
+    console.error("執行節點時發生錯誤:", error);
+    status.value = "error";
+    errorMessage.value = error.message || "執行節點時發生未知錯誤";
     errorDetails.value = {
       message: error.message,
-      timestamp: new Date().toISOString(),
-      suggestion: "請檢查網絡連接或聯繫系統管理員",
+      stack: error.stack,
     };
 
-    ElMessage.error(`執行失敗: ${formatErrorMessage(errorMessage.value)}`);
-    console.error("節點執行失敗:", error);
-
-    // 添加失敗記錄到執行歷史
-    executionHistory.value.unshift({
-      timestamp: new Date().toISOString(),
-      success: false,
-      error: errorMessage.value,
-      data: { complaintId: selectedComplaint.value },
-      details: errorDetails.value,
-    });
-  } finally {
-    executing.value = false;
+    ElMessage.error(`執行失敗: ${errorMessage.value}`);
+    throw error;
   }
 };
 
-// 組件掛載時初始化
-onMounted(() => {
-  // 檢查節點上下文，如果已有數據則恢復狀態
-  const nodeContext = flowInstanceStore.getNodeContext(props.id);
-  if (nodeContext && nodeContext.output) {
-    selectedComplaint.value = nodeContext.output.complaintId;
-    complaintDetail.value = nodeContext.output.complaintDetail;
-    status.value = "success";
-  }
+// 清除錯誤
+const handleClearError = async () => {
+  await clearNodeError(props.id);
+};
 
-  // 檢查節點狀態，如果有錯誤則顯示
-  const nodeState = flowInstanceStore.getNodeState(props.id);
-  if (nodeState.status === "failed" && nodeState.error) {
-    status.value = "error";
-    errorMessage.value = nodeState.error;
-
-    // 設置錯誤詳情
-    errorDetails.value = {
-      ...nodeState.errorDetails,
-      suggestion: nodeState.suggestion,
-      retryCount: nodeState.retryCount,
-      timestamp: nodeState.endTime || new Date().toISOString(),
-    };
+// 檢查是否有之前選擇的客訴單號
+onMounted(async () => {
+  // 嘗試從共享數據中獲取之前選擇的客訴單號
+  const previousSelection = getSharedData("selectedComplaint");
+  if (previousSelection) {
+    console.log("找到之前選擇的客訴單號:", previousSelection);
+    // 可以選擇是否要恢復之前的選擇
+    // selectedComplaint.value = previousSelection.id;
+    // complaintDetail.value = previousSelection.detail;
   }
+});
+
+// 暴露方法給父元件
+defineExpose({
+  handleRun,
+  handleClearError,
 });
 </script>
 

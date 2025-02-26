@@ -6,6 +6,7 @@ import {
   BarChart4,
   FileCheck2,
   CircleDot,
+  GitBranch,
 } from "lucide-vue-next";
 
 export const NODE_TYPES = {
@@ -82,31 +83,51 @@ export const NODE_TYPES = {
       includeMetadata: true,
     },
   },
+  DECISION_TREE: {
+    type: "decision-tree-analysis",
+    label: "決策樹分析",
+    icon: GitBranch,
+    color: "#84cc16", // lime-500
+    description: "使用決策樹模型分析數據並提供視覺化結果",
+    allowedInputs: 1,
+    allowedOutputs: 1,
+    defaultConfig: {
+      maxDepth: 3,
+      minSamplesSplit: 5,
+      targetVariable: "",
+      featureVariables: [],
+    },
+  },
 };
 
 export const NODE_STATUS = {
   IDLE: {
-    label: "未執行",
+    key: "idle",
+    label: "閒置",
     color: "#9CA3AF", // gray-400
     icon: CircleDot,
   },
   RUNNING: {
+    key: "running",
     label: "執行中",
     color: "#60A5FA", // blue-400
     icon: CircleDot,
   },
   COMPLETED: {
+    key: "completed",
     label: "已完成",
     color: "#34D399", // green-400
     icon: CircleDot,
   },
   ERROR: {
+    key: "error",
     label: "錯誤",
     color: "#EF4444", // red-500
     icon: CircleDot,
   },
-  WAITING: {
-    label: "等待中",
+  WARNING: {
+    key: "warning",
+    label: "警告",
     color: "#F59E0B", // amber-500
     icon: CircleDot,
   },

@@ -1,17 +1,20 @@
 <template>
   <div>
-    <Teleport to="#header-actions" v-if="showHeaderContent">
+    <Teleport
+      to="#header-actions"
+      v-if="showHeaderContent">
       <el-button
         plain
         link
         type="primary"
-        @click="viewFlowMode = !viewFlowMode"
-      >
+        @click="viewFlowMode = !viewFlowMode">
         <Workflow class="mr-1" />
         {{ viewFlowMode ? "流程" : "測試" }}
       </el-button>
     </Teleport>
-    <div v-if="!viewFlowMode" class="flow-instance-detail">
+    <div
+      v-if="!viewFlowMode"
+      class="flow-instance-detail">
       <!-- 頂部資訊卡片 -->
       <el-card class="mb-4">
         <div class="flex justify-between items-center">
@@ -20,8 +23,7 @@
               {{ flowInstance?.template?.name }}
               <el-tag
                 :type="getStatusTagType(flowInstance?.status)"
-                class="ml-2"
-              >
+                class="ml-2">
                 {{ getStatusLabel(flowInstance?.status) }}
               </el-tag>
             </h2>
@@ -32,7 +34,9 @@
             </div>
           </div>
           <div class="flex items-center space-x-2">
-            <el-button type="primary" @click="viewFlowMode = true">
+            <el-button
+              type="primary"
+              @click="viewFlowMode = true">
               <Workflow class="mr-1" />
               流程
             </el-button>
@@ -40,8 +44,7 @@
               v-if="flowInstance?.status === 'draft'"
               type="primary"
               @click="handleStart"
-              :loading="loading"
-            >
+              :loading="loading">
               <Play class="mr-1" />
               啟動
             </el-button>
@@ -49,8 +52,7 @@
               v-if="flowInstance?.status === 'running'"
               type="danger"
               @click="handleStop"
-              :loading="loading"
-            >
+              :loading="loading">
               <StopCircle class="mr-1" />
               停止
             </el-button>
@@ -58,8 +60,7 @@
               v-if="flowInstance?.status === 'draft'"
               type="danger"
               @click="handleDelete"
-              :loading="loading"
-            >
+              :loading="loading">
               <Trash2 class="mr-1" />
               刪除
             </el-button>
@@ -68,45 +69,49 @@
       </el-card>
 
       <!-- 內容區域 -->
-      <el-tabs v-model="activeTab" class="flow-tabs">
-        <el-tab-pane label="流程圖" name="flow">
-          <el-card class="flow-container">
-            <VueFlow
-              v-if="nodes.length > 0"
-              v-model="nodes"
-              v-model:edges="edges"
-              :default-viewport="{ zoom: 1 }"
-              :min-zoom="0.2"
-              :max-zoom="4"
-            >
-              <template #node-custom="props">
-                <BaseNode v-bind="props" />
-              </template>
-              <Background :gap="8" />
-              <Controls />
-              <MiniMap />
-            </VueFlow>
-          </el-card>
-        </el-tab-pane>
-
-        <el-tab-pane label="文件" name="documents">
+      <el-tabs
+        v-model="activeTab"
+        class="flow-tabs">
+        <el-tab-pane
+          label="文件"
+          name="documents">
           <el-card>
-            <el-table :data="flowInstance?.documents" border stripe>
-              <el-table-column prop="name" label="文件名稱" min-width="200" />
-              <el-table-column prop="docType" label="類型" width="120">
+            <el-table
+              :data="flowInstance?.documents"
+              border
+              stripe>
+              <el-table-column
+                prop="name"
+                label="文件名稱"
+                min-width="200" />
+              <el-table-column
+                prop="docType"
+                label="類型"
+                width="120">
                 <template #default="{ row }">
                   <el-tag>{{ row.docType }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="createdAt" label="上傳時間" width="180">
+              <el-table-column
+                prop="createdAt"
+                label="上傳時間"
+                width="180">
                 <template #default="{ row }">
-                  {{ formatDate(row.createdAt) }}
+                  {{ formatTimestamp(row.createdAt) }}
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="120" fixed="right">
+              <el-table-column
+                label="操作"
+                width="120"
+                fixed="right">
                 <template #default="{ row }">
-                  <el-button type="primary" link @click="handleDownload(row)">
-                    <Icon name="Download" class="mr-1" />
+                  <el-button
+                    type="primary"
+                    link
+                    @click="handleDownload(row)">
+                    <Icon
+                      name="Download"
+                      class="mr-1" />
                     下載
                   </el-button>
                 </template>
@@ -115,19 +120,22 @@
           </el-card>
         </el-tab-pane>
 
-        <el-tab-pane label="上下文" name="context">
+        <el-tab-pane
+          label="上下文"
+          name="context">
           <el-card>
             <vue-json-pretty
               :data="flowInstance?.context"
               :deep="2"
               :show-double-quotes="true"
               :show-length="true"
-              :show-line="true"
-            />
+              :show-line="true" />
           </el-card>
         </el-tab-pane>
 
-        <el-tab-pane label="測試" name="logs">
+        <el-tab-pane
+          label="測試"
+          name="logs">
           <el-card class="overflow-auto">
             <json-viewer
               :value="flowInstance"
@@ -136,16 +144,18 @@
               sort
               boxed
               :expand-on-click="true"
-              class="custom-json-viewer"
-            />
+              class="custom-json-viewer" />
             {{ flowInstance }}
           </el-card>
         </el-tab-pane>
       </el-tabs>
     </div>
-  </div>
-  <div v-if="viewFlowMode">
-    <FlowInstanceDiagram v-if="flowInstance" :flowInstance="flowInstance" />
+
+    <div v-if="viewFlowMode">
+      <FlowInstanceDiagram
+        v-if="flowInstance"
+        :flowInstance="flowInstance" />
+    </div>
   </div>
 </template>
 
@@ -236,8 +246,13 @@ const loadFlowInstance = async () => {
       nodes.value = flowInstance.value.template.nodes;
       edges.value = flowInstance.value.template.edges;
 
+      console.log(
+        `sett heerere 123333${flowInstance.value.project.name}-- status ${flowInstance.value.status}`
+      );
       // 設置專案名稱(給面包屑)
-      flowInstanceStore.setProjectName(flowInstance.value.project.name);
+      flowInstanceStore.setProjectName(
+        `123333${flowInstance.value.project.name}-- status ${flowInstance.value}`
+      );
     }
   } catch (error) {
     console.error("載入數據失敗:", error);

@@ -21,7 +21,7 @@ export const getFlowInstanceById = (instanceId) => {
 // 創建流程實例
 export const createFlowInstance = (data) => {
   return request({
-    url: BASE_PATH,
+    url: "/flow-instances",
     method: "post",
     data: {
       projectId: data.projectId,
@@ -66,7 +66,7 @@ export const startFlowInstance = (instanceId) => {
 export const pauseFlowInstance = (instanceId) => {
   return request({
     url: `/flow-instances/${instanceId}/pause`,
-    method: "post",
+    method: "put",
   });
 };
 

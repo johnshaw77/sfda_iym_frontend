@@ -99,9 +99,8 @@ import { Network } from "lucide-vue-next";
 import BaseNode from "../base/BaseNode.vue";
 import { ElMessage } from "element-plus";
 import { formatTimestamp } from "@/utils/dateUtils";
-import { useFlowInstanceStore } from "@/stores/flowInstance";
+import { useFlowInstance } from "@/composables/useFlowInstance";
 import { storeToRefs } from "pinia";
-import { createFlowInstance } from "@/api/modules/flow";
 
 // 節點基本屬性
 const props = defineProps({
@@ -123,9 +122,9 @@ const props = defineProps({
   },
 });
 
-// 獲取流程實例 store
-const flowInstanceStore = useFlowInstanceStore();
-const { currentInstance } = storeToRefs(flowInstanceStore);
+// 使用流程實例 composable
+const { executeNode, clearNodeError, flowStore } = useFlowInstance();
+const { currentInstance } = storeToRefs(flowStore);
 
 // 視覺相關設定
 const headerBgColor = ref("#f0f9ff"); // 淺藍色背景
@@ -198,51 +197,6 @@ const handleCopyResult = async () => {
   }
 };
 
-// 實作 handleRun 方法，覆蓋 BaseNode 的空方法
-const handleRun = async () => {
-  console.log("HttpRequestNode handleRun 被調用");
-
-  // 檢查是否有活動的流程實例，如果沒有則創建一個臨時的測試實例
-  if (!currentInstance.value) {
-    console.log("沒有活動的流程實例，創建臨時測試實例");
-    // 創建一個臨時的測試實例
-    const tempInstance = {
-      name: "臨時測試實例",
-      status: "testing",
-      nodes: [{ id: props.id, type: "HttpRequestNode" }],
-      edges: [],
-    };
-
-    try {
-      // 在後端創建臨時實例
-      console.log("正在後端創建臨時實例...");
-      const response = await createFlowInstance({
-        projectId: "1", // 使用實際存在的專案 ID
-        templateId: "1", // 使用實際存在的模板 ID
-        nodes: tempInstance.nodes,
-        edges: tempInstance.edges,
-      });
-      console.log("後端臨時實例創建成功:", response);
-
-      // 設置臨時實例
-      if (response && response.data) {
-        flowInstanceStore.setCurrentInstance(response.data);
-        console.log("已設置臨時測試實例:", response.data);
-      } else {
-        throw new Error("創建臨時實例失敗: 無效的響應數據");
-      }
-    } catch (error) {
-      console.error("創建臨時實例失敗:", error);
-      ElMessage.error("創建臨時實例失敗: " + (error.message || "未知錯誤"));
-      status.value = "error";
-      return;
-    }
-  }
-
-  // 使用空物件作為輸入數據執行 HTTP 請求
-  await processData({});
-};
-
 // HTTP 請求處理
 const processData = async (inputData) => {
   try {
@@ -258,25 +212,33 @@ const processData = async (inputData) => {
 
     const data = await response.json();
 
-    httpResult.value = {
+    const result = {
       status: response.status,
       data: data,
       timestamp: new Date().toISOString(),
     };
 
+    httpResult.value = result;
     status.value = "completed";
+
     emit("update:data", {
       id: props.id,
-      data: httpResult.value,
+      data: result,
     });
+
+    return result;
   } catch (error) {
     console.error("HTTP 請求錯誤:", error);
     status.value = "error";
-    httpResult.value = {
+
+    const errorResult = {
       status: 500,
       data: { error: error.message },
       timestamp: new Date().toISOString(),
     };
+
+    httpResult.value = errorResult;
+
     emit("update:data", {
       id: props.id,
       error: {
@@ -284,6 +246,25 @@ const processData = async (inputData) => {
         timestamp: new Date().toISOString(),
       },
     });
+
+    throw error;
+  }
+};
+
+// 實作 handleRun 方法，覆蓋 BaseNode 的空方法
+const handleRun = async () => {
+  console.log("HttpRequestNode handleRun 被調用");
+
+  try {
+    // 使用 composable 執行節點
+    await executeNode(
+      props.id,
+      {}, // 空物件作為輸入數據
+      processData
+    );
+  } catch (error) {
+    console.error("執行 HTTP 請求節點失敗:", error);
+    ElMessage.error("執行 HTTP 請求失敗: " + (error.message || "未知錯誤"));
   }
 };
 
