@@ -32,6 +32,22 @@
             value="cancelled" />
         </el-select>
 
+        <!-- 視圖切換按鈕 -->
+        <el-button-group>
+          <el-button
+            :type="viewMode === 'card' ? 'primary' : 'default'"
+            @click="viewMode = 'card'"
+            size="small">
+            <el-icon><Grid /></el-icon>
+          </el-button>
+          <el-button
+            :type="viewMode === 'table' ? 'primary' : 'default'"
+            @click="viewMode = 'table'"
+            size="small">
+            <el-icon><List /></el-icon>
+          </el-button>
+        </el-button-group>
+
         <!-- 重整按鈕 -->
         <el-button
           type="default"
@@ -56,148 +72,83 @@
         </el-button>
       </div>
     </Teleport>
+
+    <!-- 專案列表內容 -->
     <div
+      v-if="loading"
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
       <!-- Skeleton 載入效果 -->
-      <template v-if="loading">
-        <div
-          v-for="n in 8"
-          :key="n"
-          class="bg-white rounded-lg shadow-md p-6">
-          <el-skeleton animated>
-            <template #template>
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex-1">
+      <div
+        v-for="n in 8"
+        :key="n"
+        class="bg-white rounded-lg shadow-md p-6">
+        <el-skeleton animated>
+          <template #template>
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1">
+                <el-skeleton-item
+                  variant="h3"
+                  style="width: 50%" />
+                <div class="mt-2">
                   <el-skeleton-item
-                    variant="h3"
-                    style="width: 50%" />
-                  <div class="mt-2">
-                    <el-skeleton-item
-                      variant="text"
-                      style="width: 80%" />
-                    <el-skeleton-item
-                      variant="text"
-                      style="width: 60%" />
-                  </div>
+                    variant="text"
+                    style="width: 80%" />
+                  <el-skeleton-item
+                    variant="text"
+                    style="width: 60%" />
                 </div>
+              </div>
+              <el-skeleton-item
+                variant="circle"
+                style="width: 20px; height: 20px" />
+            </div>
+            <div class="mt-4">
+              <div class="flex items-center mb-2">
                 <el-skeleton-item
                   variant="circle"
-                  style="width: 20px; height: 20px" />
+                  style="width: 16px; height: 16px; margin-right: 8px" />
+                <el-skeleton-item
+                  variant="text"
+                  style="width: 30%" />
               </div>
-              <div class="mt-4">
-                <div class="flex items-center mb-2">
-                  <el-skeleton-item
-                    variant="circle"
-                    style="width: 16px; height: 16px; margin-right: 8px" />
-                  <el-skeleton-item
-                    variant="text"
-                    style="width: 30%" />
-                </div>
-                <div class="flex items-center">
-                  <el-skeleton-item
-                    variant="circle"
-                    style="width: 16px; height: 16px; margin-right: 8px" />
-                  <el-skeleton-item
-                    variant="text"
-                    style="width: 20%" />
-                </div>
-              </div>
-            </template>
-          </el-skeleton>
-        </div>
-      </template>
-
-      <!-- 實際內容 -->
-      <template v-else>
-        <!-- 新增專案卡片 -->
-        <div
-          class="bg-white rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-500 cursor-pointer p-6 flex flex-col items-center justify-center min-h-[200px] transition-colors duration-200 border-t-[3px] border-t-gray-300"
-          @click="handleCreateProject">
-          <Plus
-            :size="32"
-            class="text-gray-400" />
-          <span class="mt-4 text-gray-600">新增專案</span>
-        </div>
-
-        <!-- 專案卡片列表 -->
-        <div
-          v-for="project in filteredProjects"
-          :key="project.id"
-          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 transform cursor-pointer">
-          <div class="p-6">
-            <div class="flex items-start justify-between">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-800">
-                  {{ project.name }}
-                </h3>
-                <p class="mt-2 text-sm text-gray-600 line-clamp-2">
-                  {{ project.description }}
-                </p>
-              </div>
-              <el-dropdown trigger="click">
-                <MoreVertical
-                  :size="20"
-                  class="text-gray-400 cursor-pointer hover:text-gray-600" />
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="handleEditProject(project)"
-                      >編輯</el-dropdown-item
-                    >
-                    <el-dropdown-item
-                      divided
-                      @click="handleDeleteProject(project)"
-                      class="text-red-500">
-                      刪除
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
-
-            <div class="mt-4">
-              <div class="flex items-center text-sm text-gray-500">
-                <Calendar
-                  :size="16"
-                  class="mr-2" />
-                <span>更新於 {{ formatDate(project.updatedAt) }}</span>
-              </div>
-              <div class="mt-2 flex items-center text-sm text-gray-500">
-                <User
-                  :size="16"
-                  class="mr-2" />
-                <span>{{ project.creator.username }}</span>
-              </div>
-              <!-- 添加專案號碼 -->
-              <div class="flex items-center gap-2 mt-2">
-                <div
-                  v-if="isAdmin"
-                  class="text-xs text-blue-500 rounded-sm bg-slate-100 p-1">
-                  {{ project.systemCode }}
-                </div>
-                <span class="text-xs font-semibold text-gray-500">
-                  {{ project.projectNumber }} - {{ project.id }}</span
-                >
+              <div class="flex items-center">
+                <el-skeleton-item
+                  variant="circle"
+                  style="width: 16px; height: 16px; margin-right: 8px" />
+                <el-skeleton-item
+                  variant="text"
+                  style="width: 20%" />
               </div>
             </div>
-
-            <el-divider />
-            <div class="mt-2 flex items-center justify-between">
-              <el-tag
-                :type="getStatusType(project.status)"
-                size="small">
-                {{ getStatusText(project.status) }}
-              </el-tag>
-              <el-button
-                type="primary"
-                link
-                @click="handleViewProject(project)">
-                開啟專案
-              </el-button>
-            </div>
-          </div>
-        </div>
-      </template>
+          </template>
+        </el-skeleton>
+      </div>
     </div>
+
+    <!-- 卡片視圖 -->
+    <div v-else-if="viewMode === 'card'">
+      <ProjectCard
+        :projects="projects"
+        :filter-status="filterStatus"
+        :is-admin="isAdmin"
+        @create-project="handleCreateProject"
+        @view-project="handleViewProject"
+        @edit-project="handleEditProject"
+        @delete-project="handleDeleteProject" />
+    </div>
+
+    <!-- 表格視圖 -->
+    <div v-else>
+      <ProjectTable
+        :projects="projects"
+        :loading="loading"
+        :filter-status="filterStatus"
+        :is-admin="isAdmin"
+        @view-project="handleViewProject"
+        @edit-project="handleEditProject"
+        @delete-project="handleDeleteProject" />
+    </div>
+
     <!-- 新增/編輯專案對話框 -->
     <el-dialog
       v-model="dialogVisible"
@@ -265,6 +216,7 @@
 import { ref, onMounted, onActivated, onDeactivated, computed } from "vue";
 import { Plus, MoreVertical, Calendar, User, RefreshCw } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { Grid, List } from "@element-plus/icons-vue";
 import {
   getAllProjects,
   createProject,
@@ -275,6 +227,8 @@ import {
 import { Teleport } from "vue";
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "vue-router";
+import ProjectTable from "./components/ProjectTable.vue";
+import ProjectCard from "./components/ProjectCard.vue";
 
 // 路由
 const router = useRouter();
@@ -284,6 +238,7 @@ const loading = ref(false);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const projects = ref([]);
+const viewMode = ref("card"); // 新增視圖模式狀態，預設為卡片視圖
 
 // 表單相關
 const formRef = ref(null);
@@ -475,7 +430,7 @@ onMounted(() => {
 <style scoped>
 .line-clamp-2 {
   display: -webkit-box;
-  /* -webkit-line-clamp: 2; */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

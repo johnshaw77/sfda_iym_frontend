@@ -81,7 +81,7 @@ const routes = [
   {
     path: "/flow-node-definitions",
     name: "FlowNodeDefinitions",
-    component: () => import("@/views/flow/FlowNodeDefinitionList.vue"),
+    component: () => import("@/views/flow/node-definitions/index.vue"),
     meta: {
       title: "節點定義管理",
       icon: "Component",

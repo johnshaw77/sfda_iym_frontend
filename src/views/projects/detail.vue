@@ -424,19 +424,7 @@
 
 <script setup>
 import { ref, onMounted, onActivated, onDeactivated, computed } from "vue";
-import {
-  Plus,
-  MoreVertical,
-  Calendar,
-  User,
-  RefreshCw,
-  ArrowLeft,
-  FileX,
-  GitBranch,
-  CheckCircle,
-  Clock,
-  FileText,
-} from "lucide-vue-next";
+
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getProjectById,
@@ -449,7 +437,6 @@ import {
   deleteFlowInstance,
   getFlowTemplates,
 } from "@/api/modules/flow";
-import { Teleport } from "vue";
 import { useUserStore } from "@/stores/user";
 import { useRouter, useRoute } from "vue-router";
 import { getDocumentsByProject } from "@/api/modules/flowDocument";

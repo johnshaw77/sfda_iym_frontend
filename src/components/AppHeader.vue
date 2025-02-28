@@ -1,11 +1,12 @@
 <template>
   <el-header
-    class="!px-0 !h-12 fixed top-0 left-0 right-0 z-10 bg-white border-b border-gray-200"
-  >
+    class="!px-0 !h-12 fixed top-0 left-0 right-0 z-10 bg-white border-b border-gray-200">
     <div class="flex justify-between items-center h-full px-4">
       <!-- Logo 區域 -->
       <div class="flex items-center space-x-0">
-        <img src="/logo_flowchart.svg" class="w-6 h-6 mr-2" />
+        <img
+          src="/logo_flowchart.svg"
+          class="w-6 h-6 mr-2" />
         <h1 class="text-xl font-semibold text-gray-800">IYM 良率分析平台</h1>
       </div>
 
@@ -14,58 +15,73 @@
         <!-- 暗黑模式切換 -->
         <el-tooltip
           :content="isDark ? '切換亮色模式' : '切換暗色模式'"
-          placement="bottom"
-        >
+          placement="bottom">
           <div
             class="cursor-pointer text-gray-600 hover:text-blue-500"
-            @click="toggleDarkMode"
-          >
-            <Sun v-if="isDark" :size="18" />
-            <Moon v-else :size="18" />
+            @click="toggleDarkMode">
+            <Sun
+              v-if="isDark"
+              :size="18" />
+            <Moon
+              v-else
+              :size="18" />
           </div>
         </el-tooltip>
 
         <!-- Bug 回報圖示 -->
-        <el-tooltip content="回報問題" placement="bottom">
+        <el-tooltip
+          content="回報問題"
+          placement="bottom">
           <Bug
             :size="18"
-            class="text-gray-600 hover:text-blue-500 cursor-pointer"
-          />
+            class="text-gray-600 hover:text-blue-500 cursor-pointer" />
         </el-tooltip>
 
         <!-- 通知圖標 -->
-        <el-badge :value="3" :max="99" class="cursor-pointer">
-          <el-tooltip content="通知" placement="bottom">
-            <Bell :size="18" class="text-gray-600 hover:text-blue-500" />
+        <el-badge
+          :value="3"
+          :max="99"
+          class="cursor-pointer">
+          <el-tooltip
+            content="通知"
+            placement="bottom">
+            <Bell
+              :size="18"
+              class="text-gray-600 hover:text-blue-500" />
           </el-tooltip>
         </el-badge>
 
         <!-- 設置圖標 -->
-        <el-tooltip content="設置" placement="bottom">
-          <Settings :size="18" class="cursor-pointer hover:text-blue-500" />
+        <el-tooltip
+          content="設置"
+          placement="bottom">
+          <Settings
+            :size="18"
+            class="cursor-pointer hover:text-blue-500" />
         </el-tooltip>
 
         <!-- 用戶選單 -->
-        <el-dropdown trigger="hover" @command="handleCommand">
+        <el-dropdown
+          trigger="hover"
+          @command="handleCommand">
           <div class="flex items-center space-x-2 cursor-pointer">
-            <div class="relative" @click.stop="handleAvatarClick">
+            <div
+              class="relative"
+              @click.stop="handleAvatarClick">
               <el-avatar
                 :size="36"
                 :src="userInfo.avatar"
                 :alt="userInfo.username"
-                class="!bg-blue-100 hover:opacity-80 transition-opacity cursor-pointer"
-              >
+                class="!bg-blue-100 hover:opacity-80 transition-opacity cursor-pointer">
                 <span class="text-sm font-medium text-blue-600">{{
                   userInfo.username?.slice(0, 1)
                 }}</span>
               </el-avatar>
               <div
-                class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"
-              ></div>
+                class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
               <!-- 懸停提示 -->
               <div
-                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
-              >
+                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
                 點擊更換頭像
               </div>
             </div>
@@ -81,28 +97,42 @@
                   {{ userInfo.email }}
                 </div>
                 <div class="text-xs text-gray-500 mt-1">
-                  <el-tag v-for="role in userInfo.roles" :key="role.id">
+                  <el-tag
+                    v-for="role in userInfo.roles"
+                    :key="role.id">
                     {{ role.name }}
                   </el-tag>
                 </div>
               </div>
               <el-divider class="!my-1" />
               <el-dropdown-item command="profile">
-                <User :size="14" class="mr-2" />個人資料
+                <User
+                  :size="14"
+                  class="mr-2" />個人資料
               </el-dropdown-item>
               <el-dropdown-item command="settings">
-                <Settings :size="14" class="mr-2" />偏好設定
+                <Settings
+                  :size="14"
+                  class="mr-2" />偏好設定
               </el-dropdown-item>
               <el-divider class="!my-1" />
               <el-dropdown-item command="notifications">
-                <Bell :size="14" class="mr-2" />通知設定
+                <Bell
+                  :size="14"
+                  class="mr-2" />通知設定
               </el-dropdown-item>
               <el-dropdown-item command="privacy">
-                <Shield :size="14" class="mr-2" />隱私權設定
+                <Shield
+                  :size="14"
+                  class="mr-2" />隱私權設定
               </el-dropdown-item>
               <el-divider class="!my-1" />
-              <el-dropdown-item command="logout" class="!text-red-500">
-                <LogOut :size="14" class="mr-2" />登出
+              <el-dropdown-item
+                command="logout"
+                class="!text-red-500">
+                <LogOut
+                  :size="14"
+                  class="mr-2" />登出
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -116,8 +146,7 @@
       title="更換頭像"
       width="420px"
       :close-on-click-modal="false"
-      :close-on-press-escape="false"
-    >
+      :close-on-press-escape="false">
       <div class="flex flex-col items-center">
         <!-- 預覽區域 -->
         <div class="mb-4 relative group">
@@ -128,23 +157,22 @@
             :show-file-list="false"
             :on-change="handleFileChange"
             accept="image/jpeg,image/png,image/gif"
-            drag
-          >
+            drag>
             <el-avatar
               :size="120"
               :src="previewUrl || userInfo.avatar"
-              class="!bg-blue-100 hover:opacity-80 transition-all duration-300"
-            >
+              class="!bg-blue-100 hover:opacity-80 transition-all duration-300">
               <span class="text-2xl font-medium text-blue-600">{{
                 userInfo.username?.slice(0, 1)
               }}</span>
             </el-avatar>
             <!-- 懸停提示 -->
             <div
-              class="absolute inset-0 bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-            >
+              class="absolute inset-0 bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <div class="text-white text-sm">
-                <Upload class="mx-auto mb-1" :size="20" />
+                <Upload
+                  class="mx-auto mb-1"
+                  :size="20" />
                 <div class="text-xs">點擊或拖拉</div>
               </div>
             </div>
@@ -164,8 +192,7 @@
             type="primary"
             :loading="uploading"
             :disabled="!selectedFile"
-            @click="handleUpload"
-          >
+            @click="handleUpload">
             確認上傳
           </el-button>
         </div>
@@ -348,39 +375,37 @@ onMounted(() => {
 .el-dropdown-menu {
   @apply min-w-[240px];
 }
+
 :deep(.el-upload-dragger) {
   @apply w-full border-none p-0;
 }
-.avatar-uploader {
-  :deep(.el-upload) {
-    @apply w-full;
-  }
 
-  :deep(.el-upload-dragger) {
-    @apply w-full border-none p-0;
-  }
-
-  :deep(.el-upload-dragger:hover) {
-    @apply bg-transparent;
-  }
-
-  .upload-area {
-    @apply w-full flex flex-col items-center;
-  }
+.avatar-uploader :deep(.el-upload) {
+  @apply w-full;
 }
 
-.avatar-preview-uploader {
-  :deep(.el-upload) {
-    @apply block;
-  }
+.avatar-uploader :deep(.el-upload-dragger) {
+  @apply w-full border-none p-0;
+}
 
-  :deep(.el-upload-dragger) {
-    @apply w-[120px] h-[120px] border-none p-0 bg-transparent;
-  }
+.avatar-uploader :deep(.el-upload-dragger:hover) {
+  @apply bg-transparent;
+}
 
-  :deep(.el-upload-dragger:hover) {
-    @apply bg-transparent;
-  }
+.avatar-uploader .upload-area {
+  @apply w-full flex flex-col items-center;
+}
+
+.avatar-preview-uploader :deep(.el-upload) {
+  @apply block;
+}
+
+.avatar-preview-uploader :deep(.el-upload-dragger) {
+  @apply w-[120px] h-[120px] border-none p-0 bg-transparent;
+}
+
+.avatar-preview-uploader :deep(.el-upload-dragger:hover) {
+  @apply bg-transparent;
 }
 
 /* 懸停效果 */
@@ -415,28 +440,6 @@ onMounted(() => {
 }
 
 /* 移除所有可能的外框 */
-:deep(.el-dropdown-menu) {
-  outline: none !important;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-
-:deep(.el-dropdown-menu__item) {
-  outline: none !important;
-}
-
-:deep(.el-dropdown *) {
-  outline: none !important;
-}
-
-:deep(.el-button) {
-  outline: none !important;
-}
-
-:deep(.el-avatar) {
-  outline: none !important;
-}
-
-/* 移除所有元素的外框 */
 * {
   outline: none !important;
 }
