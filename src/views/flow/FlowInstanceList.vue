@@ -49,11 +49,33 @@
         @click="handleCreate">
         <Plus class="mr-1" /> 新建流程實例
       </el-button>
+      <el-button
+        type="danger"
+        :disabled="selectedInstances.length === 0"
+        @click="handleBatchDelete"
+        :title="
+          userStore.isAdmin
+            ? '管理員可以強制刪除任何狀態的流程實例'
+            : '只能刪除草稿或失敗狀態的流程實例'
+        ">
+        <Trash2 class="mr-1" /> 批次刪除 ({{ selectedInstances.length }})
+      </el-button>
     </Teleport>
 
     <el-table
       :data="instances"
-      v-loading="loading">
+      v-loading="loading"
+      @selection-change="handleSelectionChange"
+      row-key="id">
+      <el-table-column
+        type="selection"
+        width="55"
+        :selectable="
+          (row) =>
+            userStore.isAdmin ||
+            row.status === 'draft' ||
+            row.status === 'failed'
+        " />
       <el-table-column
         type="index"
         label="序號"
@@ -216,8 +238,11 @@ import {
 } from "@/api/modules/flow";
 import { getAllProjects } from "@/api/modules/project";
 import { getFlowTemplates } from "@/api/modules/flow";
+import { Play, StopCircle, Eye, Trash2, RotateCw, Plus } from "lucide-vue-next";
+import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
+const userStore = useUserStore();
 const loading = ref(false);
 const instances = ref([]);
 const projects = ref([]);
@@ -225,6 +250,7 @@ const templates = ref([]);
 const dialogVisible = ref(false);
 const submitting = ref(false);
 const showHeaderContent = ref(true);
+const selectedInstances = ref([]);
 
 // KeepAlive 生命週期鉤子
 onActivated(() => {
@@ -274,6 +300,89 @@ const getStatusTagType = (status) => {
 const getStatusLabel = (status) => {
   const option = statusOptions.find((opt) => opt.value === status);
   return option ? option.label : status;
+};
+
+// 處理選擇變更
+const handleSelectionChange = (selection) => {
+  selectedInstances.value = selection;
+};
+
+// 處理批次刪除
+const handleBatchDelete = async () => {
+  if (selectedInstances.value.length === 0) return;
+
+  // 如果是管理員，可以強制刪除任何狀態的實例
+  const canForceDelete = userStore.isAdmin;
+
+  // 過濾出可刪除的實例（草稿或失敗狀態，或管理員強制刪除）
+  const deletableInstances = canForceDelete
+    ? selectedInstances.value
+    : selectedInstances.value.filter(
+        (instance) =>
+          instance.status === "draft" || instance.status === "failed"
+      );
+
+  // 檢查是否有不可刪除的實例
+  if (deletableInstances.length < selectedInstances.value.length) {
+    const nonDeletableCount =
+      selectedInstances.value.length - deletableInstances.length;
+    ElMessage.warning(
+      `已選中 ${nonDeletableCount} 個非草稿或失敗狀態的實例，這些實例無法刪除`
+    );
+
+    if (deletableInstances.length === 0) {
+      return;
+    }
+  }
+
+  try {
+    const confirmMessage =
+      canForceDelete &&
+      deletableInstances.some(
+        (instance) => !["draft", "failed"].includes(instance.status)
+      )
+        ? `您正在以管理員身份強制刪除 ${deletableInstances.length} 個流程實例，其中包含非草稿或失敗狀態的實例。此操作不可逆且可能影響系統運行。`
+        : `確定要刪除選中的 ${deletableInstances.length} 個流程實例嗎？此操作不可逆。`;
+
+    await ElMessageBox.confirm(confirmMessage, "批次刪除確認", {
+      confirmButtonText: "確定",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+
+    loading.value = true;
+
+    console.log("批次刪除流程實例:", {
+      總數: selectedInstances.value.length,
+      可刪除數: deletableInstances.length,
+      isAdmin: userStore.isAdmin,
+      canForceDelete,
+    });
+
+    const deletePromises = deletableInstances.map((instance) => {
+      // 確定是否需要強制刪除
+      const needForceDelete =
+        canForceDelete && !["draft", "failed"].includes(instance.status);
+      console.log(`刪除實例 ${instance.id}:`, {
+        status: instance.status,
+        needForceDelete,
+      });
+      return deleteFlowInstance(instance.id, needForceDelete);
+    });
+
+    const results = await Promise.all(deletePromises);
+    console.log("批次刪除結果:", results);
+    ElMessage.success(`成功刪除 ${deletableInstances.length} 個流程實例`);
+    selectedInstances.value = [];
+    loadData();
+  } catch (error) {
+    if (error !== "cancel") {
+      console.error("批次刪除流程實例失敗", error);
+      ElMessage.error(`批次刪除流程實例失敗: ${error.message || error}`);
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 載入數據
@@ -380,18 +489,50 @@ const handleView = (row) => {
 // 刪除流程實例
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm("確定要刪除該流程實例嗎？", "提示", {
+    // 檢查是否為管理員以及實例狀態
+    const canForceDelete = userStore.isAdmin;
+    const isDeletableStatus = row.status === "draft" || row.status === "failed";
+
+    // 如果不是可刪除狀態且不是管理員，則顯示錯誤訊息
+    if (!isDeletableStatus && !canForceDelete) {
+      ElMessage.warning("只有草稿和失敗狀態的流程實例可以刪除");
+      return;
+    }
+
+    // 根據情況顯示不同的確認訊息
+    const confirmMessage =
+      !isDeletableStatus && canForceDelete
+        ? "您正在以管理員身份強制刪除非草稿或失敗狀態的流程實例。此操作不可逆且可能影響系統運行，確定要繼續嗎？"
+        : "確定要刪除該流程實例嗎？";
+
+    await ElMessageBox.confirm(confirmMessage, "提示", {
       type: "warning",
     });
 
     row.loading = true;
-    await deleteFlowInstance(row.id);
+
+    // 確定是否需要強制刪除
+    const needForceDelete = canForceDelete && !isDeletableStatus;
+    console.log("刪除流程實例:", {
+      id: row.id,
+      status: row.status,
+      isAdmin: userStore.isAdmin,
+      canForceDelete,
+      isDeletableStatus,
+      needForceDelete,
+    });
+
+    const result = await deleteFlowInstance(row.id, needForceDelete);
+    console.log("刪除結果:", result);
     ElMessage.success("刪除成功");
     loadData();
   } catch (error) {
     if (error !== "cancel") {
       console.error("刪除失敗:", error);
-      ElMessage.error("刪除失敗");
+      console.error("刪除失敗詳情:", error.response?.data || error);
+      ElMessage.error(
+        `刪除失敗: ${error.response?.data?.message || error.message || error}`
+      );
     }
   } finally {
     row.loading = false;

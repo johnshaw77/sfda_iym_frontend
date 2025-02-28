@@ -93,7 +93,7 @@ const routes = [
   {
     path: "/flow-templates",
     name: "FlowTemplates",
-    component: () => import("@/views/flow/FlowTemplateList.vue"),
+    component: () => import("@/views/flow/templates/list/index.vue"),
     meta: {
       title: "流程模板管理",
       icon: "Workflow",
@@ -105,7 +105,7 @@ const routes = [
   {
     path: "/flow-templates/:id/design",
     name: "FlowTemplateDesign",
-    component: () => import("@/views/flow/FlowTemplateDesign.vue"),
+    component: () => import("@/views/flow/templates/design/index.vue"),
     meta: {
       title: "流程模板設計",
       icon: "Workflow",

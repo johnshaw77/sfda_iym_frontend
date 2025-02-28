@@ -8,12 +8,24 @@
         link
         type="primary"
         @click="viewFlowMode = !viewFlowMode">
-        <Workflow class="mr-1" />
-        {{ viewFlowMode ? "流程" : "測試" }}
+        <el-segmented
+          v-model="viewFlowMode"
+          :options="viewModeoptions"
+          block>
+          <template #default="scope">
+            <div class="flex align-center justify-center">
+              <component
+                :is="scope.item.icon"
+                class="!w-3 !h-3 mr-1 pt-1" />
+
+              {{ scope.item.label }}
+            </div>
+          </template>
+        </el-segmented>
       </el-button>
     </Teleport>
     <div
-      v-if="!viewFlowMode"
+      v-if="!isViewFlowMode"
       class="flow-instance-detail">
       <!-- 頂部資訊卡片 -->
       <el-card class="mb-4">
@@ -36,7 +48,7 @@
           <div class="flex items-center space-x-2">
             <el-button
               type="primary"
-              @click="viewFlowMode = true">
+              @click="isViewFlowMode = true">
               <Workflow class="mr-1" />
               流程
             </el-button>
@@ -151,7 +163,7 @@
       </el-tabs>
     </div>
 
-    <div v-if="viewFlowMode">
+    <div v-if="isViewFlowMode">
       <FlowInstanceDiagram
         v-if="flowInstance"
         :flowInstance="flowInstance" />
@@ -190,10 +202,21 @@ onDeactivated(() => {
   showHeaderContent.value = false;
 });
 
+import { useIcons } from "@/composables/useIcons";
+const icon = useIcons();
+
 import { useFlowStore } from "@/stores/flowStore";
+import { GitBranch } from "lucide-vue-next";
 const flowStore = useFlowStore();
-console.log("flowStore", flowStore);
-const viewFlowMode = ref(true); // 默認為流程圖模式
+
+const viewFlowMode = ref("flow"); // 默認為流程圖模式
+const viewModeoptions = [
+  { label: "流程", value: "flow", icon: "GitBranch" },
+  { label: "列表", value: "list", icon: "List" },
+];
+const isViewFlowMode = computed(() => {
+  return viewFlowMode.value === "flow";
+});
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);

@@ -136,8 +136,7 @@ import { useRoute, useRouter } from "vue-router";
 import { VueFlow, Panel, useVueFlow, ConnectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
-import { ElMessage } from "element-plus";
-import CustomEdge from "../../components/CustomEdge.vue";
+
 import EdgeWithButton from "../../components/EdgeWithButton.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
@@ -146,9 +145,9 @@ import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 
 // 導入子元件
-import ToolPanel from "./ToolPanel.vue";
-import PropertyPanel from "./PropertyPanel.vue";
-import FlowToolbar from "./FlowToolbar.vue";
+import ToolPanel from "./components/ToolPanel.vue";
+import PropertyPanel from "./components/PropertyPanel.vue";
+import FlowToolbar from "./components/FlowToolbar.vue";
 
 // 導入 composables
 import { useFlowTemplate } from "@/composables/flow/useFlowTemplate";
@@ -156,7 +155,7 @@ import { useFlowLayout } from "@/composables/flow/useFlowLayout";
 import { useFlowNodes } from "@/composables/flow/useFlowNodes";
 import { useFlowEdges } from "@/composables/flow/useFlowEdges";
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
-import { useScreenshot } from "@/composables/useScreenshot";
+import { useScreenshot } from "@/composables/useScreenshot"; //TODO: 待測，想擷取後上傳存檔當做封面
 
 const route = useRoute();
 const router = useRouter();
@@ -236,7 +235,6 @@ const loadNodeComponents = async () => {
 // 註冊自定義邊線類型
 const edgeTypes = {
   button: EdgeWithButton,
-  custom: CustomEdge,
 };
 
 // Vue Flow 相關函數

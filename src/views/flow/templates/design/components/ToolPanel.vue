@@ -16,7 +16,7 @@
           placement="right">
           <div
             class="p-1 rounded hover:bg-gray-100 cursor-pointer"
-            @click="handleTogglePanel">
+            @click="$emit('toggle-panel')">
             <component
               :is="isCollapsed ? 'PanelLeftOpen' : 'PanelLeftClose'"
               class="text-gray-500"
@@ -40,7 +40,7 @@
             class="p-3 bg-blue-50 rounded-lg border border-blue-100 cursor-move hover:shadow-md transition-shadow"
             :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
             draggable="true"
-            @dragstart="!node.disabled && handleDragStart($event, node)"
+            @dragstart="!node.disabled && $emit('drag-start', $event, node)"
             :title="node.disabled ? '此節點已停用' : ''">
             <div class="flex items-center space-x-2">
               <component
@@ -61,7 +61,7 @@
             class="p-3 bg-green-50 rounded-lg border border-green-100 cursor-move hover:shadow-md transition-shadow"
             :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
             draggable="true"
-            @dragstart="!node.disabled && handleDragStart($event, node)"
+            @dragstart="!node.disabled && $emit('drag-start', $event, node)"
             :title="node.disabled ? '此節點已停用' : ''">
             <div class="flex items-center space-x-2">
               <component
@@ -93,7 +93,9 @@
                 class="p-2 rounded-lg cursor-move hover:bg-blue-50 transition-colors"
                 :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
                 draggable="true"
-                @dragstart="!node.disabled && handleDragStart($event, node)">
+                @dragstart="
+                  !node.disabled && $emit('drag-start', $event, node)
+                ">
                 <component
                   :is="node.icon"
                   class="text-blue-500"
@@ -116,7 +118,9 @@
                 class="p-2 rounded-lg cursor-move hover:bg-green-50 transition-colors"
                 :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
                 draggable="true"
-                @dragstart="!node.disabled && handleDragStart($event, node)">
+                @dragstart="
+                  !node.disabled && $emit('drag-start', $event, node)
+                ">
                 <component
                   :is="node.icon"
                   class="text-green-500"
@@ -131,16 +135,14 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-
-const props = defineProps({
+defineProps({
   inputNodes: {
     type: Array,
-    default: () => [],
+    required: true,
   },
   processNodes: {
     type: Array,
-    default: () => [],
+    required: true,
   },
   isCollapsed: {
     type: Boolean,
@@ -148,15 +150,5 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["toggle-panel", "drag-start"]);
-
-// 處理面板摺疊
-const handleTogglePanel = () => {
-  emit("toggle-panel");
-};
-
-// 處理節點拖拽開始
-const handleDragStart = (event, node) => {
-  emit("drag-start", event, node);
-};
+defineEmits(["toggle-panel", "drag-start"]);
 </script>

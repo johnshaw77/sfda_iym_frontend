@@ -10,7 +10,7 @@
           placement="left">
           <div
             class="p-1 rounded hover:bg-gray-100 cursor-pointer"
-            @click="handleTogglePanel">
+            @click="$emit('toggle-panel')">
             <component
               :is="isCollapsed ? 'PanelRightOpen' : 'PanelRightClose'"
               class="text-gray-500"
@@ -113,14 +113,16 @@
 </template>
 
 <script setup>
-const props = defineProps({
+import { PanelRightOpen, PanelRightClose } from "lucide-vue-next";
+
+defineProps({
   flowTemplate: {
     type: Object,
-    default: () => ({}),
+    required: true,
   },
   formRules: {
     type: Object,
-    default: () => ({}),
+    required: true,
   },
   isCollapsed: {
     type: Boolean,
@@ -128,17 +130,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["toggle-panel"]);
-
-// 處理面板摺疊
-const handleTogglePanel = () => {
-  emit("toggle-panel");
-};
+defineEmits(["toggle-panel"]);
 </script>
 
 <style scoped>
 .writing-vertical-lr {
   writing-mode: vertical-lr;
-  text-orientation: upright;
+  text-orientation: mixed;
 }
 </style>

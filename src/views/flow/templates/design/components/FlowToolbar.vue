@@ -3,29 +3,29 @@
     <el-button-group>
       <el-tooltip content="清空畫布">
         <el-button
-          :icon="icons.LayoutGrid"
-          @click="handleReset" />
+          :icon="LayoutGrid"
+          @click="$emit('reset')" />
       </el-tooltip>
       <el-tooltip content="縮圖預覽">
         <el-button
-          :icon="icons.Camera"
-          @click="handlePreviewThumbnail" />
+          :icon="Camera"
+          @click="$emit('preview-thumbnail')" />
       </el-tooltip>
       <el-tooltip content="儲存">
         <el-button
-          :icon="icons.Save"
+          :icon="Save"
           :type="hasUnsavedChanges ? 'warning' : 'default'"
-          @click="handleSave" />
+          @click="$emit('save')" />
       </el-tooltip>
       <el-tooltip content="JSON 輸出">
         <el-button
-          :icon="icons.Code2"
-          @click="handleShowJson" />
+          :icon="Code2"
+          @click="$emit('show-json')" />
       </el-tooltip>
       <el-tooltip content="重新布局">
         <el-button
-          :icon="icons.Layout"
-          @click="handleLayout" />
+          :icon="Layout"
+          @click="$emit('layout')" />
       </el-tooltip>
     </el-button-group>
 
@@ -33,7 +33,7 @@
       <el-button>
         {{ layoutDirections[layoutDirection].label }}
         <el-icon class="el-icon--right">
-          <icons.ChevronDown />
+          <ChevronDown />
         </el-icon>
       </el-button>
       <template #dropdown>
@@ -50,7 +50,7 @@
 
     <el-button
       type="primary"
-      @click="handlePublish">
+      @click="$emit('publish')">
       <Send
         class="mr-1"
         :size="14" />
@@ -60,10 +60,15 @@
 </template>
 
 <script setup>
-import { Send } from "@element-plus/icons-vue";
-import { useIcons } from "@/composables/useIcons";
-
-const { icons } = useIcons();
+import {
+  LayoutGrid,
+  Camera,
+  Save,
+  Code2,
+  Layout,
+  ChevronDown,
+  Send,
+} from "lucide-vue-next";
 
 const props = defineProps({
   layoutDirection: {
@@ -90,38 +95,7 @@ const emit = defineEmits([
   "publish",
 ]);
 
-// 處理重置畫布
-const handleReset = () => {
-  emit("reset");
-};
-
-// 處理縮圖預覽
-const handlePreviewThumbnail = () => {
-  emit("preview-thumbnail");
-};
-
-// 處理儲存
-const handleSave = () => {
-  emit("save");
-};
-
-// 處理 JSON 顯示
-const handleShowJson = () => {
-  emit("show-json");
-};
-
-// 處理重新布局
-const handleLayout = () => {
-  emit("layout");
-};
-
-// 處理布局方向變更
 const handleLayoutDirectionChange = (direction) => {
   emit("layout-direction-change", direction);
-};
-
-// 處理發布範本
-const handlePublish = () => {
-  emit("publish");
 };
 </script>

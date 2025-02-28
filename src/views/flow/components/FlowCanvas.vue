@@ -54,6 +54,7 @@
         @nodesChange="onNodesChange"
         @edgesChange="onEdgesChange"
         @dragover="handleDragOver"
+        @drop="handleDrop"
         @nodes-initialized="() => {}">
         <Background
           pattern="lines"
@@ -69,16 +70,16 @@
           class="bg-white p-2 rounded shadow-md">
           <div class="flex flex-wrap gap-2">
             <el-button
-              v-for="type in Object.values(NODE_TYPES)"
-              :key="type.type"
+              v-for="nodeType in Object.values(NODE_TYPES)"
+              :key="nodeType.type"
               size="small"
-              @click="() => onAddNode(type)">
+              @click="() => onAddNode(nodeType)">
               <component
-                :is="type.icon"
+                :is="nodeType.icon"
                 :size="16"
                 :stroke-width="1.5"
                 class="mr-1" />
-              {{ type.label }}
+              {{ nodeType.label }}
             </el-button>
             <el-divider direction="vertical" />
             <el-tooltip
@@ -87,7 +88,14 @@
               effect="light">
               <el-button
                 size="small"
-                @click="() => onAddNode('sticky')">
+                @click="
+                  () =>
+                    onAddNode({
+                      type: 'sticky',
+                      label: '便利貼',
+                      icon: 'StickyNote',
+                    })
+                ">
                 <component
                   :is="StickyNoteIcon"
                   :size="16"
@@ -200,28 +208,37 @@
           title="工作流 JSON 數據"
           direction="rtl"
           size="50%">
+          <template #header>
+            <div class="flex items-center justify-between w-full pr-4">
+              <span>工作流 JSON 數據</span>
+              <div class="flex items-center space-x-2">
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="handleCopyJson">
+                  <component
+                    :is="Copy"
+                    :size="16"
+                    :stroke-width="1.5"
+                    class="mr-1" />
+                  複製
+                </el-button>
+              </div>
+            </div>
+          </template>
           <div class="p-4">
-            <el-button
-              size="small"
-              type="primary"
-              @click="copyJson"
-              class="mb-4">
-              複製 JSON
-            </el-button>
-            <pre
-              class="bg-gray-50 p-4 rounded-lg overflow-auto max-h-[calc(100vh-200px)]"><code>{{ JSON.stringify(elements, null, 2) }}</code></pre>
+            <json-viewer
+              :value="elements"
+              :expand-depth="2"
+              expandIconStyle="circle"
+              sort
+              boxed
+              :expand-on-click="true"
+              class="custom-json-viewer" />
           </div>
         </el-drawer>
       </VueFlow>
     </div>
-
-    <!-- <NodeConfigPanel
-      v-if="selectedNode"
-      :selected-node="selectedNode"
-      @update:node="updateNode"
-      @close="selectedNode = null"
-      class="border-l"
-    /> -->
   </div>
 </template>
 
@@ -249,9 +266,12 @@ import {
   Redo2,
   Maximize2,
   Minimize2,
+  Copy,
 } from "lucide-vue-next";
 import dagre from "@dagrejs/dagre"; // 自動布局
 import { ElMessageBox, ElMessage } from "element-plus";
+import JsonViewer from "vue-json-viewer";
+import "vue-json-viewer/style.css";
 
 import StickyNote from "./StickyNote.vue";
 import "@vue-flow/core/dist/style.css";
@@ -319,11 +339,6 @@ const defaultEdgeOptions = {
   },
 };
 
-const elements = ref([
-  ...props.flowInstance?.nodes,
-  ...props.flowInstance?.edges,
-]);
-
 const {
   project,
   fitView,
@@ -346,6 +361,14 @@ const {
   elevateEdgesOnSelect: true,
 });
 const selectedNode = ref(null);
+
+// 定義 elements 變數
+const elements = ref([]);
+
+// 定義 snapToGrid 變數
+const snapToGrid = ref(true);
+
+// 定義 showJsonDrawer 變數
 const showJsonDrawer = ref(false);
 
 // 修改歷史記錄系統
@@ -661,27 +684,33 @@ const onEdgeClick = (event) => {
 };
 
 // 複製 JSON 到剪貼簿
-const copyJson = () => {
-  const json = JSON.stringify(elements.value, null, 2);
-  navigator.clipboard.writeText(json).then(() => {
-    ElMessage({
-      type: "success",
-      message: "已複製到剪貼簿",
-    });
-  });
+const handleCopyJson = () => {
+  try {
+    const jsonString = JSON.stringify(elements.value, null, 2);
+    navigator.clipboard.writeText(jsonString);
+    ElMessage.success("已複製到剪貼簿");
+  } catch (error) {
+    console.error("複製失敗:", error);
+    ElMessage.error("複製失敗");
+  }
 };
 
 // 修改適應工作區功能
 const handleFitView = () => {
-  setTimeout(() => {
-    fitView({
-      padding: 0.2,
-      maxZoom: 1,
-      minZoom: 0.6,
-      duration: 150,
-      includeHiddenNodes: true,
-    });
-  }, 100);
+  const handleFitView = () => {
+    setTimeout(() => {
+      fitView({ padding: 0.2 });
+    }, 400);
+  };
+  // setTimeout(() => {
+  //   fitView({
+  //     padding: 0.2,
+  //     maxZoom: 1,
+  //     minZoom: 0.6,
+  //     duration: 150,
+  //     includeHiddenNodes: true,
+  //   });
+  // }, 100);
 };
 
 // 修改撤銷功能
@@ -841,6 +870,23 @@ onMounted(async () => {
   //   ElMessage.error("獲取節點類型定義失敗");
   // }
 
+  // 初始化 elements，從 flowInstance 中獲取節點和邊緣數據
+  if (
+    props.flowInstance &&
+    props.flowInstance.nodes &&
+    props.flowInstance.edges
+  ) {
+    console.log("初始化流程實例數據", props.flowInstance);
+    elements.value = [...props.flowInstance.nodes, ...props.flowInstance.edges];
+
+    // 適應視窗大小
+    setTimeout(() => {
+      fitView({ padding: 0.2 });
+    }, 100);
+  } else {
+    console.warn("流程實例數據不完整", props.flowInstance);
+  }
+
   // 其他初始化代碼...
   window.addEventListener("keydown", handleKeyDown);
 });
@@ -864,50 +910,50 @@ const handleDragLeave = () => {
   isDragOver.value = false;
 };
 
-// 在 handleDrop 函數之前添加檔案類型限制
-const ALLOWED_FILE_TYPES = {
-  "image/*": "圖片檔案",
-  "application/pdf": "PDF 檔案",
-  "text/plain": "文字檔案",
-  "text/csv": "CSV 檔案",
-  "application/json": "JSON 檔案",
-  // Excel 相關
-  "application/vnd.ms-excel": "Excel 檔案",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-    "Excel 檔案",
-  "application/excel": "Excel 檔案",
-  "application/x-excel": "Excel 檔案",
-  "application/x-msexcel": "Excel 檔案",
-  // PPT 相關
-  "application/vnd.ms-powerpoint": "PPT 檔案",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-    "PPT 檔案",
-  "application/powerpoint": "PPT 檔案",
-  "application/mspowerpoint": "PPT 檔案",
-  "application/x-mspowerpoint": "PPT 檔案",
-  "application/ppt": "PPT 檔案",
-  //word 相關
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-    "Word 檔案",
-  "application/word": "Word 檔案",
-  "application/x-word": "Word 檔案",
-  "application/vnd.ms-word": "Word 檔案",
-};
-
-const isFileTypeAllowed = (file) => {
-  return Object.keys(ALLOWED_FILE_TYPES).some((type) => {
-    if (type.endsWith("*")) {
-      return file.type.startsWith(type.slice(0, -1));
-    }
-    return file.type === type;
-  });
-};
-
+// 處理檔案拖放
 const handleDrop = async (event) => {
   isDragOver.value = false;
   const files = Array.from(event.dataTransfer.files);
 
   // 檢查檔案類型
+  const isFileTypeAllowed = (file) => {
+    const ALLOWED_FILE_TYPES = {
+      "image/*": "圖片檔案",
+      "application/pdf": "PDF 檔案",
+      "text/plain": "文字檔案",
+      "text/csv": "CSV 檔案",
+      "application/json": "JSON 檔案",
+      // Excel 相關
+      "application/vnd.ms-excel": "Excel 檔案",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        "Excel 檔案",
+      "application/excel": "Excel 檔案",
+      "application/x-excel": "Excel 檔案",
+      "application/x-msexcel": "Excel 檔案",
+      // PPT 相關
+      "application/vnd.ms-powerpoint": "PPT 檔案",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+        "PPT 檔案",
+      "application/powerpoint": "PPT 檔案",
+      "application/mspowerpoint": "PPT 檔案",
+      "application/x-mspowerpoint": "PPT 檔案",
+      "application/ppt": "PPT 檔案",
+      //word 相關
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        "Word 檔案",
+      "application/word": "Word 檔案",
+      "application/x-word": "Word 檔案",
+      "application/vnd.ms-word": "Word 檔案",
+    };
+
+    return Object.keys(ALLOWED_FILE_TYPES).some((type) => {
+      if (type.endsWith("*")) {
+        return file.type.startsWith(type.slice(0, -1));
+      }
+      return file.type === type;
+    });
+  };
+
   const invalidFiles = files.filter((file) => !isFileTypeAllowed(file));
   if (invalidFiles.length > 0) {
     ElMessage.error(
@@ -924,10 +970,8 @@ const handleDrop = async (event) => {
   });
 
   // 處理每個檔案
-  console.log(files.length);
   for (const file of files) {
     try {
-      console.log("file", file);
       // 創建檔案節點（先顯示上傳進度）
       const nodeId = `file-${Date.now()}-${Math.random()
         .toString(36)
@@ -944,7 +988,7 @@ const handleDrop = async (event) => {
         },
       };
 
-      // 使用 addNodes 而不是 addNode
+      // 添加節點
       addNodes([newNode]);
 
       // 模擬上傳進度
@@ -961,23 +1005,18 @@ const handleDrop = async (event) => {
         updateProgress(progress);
       }
 
+      // 上傳檔案
       const formData = new FormData();
       formData.append("file", file);
       formData.append("projectId", props.flowInstance.projectId);
       formData.append("instanceId", props.flowInstance.id);
-
       formData.append("docType", file.type);
 
-      //try {
+      // 上傳檔案
       const result = await uploadDocument(formData);
 
-      // 上傳檔案
-      //console.log("currentWorkflowId.value", currentWorkflowId.value);
-      //const result = await uploadDocument(file, currentWorkflowId.value);
-      //console.log("result", result);
       // 更新節點資訊
       const node = nodes.value.find((n) => n.id === nodeId);
-      //console.log("nodenodenode", result);
       if (node) {
         node.data = {
           ...node.data,
@@ -986,7 +1025,6 @@ const handleDrop = async (event) => {
           fileName: result.data.name,
           uploadProgress: 100,
         };
-        console.log("nodenodenode", node.data);
 
         // 確保節點被添加到 elements 陣列中
         if (!elements.value.some((el) => el.id === nodeId)) {
@@ -1009,8 +1047,8 @@ const handleDrop = async (event) => {
       }
     } catch (error) {
       console.error("上傳檔案失敗", error);
-      ElMessage.error(`檔案 ${file.name} 上傳失敗`);
-      // 使用 removeNodes 而不是 removeNode
+      ElMessage.warning(`檔案 ${file.name} 上傳失敗`);
+      // 移除失敗的節點
       const node = nodes.value.find((n) => n.data.fileName === file.name);
       if (node) {
         removeNodes([node]);
@@ -1209,5 +1247,42 @@ const shiftSymbol = isMac ? "⇧" : "Shift+";
 :fullscreen .vue-flow__panel button:hover {
   transform: scale(1.05);
   transition: transform 0.2s ease;
+}
+
+/* JSON Viewer 自定義樣式 */
+.custom-json-viewer {
+  background-color: #f9fafb !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.custom-json-viewer :deep(.jv-container) {
+  background: none !important;
+}
+
+.custom-json-viewer :deep(.jv-container .jv-code) {
+  padding: 0 !important;
+  background: none !important;
+}
+
+.custom-json-viewer :deep(.jv-container .jv-key) {
+  color: #2563eb !important;
+}
+
+.custom-json-viewer :deep(.jv-container .jv-item.jv-string) {
+  color: #059669 !important;
+}
+
+.custom-json-viewer :deep(.jv-container .jv-item.jv-number) {
+  color: #d97706 !important;
+}
+
+.custom-json-viewer :deep(.jv-container .jv-item.jv-boolean) {
+  color: #7c3aed !important;
+}
+
+.custom-json-viewer :deep(.jv-container .jv-item.jv-null) {
+  color: #dc2626 !important;
 }
 </style>

@@ -47,10 +47,15 @@ export const updateFlowInstance = (id, data) => {
 };
 
 // 刪除流程實例
-export const deleteFlowInstance = (instanceId) => {
+export const deleteFlowInstance = (instanceId, force = false) => {
+  console.log(`API 刪除流程實例 ${instanceId}，force=${force}`);
+  const params = force ? { force: true } : undefined;
+  console.log("API 請求參數:", { params });
+
   return request({
     url: `/flow-instances/${instanceId}`,
     method: "delete",
+    params: params,
   });
 };
 

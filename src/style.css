@@ -4,7 +4,7 @@
 
 :root {
   /* Element Plus 主題顏色 */
-  --el-color-primary: #2A6DF4;
+  --el-color-primary: #2a6df4;
   --el-color-primary-light-3: #5891f7;
   --el-color-primary-light-5: #86b0f9;
   --el-color-primary-light-7: #b4cefb;
@@ -20,6 +20,33 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 全局移除 focus 樣式 */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+/* 全局移除 Element Plus 組件的 focus 樣式 */
+.el-input__inner:focus,
+.el-textarea__inner:focus,
+.el-select:focus,
+.el-select .el-input__inner:focus,
+.el-button:focus,
+.el-radio:focus,
+.el-checkbox:focus,
+.el-switch:focus,
+.el-slider:focus,
+.el-date-editor:focus,
+.el-cascader:focus,
+.el-color-picker:focus,
+.el-upload:focus,
+.el-form-item:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
 }
 
 /* 全域字體大小設置 */
@@ -73,7 +100,7 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: none;
 }
 
 .card {
@@ -116,13 +143,12 @@ button:focus-visible {
 
 /* NProgress 自定義樣式 */
 #nprogress .bar {
-  background: #007AFF !important;
+  background: #007aff !important;
 }
 
 #nprogress .peg {
-  box-shadow: 0 0 10px #007AFF, 0 0 5px #007AFF !important;
+  box-shadow: 0 0 10px #007aff, 0 0 5px #007aff !important;
 }
-
 
 /* JSON Viewer 自定義樣式 */
 .custom-json-viewer {
@@ -159,4 +185,91 @@ button:focus-visible {
 
 .custom-json-viewer .jv-container .jv-item.jv-null {
   color: #dc2626 !important;
+}
+
+.el-table thead th {
+  color: black;
+  background-color: #f9fbfc !important;
+}
+
+/* 移除 Vue Flow 元素的 focus 樣式 */
+.vue-flow__node:focus,
+.vue-flow__node:focus-visible,
+.vue-flow__edge:focus,
+.vue-flow__edge:focus-visible,
+.vue-flow__edge-path:focus,
+.vue-flow__edge-path:focus-visible,
+.vue-flow__handle:focus,
+.vue-flow__handle:focus-visible,
+.vue-flow__edge-button:focus,
+.vue-flow__edge-button:focus-visible,
+.vue-flow__edge-label:focus,
+.vue-flow__edge-label:focus-visible,
+.vue-flow__edge-text:focus,
+.vue-flow__edge-text:focus-visible,
+.vue-flow__connection-line:focus,
+.vue-flow__connection-line:focus-visible,
+.vue-flow__viewport:focus,
+.vue-flow__viewport:focus-visible,
+.vue-flow__pane:focus,
+.vue-flow__pane:focus-visible,
+.vue-flow__background:focus,
+.vue-flow__background:focus-visible,
+.vue-flow__minimap:focus,
+.vue-flow__minimap:focus-visible,
+.vue-flow__controls:focus,
+.vue-flow__controls:focus-visible,
+.vue-flow__controls-button:focus,
+.vue-flow__controls-button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+/* 移除 Element Plus 圖標和下拉菜單的 focus 樣式 */
+.el-icon:focus,
+.el-icon:focus-visible,
+.el-dropdown:focus,
+.el-dropdown:focus-visible,
+.el-dropdown-menu__item:focus,
+.el-dropdown-menu__item:focus-visible,
+.el-tooltip:focus,
+.el-tooltip:focus-visible,
+.el-tooltip__trigger:focus,
+.el-tooltip__trigger:focus-visible,
+.el-badge:focus,
+.el-badge:focus-visible,
+.el-popover:focus,
+.el-popover:focus-visible,
+.el-popover__reference:focus,
+.el-popover__reference:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+/* 移除 EdgeWithButton 組件的 focus 樣式 */
+.vue-flow__edge-button-circle:focus,
+.vue-flow__edge-button-circle:focus-visible,
+.vue-flow__edge-button svg:focus,
+.vue-flow__edge-button svg:focus-visible,
+.vue-flow__edge-button path:focus,
+.vue-flow__edge-button path:focus-visible,
+.vue-flow__edge-button circle:focus,
+.vue-flow__edge-button circle:focus-visible,
+.vue-flow__edge-button g:focus,
+.vue-flow__edge-button g:focus-visible,
+.vue-flow__edge-button text:focus,
+.vue-flow__edge-button text:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+/* 媒體查詢 - 淺色模式調整 */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
 }

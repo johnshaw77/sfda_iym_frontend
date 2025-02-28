@@ -465,8 +465,6 @@ import { Controls } from "@vue-flow/controls";
 import { MiniMap } from "@vue-flow/minimap";
 import { ElMessage, ElMessageBox } from "element-plus";
 
-//import CustomNode from "./components/CustomNode.vue";
-import CustomEdge from "./components/CustomEdge.vue";
 import EdgeWithButton from "./components/EdgeWithButton.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
@@ -797,7 +795,7 @@ const getInitialConfig = (nodeType) => {
 // 註冊自定義邊線類型 (TODO: 需要優化)
 const edgeTypes = {
   button: EdgeWithButton,
-  custom: CustomEdge,
+  // custom: CustomEdge,
 };
 
 // 設置默認的連接線選項
