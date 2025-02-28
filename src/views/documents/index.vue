@@ -52,94 +52,20 @@
       </el-button>
       <el-button
         type="primary"
-        @click="handleUpload"
-        :icon="Upload">
+        @click="handleUpload">
+        <Upload
+          class="mr-1"
+          :size="14" />
         上傳文檔
       </el-button>
     </Teleport>
 
-    <el-table
-      v-loading="loading"
-      :data="documents"
-      style="width: 100%"
-      border>
-      <el-table-column
-        type="index"
-        label="序號"
-        width="80" />
-      <el-table-column
-        prop="name"
-        label="文檔名稱"
-        min-width="200" />
-      <el-table-column
-        prop="docType"
-        label="類型"
-        width="120">
-        <template #default="{ row }">
-          <el-tag :type="getDocTypeTag(row.docType)">
-            {{ getDocTypeLabel(row.docType) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="project.name"
-        label="所屬專案"
-        width="180" />
-      <el-table-column
-        prop="creator.username"
-        label="上傳者"
-        width="120" />
-      <el-table-column
-        prop="createdAt"
-        label="上傳時間"
-        width="180">
-        <template #default="{ row }">
-          {{ formatTimestamp(row.createdAt) }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="操作"
-        width="240"
-        fixed="right">
-        <template #default="{ row }">
-          <el-button-group>
-            <el-button
-              v-if="isImage(row.docType)"
-              type="primary"
-              :icon="Search"
-              @click="handlePreview(row)"
-              link>
-              預覽
-            </el-button>
-            <el-button
-              type="primary"
-              :icon="Download"
-              link
-              @click="handleDownload(row)">
-              下載
-            </el-button>
-            <el-button
-              type="danger"
-              :icon="Delete"
-              link
-              @click="handleDelete(row)">
-              刪除
-            </el-button>
-          </el-button-group>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="pagination">
-      <el-pagination
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange" />
-    </div>
+    <DocumentList
+      :documents="documents"
+      :loading="loading"
+      @refresh="fetchDocuments"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange" />
 
     <!-- 上傳對話框 -->
     <el-dialog
@@ -226,23 +152,6 @@
         </span>
       </template>
     </el-dialog>
-
-    <!-- 預覽對話框 -->
-    <el-dialog
-      v-model="previewDialogVisible"
-      title="文檔預覽"
-      width="800px"
-      destroy-on-close>
-      <div class="preview-content">
-        {{ previewDocument.url }}
-        <img
-          v-if="previewDocument && isImage(previewDocument.docType)"
-          :src="previewDocument.url"
-          style="max-width: 100%; max-height: 600px" />
-
-        <div v-else>此文檔類型不支援預覽</div>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -255,15 +164,15 @@ import {
   onDeactivated,
   watch,
 } from "vue";
+import { Search, Upload, RotateCw } from "lucide-vue-next";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getAllDocuments,
   getDocumentsByProject,
   uploadDocument,
-  deleteDocument,
 } from "@/api/modules/flowDocument";
 import { getAllProjects, getProjectInstances } from "@/api/modules/project";
-import { formatTimestamp } from "@/utils/dateUtils";
+import DocumentList from "./components/DocumentList.vue";
 
 // 控制 Teleport 內容顯示
 const showHeaderContent = ref(true);
@@ -276,6 +185,7 @@ onActivated(() => {
 onDeactivated(() => {
   showHeaderContent.value = false;
 });
+
 // 狀態
 const loading = ref(false);
 const documents = ref([]);
@@ -289,6 +199,7 @@ const pageSize = ref(10);
 const filters = ref({
   projectId: "",
   docType: "",
+  search: "",
 });
 
 // 上傳相關
@@ -308,19 +219,14 @@ const uploadRules = {
   file: [{ required: true, message: "請選擇檔案", trigger: "change" }],
 };
 
-// 預覽相關
-const previewDialogVisible = ref(false);
-const previewDocument = ref(null);
-
 // 方法
 const fetchProjects = async () => {
   try {
     const response = await getAllProjects();
     projects.value = response.data || [];
-    console.log("獲取到的專案列表：", projects.value); // 添加日誌
   } catch (error) {
     ElMessage.error("獲取專案列表失敗");
-    console.error("獲取專案列表錯誤：", error); // 添加錯誤日誌
+    console.error("獲取專案列表錯誤：", error);
   }
 };
 
@@ -338,7 +244,6 @@ const handleProjectChange = async (projectId) => {
       label: item.template.name,
       value: item.id,
     }));
-    console.log("獲取到的專案工作流程實例：", result);
     instances.value = result;
   } catch (error) {
     ElMessage.error(error.message || "獲取工作流程實例失敗");
@@ -414,31 +319,6 @@ const submitUpload = async () => {
   });
 };
 
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm("確定要刪除此文檔嗎？", "警告", {
-      type: "warning",
-    });
-
-    await deleteDocument(row.id);
-    ElMessage.success("刪除成功");
-    fetchDocuments();
-  } catch (error) {
-    if (error !== "cancel") {
-      ElMessage.error("刪除失敗");
-    }
-  }
-};
-
-const handlePreview = (row) => {
-  previewDocument.value = row;
-  previewDialogVisible.value = true;
-};
-
-const handleDownload = (row) => {
-  window.open(row.url, "_blank");
-};
-
 const handleSizeChange = (val) => {
   pageSize.value = val;
   fetchDocuments();
@@ -457,26 +337,14 @@ watch(
   }
 );
 
-// 工具方法
-const getDocTypeLabel = (type) => {
-  const types = {
-    report: "報告",
-    image: "圖片",
-    attachment: "附件",
-  };
-  return types[type] || type;
-};
-
-const getDocTypeTag = (type) => {
-  const types = {
-    report: "success",
-    image: "warning",
-    attachment: "info",
-  };
-  return types[type] || "";
-};
-
-const isImage = (type) => type === "image";
+// 監聽過濾條件變化
+watch(
+  () => [filters.value.projectId, filters.value.docType, filters.value.search],
+  () => {
+    handleSearch();
+  },
+  { deep: true }
+);
 
 // 生命週期
 onMounted(() => {
@@ -486,32 +354,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.flow-document-list {
-  padding: 20px;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.search-area {
-  margin-bottom: 20px;
-}
-
 .pagination {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
-}
-
-.preview-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
 }
 
 .upload-demo {

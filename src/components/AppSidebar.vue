@@ -7,16 +7,16 @@
       background-color="#ffffff"
       text-color="#333333"
       active-text-color="#409EFF"
-      popper-effect="light"
-    >
+      popper-effect="light">
       <div class="menu-scroll-container">
         <el-menu-item
           v-for="item in menuItems"
           :key="item.path"
           :index="item.path"
-          @click="$router.push(item.path)"
-        >
-          <component :is="item.icon" :size="24" />
+          @click="$router.push(item.path)">
+          <component
+            :is="item.icon"
+            :size="24" />
           <template #title>
             <span class="menu-title">{{ item.title }}</span>
           </template>
@@ -25,13 +25,23 @@
     </el-menu>
 
     <!-- 版本信息 -->
-    <div v-show="!isCollapse" class="version-info flex justify-center">
-      <img src="/flexium_logo.png" class="h-4" :alt="version" />
+    <div
+      v-show="!isCollapse"
+      class="version-info flex justify-center">
+      <img
+        src="/flexium_logo.png"
+        class="h-4"
+        :alt="version" />
     </div>
 
     <!-- 折疊按鈕 -->
-    <el-button type="text" class="collapse-button" @click="toggleCollapse">
-      <component :is="isCollapse ? ChevronRight : ChevronLeft" :size="16" />
+    <el-button
+      type="text"
+      class="collapse-button"
+      @click="toggleCollapse">
+      <component
+        :is="isCollapse ? ChevronRight : ChevronLeft"
+        :size="16" />
     </el-button>
   </div>
 </template>
@@ -41,7 +51,6 @@ import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChevronLeft, ChevronRight, Settings } from "lucide-vue-next";
 import { useUserStore } from "@/stores/user";
-import { getCategoryIcon } from "@/utils/nodeIcons";
 
 const route = useRoute();
 const router = useRouter();

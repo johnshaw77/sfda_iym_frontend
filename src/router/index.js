@@ -55,7 +55,17 @@ const routes = [
       showContentHeader: true,
     },
   },
-
+  {
+    path: "/projects/:id",
+    name: "project-detail",
+    component: () => import("@/views/projects/detail.vue"),
+    meta: {
+      requiresAuth: true,
+      showContentHeader: true,
+      hidden: true,
+      title: "專案詳情",
+    },
+  },
   {
     path: "/flow-instances",
     name: "FlowInstances",
@@ -117,14 +127,26 @@ const routes = [
       hidden: true,
     },
   },
+  // {
+  //   path: "/flow-documents",
+  //   name: "FlowDocuments",
+  //   component: () => import("@/views/flow/FlowDocumentList.vue"),
+  //   meta: {
+  //     title: "文檔管理",
+  //     icon: "FileText",
+  //     requiresAuth: true,
+  //     showContentHeader: true,
+  //   },
+  // },
   {
-    path: "/flow-documents",
-    name: "FlowDocuments",
-    component: () => import("@/views/flow/FlowDocumentList.vue"),
+    path: "/documents",
+    name: "Documents",
+    component: () => import("@/views/documents/index.vue"),
     meta: {
-      title: "文檔管理",
-      icon: "FileText",
+      keepAlive: true,
       requiresAuth: true,
+      title: "文件管理",
+      icon: "FileText",
       showContentHeader: true,
     },
   },

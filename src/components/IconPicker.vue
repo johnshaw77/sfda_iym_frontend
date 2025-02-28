@@ -6,13 +6,11 @@
       @click="dialogVisible = true"
       type="primary"
       plain
-      class="flex items-center gap-2"
-    >
+      class="flex items-center gap-2">
       <component
         v-if="modelValue"
         :is="icons[modelValue]"
-        class="w-4 h-4 mr-2"
-      />
+        class="w-4 h-4 mr-2" />
       <span>{{ modelValue || "選擇圖示" }}</span>
     </el-button>
 
@@ -21,21 +19,18 @@
       v-model="dialogVisible"
       title="選擇圖示"
       width="80%"
-      class="max-w-4xl"
-    >
+      class="max-w-4xl">
       <!-- 搜尋輸入框 -->
       <el-input
         v-model="searchQuery"
         placeholder="搜尋圖示..."
         prefix-icon="Search"
         clearable
-        class="mb-4"
-      />
+        class="mb-4" />
 
       <!-- 圖示網格 -->
       <div
-        class="grid grid-cols-6 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 max-h-[60vh] overflow-y-auto p-2"
-      >
+        class="grid grid-cols-6 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 max-h-[60vh] overflow-y-auto p-2">
         <el-card
           v-for="iconName in filteredIcons"
           :key="iconName"
@@ -46,10 +41,13 @@
               ? 'border-dashed border-2 border-gray-500 bg-gray-300'
               : '',
           ]"
-          @click="selectIcon(iconName)"
-        >
-          <el-tooltip :content="iconName" placement="top">
-            <component :is="icons[iconName]" class="w-4 h-4" />
+          @click="selectIcon(iconName)">
+          <el-tooltip
+            :content="iconName"
+            placement="top">
+            <component
+              :is="icons[iconName]"
+              class="w-4 h-4" />
           </el-tooltip>
           <!-- <div class="text-xs text-center truncate w-full">
             {{ iconName }}
@@ -61,7 +59,11 @@
       <template #footer>
         <div class="flex justify-end gap-2">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="confirmSelection"> 確認 </el-button>
+          <el-button
+            type="primary"
+            @click="confirmSelection">
+            確認
+          </el-button>
         </div>
       </template>
     </el-dialog>

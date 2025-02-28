@@ -1,19 +1,28 @@
 <template>
-  <el-card class="h-full" shadow="never">
+  <el-card
+    class="h-full"
+    shadow="never">
     <template #header>
       <div class="flex justify-between items-center">
         <span>分析列表</span>
-        <el-button type="primary" @click="handleNewAnalysis">
-          <LineChart class="mr-2" :size="16" />
+        <el-button
+          type="primary"
+          @click="handleNewAnalysis">
+          <LineChart
+            class="mr-2"
+            :size="16" />
           新建分析
         </el-button>
       </div>
     </template>
 
-    <AnalysisTable :loading="loading" @pageChange="handlePageChange" />
+    <AnalysisTable
+      :loading="loading"
+      @pageChange="handlePageChange" />
+    <NewAnalysisDialog
+      v-model="dialogVisible"
+      @submit="handleSubmit" />
   </el-card>
-
-  <NewAnalysisDialog v-model="dialogVisible" @submit="handleSubmit" />
 </template>
 
 <script setup>

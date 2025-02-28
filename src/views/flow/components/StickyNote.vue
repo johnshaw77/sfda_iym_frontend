@@ -3,10 +3,9 @@
     :class="['sticky-note', { 'is-selected': selected }]"
     :style="{
       backgroundColor: data.color || '#fef3c7',
-      opacity: selected ? 1 : 0.6,
+      opacity: selected ? 1 : 0.95,
       zIndex: selected ? 1 : 0,
-    }"
-  >
+    }">
     <NodeResizer
       v-if="selected"
       :min-width="150"
@@ -15,8 +14,7 @@
       :max-height="500"
       :is-visible="selected"
       :line-style="{ borderColor: '#3b82f6' }"
-      :handle-style="{ backgroundColor: '#3b82f6' }"
-    />
+      :handle-style="{ backgroundColor: '#3b82f6' }" />
 
     <div class="sticky-note-content">
       <el-input
@@ -27,39 +25,39 @@
         @blur="saveContent"
         ref="textInput"
         :placeholder="'在此輸入便利貼內容...'"
-        class="sticky-note-textarea"
-      />
-      <div v-else class="sticky-note-text" @dblclick="startEditing">
+        class="sticky-note-textarea" />
+      <div
+        v-else
+        class="sticky-note-text"
+        @dblclick="startEditing">
         {{ data.content || "雙擊編輯內容" }}
       </div>
     </div>
 
-    <div class="sticky-note-toolbar" v-if="selected">
+    <div
+      class="sticky-note-toolbar"
+      v-if="selected">
       <el-button-group>
         <el-button
           size="small"
           @click="changeColor('#fef3c7')"
           class="color-btn"
-          style="background-color: #fef3c7"
-        />
+          style="background-color: #fef3c7" />
         <el-button
           size="small"
           @click="changeColor('#dcfce7')"
           class="color-btn"
-          style="background-color: #dcfce7"
-        />
+          style="background-color: #dcfce7" />
         <el-button
           size="small"
           @click="changeColor('#dbeafe')"
           class="color-btn"
-          style="background-color: #dbeafe"
-        />
+          style="background-color: #dbeafe" />
         <el-button
           size="small"
           @click="changeColor('#fae8ff')"
           class="color-btn"
-          style="background-color: #fae8ff"
-        />
+          style="background-color: #fae8ff" />
       </el-button-group>
     </div>
   </div>

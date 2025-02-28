@@ -88,3 +88,23 @@ export function deleteDocument(id) {
     method: "delete",
   });
 }
+
+/**
+ * 下載文檔
+ * @param {string} id - 文檔 ID
+ * @returns {Promise} 下載結果
+ */
+export function downloadDocument(id) {
+  return request({
+    url: `/flow-documents/${id}/download`,
+    method: "get",
+  });
+}
+
+/**
+ * 檢查檔案處理狀態
+ * @param {string} fileId - 檔案 ID
+ * @returns {Promise<Object>} - 檔案狀態
+ */
+export const checkDocumentStatus = (fileId) =>
+  request.get(`/flow-documents/${fileId}/status`);

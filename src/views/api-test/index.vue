@@ -7,16 +7,19 @@
         </div>
       </template>
 
-      <el-tabs v-model="activeTab" class="demo-tabs">
+      <el-tabs
+        v-model="activeTab"
+        class="demo-tabs">
         <!-- 用戶列表測試 Tab -->
-        <el-tab-pane label="用戶列表測試" name="users">
+        <el-tab-pane
+          label="用戶列表測試"
+          name="users">
           <div class="test-section">
             <div class="section-header">
               <el-button
                 type="primary"
                 @click="handleFetchUsers"
-                :loading="loading"
-              >
+                :loading="loading">
                 獲取用戶列表
               </el-button>
             </div>
@@ -27,19 +30,30 @@
               :data="userList"
               style="width: 100%"
               border
-              stripe
-            >
-              <el-table-column prop="name" label="姓名" />
-              <el-table-column prop="email" label="電子郵件" />
-              <el-table-column prop="role" label="角色" />
-              <el-table-column label="頭像" width="100">
+              stripe>
+              <el-table-column
+                prop="name"
+                label="姓名" />
+              <el-table-column
+                prop="email"
+                label="電子郵件" />
+              <el-table-column
+                prop="role"
+                label="角色" />
+              <el-table-column
+                label="頭像"
+                width="100">
                 <template #default="{ row }">
-                  <el-avatar :src="row.avatar" :size="40">
+                  <el-avatar
+                    :src="row.avatar"
+                    :size="40">
                     {{ row.nickname.charAt(0) }}
                   </el-avatar>
                 </template>
               </el-table-column>
-              <el-table-column prop="status" label="狀態">
+              <el-table-column
+                prop="status"
+                label="狀態">
                 <template #default="{ row }">
                   <el-tag :type="row.status === 'active' ? 'success' : 'info'">
                     {{ row.status === "active" ? "啟用" : "停用" }}
@@ -51,7 +65,9 @@
         </el-tab-pane>
 
         <!-- 檔案上傳測試 Tab -->
-        <el-tab-pane label="檔案上傳測試" name="upload">
+        <el-tab-pane
+          label="檔案上傳測試"
+          name="upload">
           <div class="test-section">
             <el-upload
               class="upload-demo"
@@ -59,8 +75,7 @@
               action="http://localhost:3001/api/file/upload"
               :on-success="handleUploadSuccess"
               :on-error="handleUploadError"
-              :before-upload="handleBeforeUpload"
-            >
+              :before-upload="handleBeforeUpload">
               <el-icon class="el-icon--upload"><upload-filled /></el-icon>
               <div class="el-upload__text">
                 拖曳檔案到此處或 <em>點擊上傳</em>
@@ -68,22 +83,27 @@
             </el-upload>
 
             <!-- 上傳結果顯示 -->
-            <div v-if="uploadResult" class="mt-4">
+            <div
+              v-if="uploadResult"
+              class="mt-4">
               <el-alert
                 :title="uploadResult.success ? '上傳成功' : '上傳失敗'"
                 :type="uploadResult.success ? 'success' : 'error'"
                 :description="uploadResult.message"
-                show-icon
-              />
-              <pre class="response-data" v-if="uploadResult.data">{{
-                JSON.stringify(uploadResult.data, null, 2)
-              }}</pre>
+                show-icon />
+              <pre
+                class="response-data"
+                v-if="uploadResult.data"
+                >{{ JSON.stringify(uploadResult.data, null, 2) }}</pre
+              >
             </div>
           </div>
         </el-tab-pane>
 
         <!-- 外部 API 測試 Tab -->
-        <el-tab-pane label="外部 API 測試" name="external">
+        <el-tab-pane
+          label="外部 API 測試"
+          name="external">
           <div class="test-section">
             <div class="section-header">
               <div class="api-input-group">
@@ -91,29 +111,28 @@
                   v-model="externalApiEndpoint"
                   placeholder="輸入 API 端點（例如：/methods）"
                   clearable
-                  class="endpoint-input"
-                >
+                  class="endpoint-input">
                   <template #prepend>/external/test</template>
                 </el-input>
                 <el-button
                   type="primary"
                   @click="handleTestExternalApi"
-                  :loading="externalApiLoading"
-                >
+                  :loading="externalApiLoading">
                   測試外部 API 連接
                 </el-button>
               </div>
             </div>
 
             <!-- 外部 API 測試結果 -->
-            <div v-if="externalApiResult" class="mt-4">
+            <div
+              v-if="externalApiResult"
+              class="mt-4">
               <el-alert
                 :title="externalApiResult.message"
                 :type="externalApiResult.success ? 'success' : 'error'"
                 :description="externalApiResult.error"
                 show-icon
-                class="mb-4"
-              />
+                class="mb-4" />
 
               <div v-if="externalApiResult.data">
                 <h4>響應數據：</h4>
@@ -121,14 +140,15 @@
                   type="textarea"
                   v-model="formattedExternalResponse"
                   :rows="10"
-                  readonly
-                />
+                  readonly />
               </div>
             </div>
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="Flow Nodes 組件" name="flow-nodes">
+        <el-tab-pane
+          label="Flow Nodes 組件"
+          name="flow-nodes">
           <!-- 組件列表 -->
           <div class="component-manager">
             <h2>組件列表</h2>
@@ -136,8 +156,7 @@
               <div
                 v-for="(component, path) in components"
                 :key="path"
-                class="component-item"
-              >
+                class="component-item">
                 <div class="component-info">
                   <h3>{{ getComponentName(path) }}</h3>
                   <p class="component-path">路徑: {{ path }}</p>
@@ -150,10 +169,18 @@
             </div>
 
             <!-- 預覽模態框 -->
-            <div v-if="showPreview" class="preview-modal">
+            <div
+              v-if="showPreview"
+              class="preview-modal">
               <div class="modal-content">
-                <button @click="closePreview" class="close-btn">關閉</button>
-                <component :is="currentComponent" v-if="currentComponent" />
+                <button
+                  @click="closePreview"
+                  class="close-btn">
+                  關閉
+                </button>
+                <component
+                  :is="currentComponent"
+                  v-if="currentComponent" />
               </div>
             </div>
           </div>
@@ -165,7 +192,11 @@
       <div class="test-section">
         <div class="section-header">
           <h4>API 請求日誌</h4>
-          <el-button type="info" plain size="small" @click="clearLogs">
+          <el-button
+            type="info"
+            plain
+            size="small"
+            @click="clearLogs">
             清除日誌
           </el-button>
         </div>
@@ -174,8 +205,7 @@
             v-for="(log, index) in requestLogs"
             :key="index"
             :type="log.success ? 'success' : 'danger'"
-            :timestamp="log.timestamp"
-          >
+            :timestamp="log.timestamp">
             {{ log.message }}
           </el-timeline-item>
         </el-timeline>
@@ -189,7 +219,6 @@ import { ref } from "vue";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { request } from "@/api/request";
 import { testExternalApi } from "@/api/modules/external";
-import { useFlowComponents } from "@/composables/useFlowNodeComponents";
 
 const activeTab = ref("users");
 const uploadResult = ref(null);

@@ -172,21 +172,11 @@ import {
 } from "@/api/modules/flow";
 
 import FlowInstanceDiagram from "./FlowInstanceDiagram.vue";
-import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
-
-import { VueFlow, useVueFlow } from "@vue-flow/core";
-import { Background } from "@vue-flow/background";
-import { MiniMap } from "@vue-flow/minimap";
-import { Controls } from "@vue-flow/controls";
-import "@vue-flow/core/dist/style.css";
-import "@vue-flow/core/dist/theme-default.css";
-import "@vue-flow/controls/dist/style.css";
-import "@vue-flow/minimap/dist/style.css";
 
 // 控制 Teleport 內容顯示
 const showHeaderContent = ref(true);
@@ -200,9 +190,9 @@ onDeactivated(() => {
   showHeaderContent.value = false;
 });
 
-import { useFlowInstanceStore } from "@/stores/flowInstance";
-const flowInstanceStore = useFlowInstanceStore();
-console.log("flowInstanceStore", flowInstanceStore);
+import { useFlowStore } from "@/stores/flowStore";
+const flowStore = useFlowStore();
+console.log("flowStore", flowStore);
 const viewFlowMode = ref(true); // 默認為流程圖模式
 const route = useRoute();
 const router = useRouter();
@@ -246,12 +236,9 @@ const loadFlowInstance = async () => {
       nodes.value = flowInstance.value.template.nodes;
       edges.value = flowInstance.value.template.edges;
 
-      console.log(
-        `sett heerere 123333${flowInstance.value.project.name}-- status ${flowInstance.value.status}`
-      );
       // 設置專案名稱(給面包屑)
-      flowInstanceStore.setProjectName(
-        `123333${flowInstance.value.project.name}-- status ${flowInstance.value}`
+      flowStore.setProjectName(
+        `${flowInstance.value.project.name}-- status ${flowInstance.value}`
       );
     }
   } catch (error) {

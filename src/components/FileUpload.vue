@@ -1,15 +1,23 @@
 <template>
+  <!-- 用於 views/flow/FlowInstanceDiagram.vue 的檔案上傳 !TODO: check this file-->
   <div
     class="file-upload-zone"
     @dragover.prevent="handleDragOver"
     @dragleave.prevent="handleDragLeave"
     @drop.prevent="handleDrop"
-    :class="{ 'is-dragover': isDragOver }"
-  >
+    :class="{ 'is-dragover': isDragOver }">
     <div class="upload-content">
-      <Upload v-if="!isDragOver" :size="32" class="text-gray-400" />
-      <CloudUpload v-else :size="32" class="text-blue-500" />
-      <div class="mt-2 text-sm" v-if="!isDragOver">
+      <Upload
+        v-if="!isDragOver"
+        :size="32"
+        class="text-gray-400" />
+      <CloudUpload
+        v-else
+        :size="32"
+        class="text-blue-500" />
+      <div
+        class="mt-2 text-sm"
+        v-if="!isDragOver">
         <span class="text-gray-600">拖拉檔案至此處，或</span>
         <label class="text-blue-500 cursor-pointer hover:text-blue-600">
           點擊上傳
@@ -18,28 +26,31 @@
             class="hidden"
             :multiple="multiple"
             :accept="accept"
-            @change="handleFileSelect"
-          />
+            @change="handleFileSelect" />
         </label>
       </div>
-      <div class="mt-2 text-sm text-blue-500" v-else>釋放滑鼠以上傳檔案</div>
+      <div
+        class="mt-2 text-sm text-blue-500"
+        v-else>
+        釋放滑鼠以上傳檔案
+      </div>
       <div class="mt-1 text-xs text-gray-400">
         {{ acceptText }}
       </div>
     </div>
     <!-- 檔案列表(右側的面板) -->
-    <div v-if="fileList.length > 0" class="mt-4">
+    <div
+      v-if="fileList.length > 0"
+      class="mt-4">
       <div
         v-for="file in fileList"
         :key="file.id"
-        class="flex items-center justify-between p-2 mb-2 bg-gray-50 rounded"
-      >
+        class="flex items-center justify-between p-2 mb-2 bg-gray-50 rounded">
         <div class="flex items-center">
           <component
             :is="getFileIcon(file.fileType)"
             :size="20"
-            class="text-gray-400"
-          />
+            class="text-gray-400" />
           <span class="ml-2 text-sm text-gray-600">{{ file.fileName }}</span>
           <span class="ml-2 text-xs text-gray-400"
             >({{ formatFileSize(file.fileSize) }})</span
@@ -51,18 +62,20 @@
             type="primary"
             link
             size="small"
-            @click="handleDownload(file)"
-          >
-            <Download :size="14" class="mr-1" />
+            @click="handleDownload(file)">
+            <Download
+              :size="14"
+              class="mr-1" />
             下載
           </el-button>
           <el-button
             type="danger"
             link
             size="small"
-            @click="handleDelete(file)"
-          >
-            <Trash :size="14" class="mr-1" />
+            @click="handleDelete(file)">
+            <Trash
+              :size="14"
+              class="mr-1" />
             刪除
           </el-button>
         </div>
@@ -83,11 +96,7 @@ import {
   Download,
   Trash,
 } from "lucide-vue-next";
-import {
-  uploadWorkflowFile,
-  deleteWorkflowFile,
-  downloadWorkflowFile,
-} from "@/api";
+import { updateDocument, deleteDocument, downloadDocument } from "@/api";
 
 const props = defineProps({
   // 是否允許多檔案上傳
@@ -147,7 +156,7 @@ const handleFileSelect = async (e) => {
 const handleFiles = async (files) => {
   for (const file of files) {
     try {
-      const result = await uploadWorkflowFile(file, props.workflowId);
+      const result = await uploadDocument(file, props.workflowId);
       fileList.value.push(result);
       emit("file-uploaded", result);
       ElMessage.success("檔案上傳成功");
@@ -160,7 +169,7 @@ const handleFiles = async (files) => {
 // 處理檔案刪除
 const handleDelete = async (file) => {
   try {
-    await deleteWorkflowFile(file.id);
+    await deleteDocument(file.id);
     fileList.value = fileList.value.filter((f) => f.id !== file.id);
     emit("file-deleted", file);
     ElMessage.success("檔案刪除成功");
@@ -172,7 +181,7 @@ const handleDelete = async (file) => {
 // 處理檔案下載
 const handleDownload = async (file) => {
   try {
-    const result = await downloadWorkflowFile(file.id);
+    const result = await downloadDocument(file.id);
     // 創建下載連結
     const link = document.createElement("a");
     link.href = result.url;

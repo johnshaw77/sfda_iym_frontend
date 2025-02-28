@@ -392,25 +392,8 @@ const handleEditProject = (project) => {
 };
 
 // 處理查看專案
-const handleViewProject = async (project) => {
-  try {
-    loading.value = true;
-    // 獲取專案的流程實例列表
-    const response = await getProjectInstances(project.id);
-    const instances = response.data;
-
-    if (instances && instances.length > 0) {
-      // 導航到第一個流程實例頁面
-      router.push(`/flow-instances/${instances[0].id}`);
-    } else {
-      ElMessage.info("此專案尚未建立流程實例");
-    }
-  } catch (error) {
-    console.error("獲取專案流程實例失敗:", error);
-    ElMessage.error("獲取專案流程實例失敗");
-  } finally {
-    loading.value = false;
-  }
+const handleViewProject = (project) => {
+  router.push(`/projects/${project.id}`);
 };
 
 // 處理刪除專案

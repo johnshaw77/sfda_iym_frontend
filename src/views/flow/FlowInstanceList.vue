@@ -1,112 +1,146 @@
 <template>
   <div class="p-0">
-    <Teleport to="#header-actions" v-if="showHeaderContent">
+    <Teleport
+      to="#header-actions"
+      v-if="showHeaderContent">
       <el-select
         v-model="queryParams.projectId"
         class="w-64"
         placeholder="選擇專案"
         clearable
         :fit-input-width="true"
-        @change="handleSearch"
-      >
+        @change="handleSearch">
         <el-option
           v-for="project in projects"
           :key="project.id"
           :label="project.name"
-          :value="project.id"
-        />
+          :value="project.id" />
       </el-select>
       <el-select
         v-model="queryParams.status"
         class="w-32"
         placeholder="選擇狀態"
         clearable
-        @change="handleSearch"
-      >
+        @change="handleSearch">
         <el-option
           v-for="status in statusOptions"
           :key="status.value"
           :label="status.label"
-          :value="status.value"
-        >
-          <el-tag :type="status.tagType" size="small">{{
-            status.label
-          }}</el-tag>
+          :value="status.value">
+          <el-tag
+            :type="status.tagType"
+            size="small"
+            >{{ status.label }}</el-tag
+          >
         </el-option>
       </el-select>
       <el-button
         plain
         @click="handleRefresh"
         :loading="loading"
-        title="重新整理"
-      >
-        <RotateCw class="mr-1" :size="14" />
+        title="重新整理">
+        <RotateCw
+          class="mr-1"
+          :size="14" />
         重整
       </el-button>
-      <el-button type="primary" @click="handleCreate">
+      <el-button
+        type="primary"
+        @click="handleCreate">
         <Plus class="mr-1" /> 新建流程實例
       </el-button>
     </Teleport>
 
-    <!-- {{ instances }} -->
-    <el-table :data="instances" v-loading="loading">
-      <el-table-column type="index" label="序號" width="80" />
-      <el-table-column prop="project.name" label="專案名稱" min-width="150" />
-      <el-table-column prop="template.name" label="模板名稱" min-width="150" />
-      <el-table-column label="狀態" width="100">
+    <el-table
+      :data="instances"
+      v-loading="loading">
+      <el-table-column
+        type="index"
+        label="序號"
+        width="80" />
+      <el-table-column
+        prop="project.name"
+        label="專案名稱"
+        min-width="100" />
+      <el-table-column
+        prop="template.name"
+        label="模板名稱"
+        min-width="100" />
+      <el-table-column
+        label="狀態"
+        width="150"
+        align="center">
         <template #default="{ row }">
           <el-tag :type="getStatusTagType(row.status)">
             {{ getStatusLabel(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="創建者" width="150">
+      <el-table-column
+        label="建立者"
+        width="200"
+        align="center">
         <template #default="{ row }">
-          <div class="flex items-center">
-            <el-avatar :size="24" :src="row.creator.avatar">
+          <div class="flex items-center justify-center">
+            <el-avatar
+              :size="24"
+              :src="`http://localhost:3001/uploads/avatars/${row.creator.avatar}`">
               {{ row.creator.username.charAt(0) }}
             </el-avatar>
             <span class="ml-2">{{ row.creator.username }}</span>
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="創建時間" width="180">
+      <el-table-column
+        prop="createdAt"
+        label="建立時間"
+        width="180">
         <template #default="{ row }">
           {{ formatTimestamp(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="250" fixed="right">
+      <el-table-column
+        label="操作"
+        width="300"
+        fixed="right">
         <template #default="{ row }">
           <el-button-group>
             <el-button
               v-if="row.status === 'draft'"
               type="primary"
               @click="handleStart(row)"
-              :loading="row.loading"
-            >
-              <Play class="mr-1" />
+              :loading="row.loading">
+              <Play
+                class="mr-1"
+                :size="14" />
               啟動
             </el-button>
             <el-button
               v-if="row.status === 'running'"
               type="danger"
               @click="handleStop(row)"
-              :loading="row.loading"
-            >
-              <StopCircle class="mr-1" />
+              :loading="row.loading">
+              <StopCircle
+                class="mr-1"
+                :size="14" />
               停止
             </el-button>
-            <el-button type="info" @click="handleView(row)">
-              <Eye class="mr-1" />
+            <el-button
+              type="info"
+              @click="handleView(row)">
+              <Eye
+                class="mr-1"
+                :size="14" />
               查看
             </el-button>
             <el-button
               v-if="row.status === 'draft'"
               type="danger"
               @click="handleDelete(row)"
-              :loading="row.loading"
-            >
-              <Trash2 class="mr-1" />
+              :loading="row.loading">
+              <Trash2
+                class="mr-1"
+                :size="14" />
               刪除
             </el-button>
           </el-button-group>
@@ -119,47 +153,48 @@
       v-model="dialogVisible"
       title="創建流程實例"
       width="600px"
-      :close-on-click-modal="false"
-    >
+      :close-on-click-modal="false">
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
         label-width="100px"
-        @submit.prevent
-      >
-        <el-form-item label="專案" prop="projectId">
+        @submit.prevent>
+        <el-form-item
+          label="專案"
+          prop="projectId">
           <el-select
             v-model="form.projectId"
             placeholder="選擇專案"
-            style="width: 100%"
-          >
+            style="width: 100%">
             <el-option
               v-for="project in projects"
               :key="project.id"
               :label="project.name"
-              :value="project.id"
-            />
+              :value="project.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="流程模板" prop="templateId">
+        <el-form-item
+          label="流程模板"
+          prop="templateId">
           <el-select
             v-model="form.templateId"
             placeholder="選擇流程模板"
-            style="width: 100%"
-          >
+            style="width: 100%">
             <el-option
               v-for="template in templates"
               :key="template.id"
               :label="template.name"
-              :value="template.id"
-            />
+              :value="template.id" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
+        <el-button
+          type="primary"
+          @click="handleSubmit"
+          :loading="submitting">
           確定
         </el-button>
       </template>

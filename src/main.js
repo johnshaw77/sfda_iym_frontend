@@ -50,8 +50,8 @@ import * as LucideIcons from "lucide-vue-next";
 // 註冊所有圖示
 // 全局註冊的方式只允許在 template 中使用元件標籤（如 <Save />），但不能直接作為值傳遞
 Object.entries(LucideIcons).forEach(([name, component]) => {
-  app.component(name, component)
-})
+  app.component(name, component);
+});
 
 // 使用路由
 app.use(router);

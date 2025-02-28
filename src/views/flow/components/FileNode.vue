@@ -2,31 +2,37 @@
   <div
     class="file-node"
     :class="{ selected: selected, 'is-uploading': isUploading }"
-    @click="$emit('click', $event)"
-  >
+    @click="$emit('click', $event)">
     <Handle
       type="target"
       position="top"
       :style="{ top: '-4px', opacity: targetVisible ? 1 : 0 }"
       @connect="onConnect"
       @mouseenter="targetVisible = true"
-      @mouseleave="targetVisible = false"
-    />
+      @mouseleave="targetVisible = false" />
 
     <div class="file-content">
       <!-- 圖片預覽 - 只在上傳完成且是圖片類型時顯示 -->
-      <div v-if="isImage && data.uploadProgress === 100" class="node-preview">
-        <img :src="data.fileUrl" :alt="decodedFileName" class="preview-image" />
+      <div
+        v-if="isImage && data.uploadProgress === 100"
+        class="node-preview">
+        <img
+          :src="data.fileUrl"
+          :alt="decodedFileName"
+          class="preview-image" />
       </div>
       <!-- 上傳中或非圖片類型顯示圖標 -->
-      <div v-else class="icon-wrapper">
+      <div
+        v-else
+        class="icon-wrapper">
         <component
           :is="getFileIcon(data.fileType)"
           :size="24"
           class="file-icon"
-          :class="getIconColorClass(data.fileType)"
-        />
-        <div v-if="data.uploadProgress < 100" class="upload-overlay">
+          :class="getIconColorClass(data.fileType)" />
+        <div
+          v-if="data.uploadProgress < 100"
+          class="upload-overlay">
           {{ data.uploadProgress }}%
         </div>
       </div>
@@ -36,41 +42,47 @@
           :content="data.fileName"
           placement="top"
           :show-after="500"
-          :hide-after="0"
-        >
-          <div class="file-name" :title="data.fileName">
+          :hide-after="0">
+          <div
+            class="file-name"
+            :title="data.fileName">
             {{ truncatedFileName }}
           </div>
         </el-tooltip>
         <div class="file-size">{{ formatFileSize(data.fileSize) }}</div>
-        <div v-if="data.uploadProgress < 100" class="upload-progress">
+        <div
+          v-if="data.uploadProgress < 100"
+          class="upload-progress">
           <el-progress
             :percentage="data.uploadProgress"
             :format="(p) => `${p}%`"
             :stroke-width="4"
-            class="mt-1"
-          />
+            class="mt-1" />
         </div>
         <!-- 檔案操作按鈕 -->
-        <div v-if="data.uploadProgress === 100" class="file-actions mt-2">
+        <div
+          v-if="data.uploadProgress === 100"
+          class="file-actions mt-2">
           <!-- 預覽按鈕 - 只對可預覽的檔案顯示 -->
           <el-button
-            v-if="isPreviewable && !isOfficeFile"
+            v-if="isPreviewable"
             type="primary"
             link
             size="small"
-            @click.stop="handlePreview"
-          >
-            <Eye :size="14" class="mr-1" />預覽
+            @click.stop="handlePreview">
+            <Eye
+              :size="14"
+              class="mr-1" />預覽
           </el-button>
           <!-- 下載按鈕 - 所有檔案都顯示 -->
           <el-button
             type="primary"
             link
             size="small"
-            @click.stop="handleDownload"
-          >
-            <Download :size="14" class="mr-1" />下載
+            @click.stop="handleDownload">
+            <Download
+              :size="14"
+              class="mr-1" />下載
           </el-button>
         </div>
       </div>
@@ -82,25 +94,33 @@
       :style="{ bottom: '-4px', opacity: sourceVisible ? 1 : 0 }"
       @connect="onConnect"
       @mouseenter="sourceVisible = true"
-      @mouseleave="sourceVisible = false"
-    />
+      @mouseleave="sourceVisible = false" />
 
     <!-- 右鍵選單 -->
-    <el-dropdown trigger="contextmenu" @command="handleCommand">
+    <el-dropdown
+      trigger="contextmenu"
+      @command="handleCommand">
       <div class="w-full h-full absolute top-0 left-0"></div>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item
             command="preview"
-            v-if="isPreviewable && !isOfficeFile"
-          >
-            <Eye :size="14" class="mr-2" />預覽
+            v-if="isPreviewable">
+            <Eye
+              :size="14"
+              class="mr-2" />預覽
           </el-dropdown-item>
           <el-dropdown-item command="download">
-            <Download :size="14" class="mr-2" />下載
+            <Download
+              :size="14"
+              class="mr-2" />下載
           </el-dropdown-item>
-          <el-dropdown-item command="delete" class="text-red-500">
-            <Trash :size="14" class="mr-2" />刪除
+          <el-dropdown-item
+            command="delete"
+            class="text-red-500">
+            <Trash
+              :size="14"
+              class="mr-2" />刪除
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>
@@ -118,13 +138,16 @@
       width="60%"
       top="5vh"
       :draggable="true"
-      @click.stop
-    >
+      @click.stop>
       <template #header="{ close, titleId, titleClass }">
         <div class="flex items-center justify-between w-full">
-          <h4 :id="titleId" :class="titleClass">{{ data.fileName }}</h4>
+          <h4
+            :id="titleId"
+            :class="titleClass">
+            {{ data.fileName }}
+          </h4>
           <div class="flex items-center space-x-2">
-            <!-- 縮放控制 -->
+            <!-- 縮放控制，只對圖片和PDF顯示，不對PPT顯示 -->
             <el-button-group v-if="showZoomControls">
               <el-button @click="handleZoomOut">
                 <ZoomOut :size="16" />
@@ -133,12 +156,11 @@
                 <ZoomIn :size="16" />
               </el-button>
             </el-button-group>
-            <!-- 全螢幕切換 -->
+            <!-- 全螢幕切換，對所有類型顯示 -->
             <el-button @click="toggleFullscreen">
               <component
                 :is="isFullscreen ? Minimize2 : Maximize2"
-                :size="16"
-              />
+                :size="16" />
             </el-button>
             <!-- 關閉按鈕 -->
             <el-button @click="close">
@@ -148,9 +170,13 @@
         </div>
       </template>
 
-      <div class="preview-content" :class="{ 'is-fullscreen': isFullscreen }">
+      <div
+        class="preview-content"
+        :class="{ 'is-fullscreen': isFullscreen }">
         <!-- 圖片預覽 -->
-        <div v-if="isImage" class="image-preview">
+        <div
+          v-if="isImage"
+          class="image-preview">
           {{ data.url }}
           <img
             ref="imageRef"
@@ -163,42 +189,55 @@
             @mousedown.stop="startDrag"
             @mousemove.stop="onDrag"
             @mouseup.stop="stopDrag"
-            @mouseleave.stop="stopDrag"
-          />
+            @mouseleave.stop="stopDrag" />
         </div>
 
         <!-- PDF 預覽 -->
-        <div v-else-if="isPdf" class="pdf-preview">
+        <div
+          v-else-if="isPdf"
+          class="pdf-preview">
           <div class="pdf-controls">
             <div class="flex items-center justify-between w-full px-4">
               <el-pagination
-                v-model:current-page="currentPage"
+                :current-page="currentPage"
                 :page-size="1"
                 :total="totalPages"
-                layout="prev, pager, next"
-              />
+                layout="prev, pager, next" />
             </div>
           </div>
-          <div class="pdf-container" :class="{ 'is-fullscreen': isFullscreen }">
-            <canvas ref="pdfCanvas" class="pdf-canvas"></canvas>
+          <div
+            class="pdf-container"
+            :class="{ 'is-fullscreen': isFullscreen }">
+            <canvas
+              ref="pdfCanvas"
+              class="pdf-canvas"></canvas>
           </div>
         </div>
 
+        <!-- Word 預覽 -->
+        <div
+          v-else-if="isWord"
+          class="word-preview">
+          <VueOfficeDocx
+            :src="data.fileUrl"
+            @rendered="handleDocxRendered"
+            @error="handleDocxError" />
+        </div>
         <!-- Excel/CSV 預覽 -->
-        <div v-else-if="isSpreadsheet" class="spreadsheet-preview">
+        <div
+          v-else-if="isSpreadsheet"
+          class="spreadsheet-preview">
           <el-table
             :data="spreadsheetData"
             border
             stripe
             height="70vh"
-            style="width: 100%"
-          >
+            style="width: 100%">
             <el-table-column
               v-for="(col, index) in spreadsheetColumns"
               :key="index"
               :prop="col.prop"
-              :label="col.label"
-            />
+              :label="col.label" />
           </el-table>
         </div>
 
@@ -211,17 +250,21 @@
         >
 
         <!-- PPT 預覽 -->
-        <div v-else-if="isPpt" class="ppt-preview">
-          <PptPreview v-if="pptFile" :file="pptFile" @error="handlePptError" />
-          <div v-else class="flex items-center justify-center h-full">
-            <el-icon class="is-loading"><Loading /></el-icon>
-            <span class="ml-2">正在載入 PPT...</span>
-          </div>
+        <div
+          v-else-if="isPpt"
+          class="ppt-preview">
+          <VueFilesPreview
+            :file="data.fileUrl"
+            @error="handlePptError" />
         </div>
 
         <!-- 不支援預覽 -->
-        <div v-else class="unsupported-preview">
-          <FileX :size="48" class="mx-auto mb-4 text-gray-400" />
+        <div
+          v-else
+          class="unsupported-preview">
+          <FileX
+            :size="48"
+            class="mx-auto mb-4 text-gray-400" />
           <p class="text-gray-600">此檔案類型不支援預覽</p>
           <p class="text-sm text-gray-500 mt-2">
             檔案類型：{{ data.fileType || "未知" }}
@@ -237,7 +280,13 @@ import { ref, computed, onMounted, watch, nextTick, shallowRef } from "vue";
 import { Handle } from "@vue-flow/core";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-
+import { VueFilesPreview } from "vue-files-preview";
+//import "vue-files-preview/dist/style.css";
+import "vue-files-preview/lib/style.css";
+import VueOfficeDocx from "@vue-office/docx";
+//引入相关样式
+import "@vue-office/docx/lib/index.css";
+console.log(VueOfficeDocx);
 import {
   FileText,
   Image as ImageIcon,
@@ -255,7 +304,6 @@ import {
 } from "lucide-vue-next";
 import { Loading } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import PptPreview from "@/components/PptPreview.vue";
 
 const props = defineProps({
   id: {
@@ -289,7 +337,6 @@ const totalPages = ref(1);
 const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
 const imageRef = ref(null);
-const pptFile = ref(null);
 
 // 設置 PDF.js 的 worker 路徑
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -339,6 +386,29 @@ const isPpt = computed(() => {
   );
 });
 
+// 增加 Word 檔案判斷
+const isWord = computed(() => {
+  const type = props.data.fileType?.toLowerCase();
+  const filename = props.data.fileName?.toLowerCase();
+
+  // 檢查檔案類型
+  const validTypes = [
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-word",
+    "application/doc",
+    "application/docx",
+  ];
+
+  // 檢查副檔名
+  const validExtensions = [".doc", ".docx"];
+
+  return (
+    validTypes.includes(type) ||
+    (filename && validExtensions.some((ext) => filename.endsWith(ext)))
+  );
+});
+
 const isOfficeFile = computed(() => {
   const type = props.data.fileType?.toLowerCase();
   const filename = props.data.fileName?.toLowerCase();
@@ -347,19 +417,27 @@ const isOfficeFile = computed(() => {
   return (
     type?.includes("powerpoint") ||
     type?.includes("excel") ||
+    type?.includes("word") ||
+    type?.includes("msword") ||
+    type?.includes("document") ||
     filename?.endsWith(".ppt") ||
     filename?.endsWith(".pptx") ||
     filename?.endsWith(".xls") ||
-    filename?.endsWith(".xlsx")
+    filename?.endsWith(".xlsx") ||
+    filename?.endsWith(".doc") ||
+    filename?.endsWith(".docx")
   );
 });
 
 const isPreviewable = computed(
-  () => isImage.value || isPdf.value || isText.value
+  () =>
+    isImage.value || isPdf.value || isText.value || isPpt.value || isWord.value
 );
 
-// 是否顯示縮放控制
-const showZoomControls = computed(() => isImage.value || isPdf.value);
+// 是否顯示縮放控制 (修改判斷，使其不包含 PPT 檔案，因為 vue-files-preview 有自己的控制項)
+const showZoomControls = computed(
+  () => (isImage.value || isPdf.value) && !isPpt.value && !isWord.value
+);
 
 // Excel/CSV 預覽數據
 const spreadsheetData = ref([]);
@@ -571,6 +649,16 @@ const getIconColorClass = (type) => {
   )
     return "text-orange-600";
 
+  // Word 檔案使用藍色
+  if (
+    type.includes("word") ||
+    type.includes("msword") ||
+    type.includes("document") ||
+    type.endsWith("doc") ||
+    type.endsWith("docx")
+  )
+    return "text-blue-600";
+
   // Excel 檔案使用綠色
   if (
     type.includes("excel") ||
@@ -620,24 +708,6 @@ const handlePreview = async () => {
     fileType: props.data.fileType,
     fileUrl: fileUrl,
   });
-
-  if (isPpt.value) {
-    try {
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      // 使用 Object.assign 來添加必要的屬性
-      pptFile.value = Object.assign(blob, {
-        lastModified: new Date().getTime(),
-        name: props.data.fileName,
-        // 如果 fileType 為空，則使用一個預設值
-        type: props.data.fileType || "application/vnd.ms-powerpoint",
-      });
-    } catch (error) {
-      console.error("PPT 檔案載入失敗：", error);
-      ElMessage.error("無法載入 PPT 檔案");
-      return;
-    }
-  }
 
   if (isText.value || isSpreadsheet.value) {
     try {
@@ -766,15 +836,12 @@ const truncatedFileName = computed(() => {
 
 // 處理 PPT 預覽失敗
 const handlePptError = (error) => {
-  ElMessage.error("PPT 預覽失敗：" + error.message);
+  console.error("檔案預覽失敗：", error);
+  ElMessage.error("檔案預覽失敗：" + (error.message || "未知錯誤"));
 };
 
 // 監聽預覽對話框關閉事件，清理資源
 watch(previewVisible, (visible) => {
-  if (!visible) {
-    pptFile.value = null;
-  }
-
   if (visible && isPdf.value && props.data.fileUrl) {
     // ... existing PDF preview code ...
   }
@@ -858,22 +925,24 @@ const handleDownload = () => {
 }
 
 /* 預覽對話框樣式 */
-.file-preview-dialog {
-  :deep(.el-dialog) {
-    @apply rounded-lg overflow-hidden;
-  }
+.file-preview-dialog :deep(.el-dialog) {
+  @apply rounded-lg overflow-hidden;
+}
 
-  :deep(.el-dialog__header) {
-    @apply m-0 p-4 border-b border-gray-200;
-  }
+.file-preview-dialog :deep(.el-dialog) {
+  @apply rounded-lg overflow-hidden;
+}
 
-  :deep(.el-dialog__body) {
-    @apply p-0;
-  }
+.file-preview-dialog :deep(.el-dialog__header) {
+  @apply m-0 p-4 border-b border-gray-200;
+}
 
-  :deep(.el-dialog__title) {
-    @apply text-lg font-medium;
-  }
+.file-preview-dialog :deep(.el-dialog__body) {
+  @apply p-0;
+}
+
+.file-preview-dialog :deep(.el-dialog__title) {
+  @apply text-lg font-medium;
 }
 
 .preview-content {
@@ -907,6 +976,10 @@ const handleDownload = () => {
 }
 
 .ppt-preview {
+  @apply h-full flex flex-col items-center justify-center;
+}
+
+.word-preview {
   @apply h-full flex flex-col items-center justify-center;
 }
 

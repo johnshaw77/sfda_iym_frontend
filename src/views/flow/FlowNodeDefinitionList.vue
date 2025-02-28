@@ -2,45 +2,66 @@
 
 <template>
   <div class="p-0">
-    <Teleport to="#header-actions" v-if="showHeaderContent">
+    <Teleport
+      to="#header-actions"
+      v-if="showHeaderContent">
       <el-button
         plain
         @click="handleRefresh"
         :loading="loading"
-        title="重新整理"
-      >
-        <RotateCw class="mr-1" :size="14" />
+        title="重新整理">
+        <RotateCw
+          class="mr-1"
+          :size="14" />
         重整
       </el-button>
 
-      <el-button type="primary" @click="handleCreate">
-        <Plus class="mr-1" :size="14" />
+      <el-button
+        type="primary"
+        @click="handleCreate">
+        <Plus
+          class="mr-1"
+          :size="14" />
         新增節點定義
       </el-button>
     </Teleport>
 
-    <el-table v-loading="loading" :data="nodeDefinitions" style="width: 100%">
+    <el-table
+      v-loading="loading"
+      :data="nodeDefinitions"
+      style="width: 100%">
       <!-- <el-table-column prop="id" label="ID" width="180" /> -->
       <el-table-column
         type="index"
         label="序號"
         width="80"
         align="center"
-        sortable
-      />
-      <el-table-column prop="icon" label="圖示" width="60">
+        sortable />
+      <el-table-column
+        prop="icon"
+        label="圖示"
+        width="60">
         <template #default="{ row }">
-          <component :is="icons[row.icon]" class="w-4 h-4" />
+          <component
+            :is="icons[row.icon]"
+            class="w-4 h-4" />
         </template>
       </el-table-column>
-      <el-table-column prop="category" label="分類" width="120" sortable>
+      <el-table-column
+        prop="category"
+        label="分類"
+        width="120"
+        sortable>
         <template #default="{ row }">
           <el-tag :type="getCategoryType(row.category)">
             {{ getCategoryLabel(row.category) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="名稱" width="200" sortable>
+      <el-table-column
+        label="名稱"
+        width="200"
+        sortable>
         <template #default="{ row }">
           <div class="flex items-center gap-2">
             <!-- 圖示 -->
@@ -49,59 +70,74 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="描述" />
+      <el-table-column
+        prop="description"
+        label="描述" />
 
       <el-table-column
         prop="componentPath"
         label="組件路徑"
         width="120"
-        sortable
-      />
+        sortable />
 
       <el-table-column
         prop="componentName"
         label="組件名稱"
         width="200"
-        sortable
-      >
+        sortable>
         <template #default="{ row }">
           <el-tooltip
             v-if="row.componentPath && row.componentName"
             :content="`@/components/flow-nodes/${row.componentPath}/${row.componentName}`"
             effect="light"
-            placement="top"
-          >
+            placement="top">
             <div class="cursor-help">
               {{ row.componentName }}
             </div>
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="創建時間" width="150" sortable>
+      <el-table-column
+        prop="createdAt"
+        label="創建時間"
+        width="150"
+        sortable>
         <template #default="{ row }">
           {{ formatTimestamp(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column prop="updatedAt" label="更新時間" width="150" sortable>
+      <el-table-column
+        prop="updatedAt"
+        label="更新時間"
+        width="150"
+        sortable>
         <template #default="{ row }">
           {{ formatTimestamp(row.updatedAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column
+        label="操作"
+        width="200"
+        fixed="right">
         <template #default="{ row }">
           <el-button-group>
-            <el-button type="primary" link @click="handleEdit(row)">
+            <el-button
+              type="primary"
+              link
+              @click="handleEdit(row)">
               編輯
             </el-button>
-            <el-button type="danger" link @click="handleDelete(row)">
+            <el-button
+              type="danger"
+              link
+              @click="handleDelete(row)">
               刪除
             </el-button>
             <el-button
               v-if="row.componentPath && row.componentName"
               type="warning"
               link
-              @click="handlePreviewComponent(row)"
-            >
+              @click="handlePreviewComponent(row)">
               預覽
             </el-button>
           </el-button-group>
@@ -115,47 +151,64 @@
       :title="isEdit ? '編輯節點定義' : '新增節點定義'"
       top="5vh"
       draggable
-      width="800px"
-    >
+      width="800px">
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
         label-width="120px"
-        class="mt-4"
-      >
-        <el-form-item label="名稱" prop="name">
-          <el-input v-model="form.name" placeholder="請輸入名稱" />
+        class="mt-4">
+        <el-form-item
+          label="名稱"
+          prop="name">
+          <el-input
+            v-model="form.name"
+            placeholder="請輸入名稱" />
         </el-form-item>
-        <el-form-item label="分類" prop="category">
+        <el-form-item
+          label="分類"
+          prop="category">
           <el-select
             v-model="form.category"
             placeholder="請選擇分類"
-            style="width: 100%"
-          >
-            <el-option label="資料輸入" value="data-input" />
-            <el-option label="資料處理" value="data-process" />
-            <el-option label="資料輸出" value="data-output" />
+            style="width: 100%">
+            <el-option
+              label="資料輸入"
+              value="data-input" />
+            <el-option
+              label="資料處理"
+              value="data-process" />
+            <el-option
+              label="資料輸出"
+              value="data-output" />
           </el-select>
         </el-form-item>
-        <el-form-item label="描述" prop="description">
+        <el-form-item
+          label="描述"
+          prop="description">
           <el-input
             v-model="form.description"
             type="textarea"
-            placeholder="請輸入描述"
-          />
+            placeholder="請輸入描述" />
         </el-form-item>
-        <el-form-item label="圖示" prop="icon">
+        <el-form-item
+          label="圖示"
+          prop="icon">
           <IconPicker v-model="form.icon" />
         </el-form-item>
-        <el-form-item label="組件名稱" prop="componentName">
-          <el-input v-model="form.componentName" placeholder="請輸入組件名稱" />
+        <el-form-item
+          label="組件名稱"
+          prop="componentName">
+          <el-input
+            v-model="form.componentName"
+            placeholder="請輸入組件名稱" />
         </el-form-item>
-        <el-form-item label="組件路徑" prop="componentPath">
+        <el-form-item
+          label="組件路徑"
+          prop="componentPath">
           <el-input
             v-model="form.componentPath"
-            placeholder="請輸入組件路徑（選填）"
-          />
+            placeholder="請輸入組件路徑（選填）" />
         </el-form-item>
 
         <!-- <el-form-item label="預設配置" prop="config">
@@ -182,21 +235,25 @@
             placeholder="請輸入 JSON 格式的連接點配置"
           />
         </el-form-item> -->
-        <el-form-item label="組件路徑" prop="componentPath">
+        <el-form-item
+          label="組件路徑"
+          prop="componentPath">
           <div class="flex items-center space-x-1">
             <div
-              class="px-1 bg-gray-100 rounded-sm text-gray-500 whitespace-nowrap"
-            >
+              class="px-1 bg-gray-100 rounded-sm text-gray-500 whitespace-nowrap">
               @/components/flow-nodes/
             </div>
             <el-select
               v-model="form.componentPath"
               class="!w-[100px]"
               placeholder="請選擇組件路徑"
-              filterable
-            >
-              <el-option label="base" value="base" />
-              <el-option label="business" value="business" />
+              filterable>
+              <el-option
+                label="base"
+                value="base" />
+              <el-option
+                label="business"
+                value="business" />
             </el-select>
 
             <el-autocomplete
@@ -205,8 +262,7 @@
               placeholder="組件名稱，例如：TopDefectsNode"
               clearable
               style="width: 340px"
-              @select="handleComponentNameSelect"
-            >
+              @select="handleComponentNameSelect">
               <template #default="{ item }">
                 <div class="flex flex-col">
                   <span>{{ item.value }}</span>
@@ -216,7 +272,11 @@
             </el-autocomplete>
           </div>
           <div class="form-item-tip w-full mt-2">
-            <el-alert type="warning" show-icon :closable="false" class="mt-0">
+            <el-alert
+              type="warning"
+              show-icon
+              :closable="false"
+              class="mt-0">
               組件的相對路徑，系統會自動添加 @/components/flow-nodes/ 前綴
               <br />※※系統裡要有對應的 Vue 組件※※</el-alert
             >
@@ -225,8 +285,7 @@
         <el-divider><ArrowBigDownDash /></el-divider>
         <div
           v-if="fullComponentPath"
-          class="text-white bg-blue-700 p-2 rounded-md flex items-center justify-between"
-        >
+          class="text-white bg-blue-700 p-2 rounded-md flex items-center justify-between">
           <div>
             完整組件路徑:
             {{ fullComponentPath }}
@@ -235,8 +294,7 @@
             type="primary"
             plain
             size="small"
-            @click="handlePreviewFormComponent"
-          >
+            @click="handlePreviewFormComponent">
             預覽節點
           </el-button>
         </div>
@@ -244,7 +302,11 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">確定</el-button>
+          <el-button
+            type="primary"
+            @click="handleSubmit"
+            >確定</el-button
+          >
         </div>
       </template>
     </el-dialog>
@@ -258,11 +320,9 @@
       :fullscreen="false"
       :draggable="true"
       destroy-on-close
-      :close-on-click-modal="false"
-    >
+      :close-on-click-modal="false">
       <div
-        class="w-full h-[800px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center"
-      >
+        class="w-full h-[800px] bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
         <VueFlow
           v-if="previewDialogVisible"
           v-model="nodes"
@@ -282,9 +342,10 @@
           :center="true"
           :auto-connect="false"
           :snap-to-grid="true"
-          :snap-grid="[20, 20]"
-        >
-          <Background pattern-color="#aaa" :gap="20" />
+          :snap-grid="[20, 20]">
+          <Background
+            pattern-color="#aaa"
+            :gap="20" />
         </VueFlow>
       </div>
     </el-dialog>
@@ -309,15 +370,6 @@ import {
   updateFlowNodeDefinition,
   deleteFlowNodeDefinition,
 } from "@/api/modules/flow";
-import {
-  DEFAULT_UI_CONFIG,
-  DEFAULT_VALIDATION,
-  DEFAULT_HANDLES,
-  parseJsonField,
-  createDefaultNode,
-  processNodeData,
-  prepareNodeDataForSave,
-} from "@/utils/nodeUtils";
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import JsonViewer from "vue-json-viewer";
 import { VueFlow } from "@vue-flow/core";

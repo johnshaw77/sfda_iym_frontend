@@ -3,36 +3,35 @@
     <!-- 左側工具欄 -->
     <div
       class="bg-white border-r border-gray-200 flex flex-col transition-all duration-300"
-      :class="[isCollapsed ? 'w-12' : 'w-64']"
-    >
+      :class="[isCollapsed ? 'w-12' : 'w-64']">
       <!-- 工具欄標題 -->
       <div
-        class="p-2.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between"
-      >
-        <h3 v-show="!isCollapsed" class="text-md font-medium text-gray-900">
+        class="p-2.5 bg-slate-50 border-b border-gray-200 flex items-center justify-between">
+        <h3
+          v-show="!isCollapsed"
+          class="text-md font-medium text-gray-900">
           節點類型
         </h3>
         <div class="flex items-center">
           <el-tooltip
             :content="isCollapsed ? '展開面板' : '收合面板'"
-            placement="right"
-          >
+            placement="right">
             <div
               class="p-1 rounded hover:bg-gray-100 cursor-pointer"
-              @click="handlePanelCollapse"
-            >
+              @click="handlePanelCollapse">
               <component
                 :is="isCollapsed ? 'PanelLeftOpen' : 'PanelLeftClose'"
                 class="text-gray-500"
-                :size="16"
-              />
+                :size="16" />
             </div>
           </el-tooltip>
         </div>
       </div>
 
       <!-- 節點類型列表 -->
-      <div v-show="!isCollapsed" class="flex-1 overflow-y-auto p-4">
+      <div
+        v-show="!isCollapsed"
+        class="flex-1 overflow-y-auto p-4">
         <div class="space-y-4">
           <!-- 資料輸入節點 -->
           <div class="space-y-2">
@@ -44,10 +43,12 @@
               :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
               draggable="true"
               @dragstart="!node.disabled && handleDragStart($event, node)"
-              :title="node.disabled ? '此節點已停用' : ''"
-            >
+              :title="node.disabled ? '此節點已停用' : ''">
               <div class="flex items-center space-x-2">
-                <component :is="node.icon" class="text-blue-500" :size="16" />
+                <component
+                  :is="node.icon"
+                  class="text-blue-500"
+                  :size="16" />
                 <span class="text-sm text-gray-700">{{ node.label }}</span>
               </div>
             </div>
@@ -63,10 +64,12 @@
               :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
               draggable="true"
               @dragstart="!node.disabled && handleDragStart($event, node)"
-              :title="node.disabled ? '此節點已停用' : ''"
-            >
+              :title="node.disabled ? '此節點已停用' : ''">
               <div class="flex items-center space-x-2">
-                <component :is="node.icon" class="text-green-500" :size="16" />
+                <component
+                  :is="node.icon"
+                  class="text-green-500"
+                  :size="16" />
                 <span class="text-sm text-gray-700">{{ node.label }}</span>
               </div>
             </div>
@@ -94,19 +97,28 @@
       </div>
 
       <!-- 收合時的圖示列表 -->
-      <div v-show="isCollapsed" class="flex-1 overflow-y-auto py-4">
+      <div
+        v-show="isCollapsed"
+        class="flex-1 overflow-y-auto py-4">
         <div class="space-y-4">
           <!-- 資料輸入節點 -->
           <div class="space-y-2">
-            <div v-for="node in inputNodes" :key="node.type" class="px-2">
-              <el-tooltip :content="node.label" placement="right">
+            <div
+              v-for="node in inputNodes"
+              :key="node.type"
+              class="px-2">
+              <el-tooltip
+                :content="node.label"
+                placement="right">
                 <div
                   class="p-2 rounded-lg cursor-move hover:bg-blue-50 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
                   draggable="true"
-                  @dragstart="!node.disabled && handleDragStart($event, node)"
-                >
-                  <component :is="node.icon" class="text-blue-500" :size="16" />
+                  @dragstart="!node.disabled && handleDragStart($event, node)">
+                  <component
+                    :is="node.icon"
+                    class="text-blue-500"
+                    :size="16" />
                 </div>
               </el-tooltip>
             </div>
@@ -114,19 +126,22 @@
 
           <!-- 資料處理節點 -->
           <div class="space-y-2">
-            <div v-for="node in processNodes" :key="node.type" class="px-2">
-              <el-tooltip :content="node.label" placement="right">
+            <div
+              v-for="node in processNodes"
+              :key="node.type"
+              class="px-2">
+              <el-tooltip
+                :content="node.label"
+                placement="right">
                 <div
                   class="p-2 rounded-lg cursor-move hover:bg-green-50 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': node.disabled }"
                   draggable="true"
-                  @dragstart="!node.disabled && handleDragStart($event, node)"
-                >
+                  @dragstart="!node.disabled && handleDragStart($event, node)">
                   <component
                     :is="node.icon"
                     class="text-green-500"
-                    :size="16"
-                  />
+                    :size="16" />
                 </div>
               </el-tooltip>
             </div>
@@ -159,26 +174,35 @@
     <div class="flex-1 flex flex-col">
       <!-- 工具列 TODO: 功能待實現-->
       <Teleport to="#header-actions">
-        <div v-if="showHeaderContent" class="flex items-center space-x-2">
+        <div
+          v-if="showHeaderContent"
+          class="flex items-center space-x-2">
           <el-button-group>
             <el-tooltip content="清空畫布">
-              <el-button :icon="icons.LayoutGrid" @click="handleReset" />
+              <el-button
+                :icon="icons.LayoutGrid"
+                @click="handleReset" />
             </el-tooltip>
             <el-tooltip content="縮圖預覽">
-              <el-button :icon="icons.Camera" @click="handlePreviewThumbnail" />
+              <el-button
+                :icon="icons.Camera"
+                @click="handlePreviewThumbnail" />
             </el-tooltip>
             <el-tooltip content="儲存">
               <el-button
                 :icon="icons.Save"
                 :type="hasUnsavedChanges ? 'warning' : 'default'"
-                @click="handleSave"
-              />
+                @click="handleSave" />
             </el-tooltip>
             <el-tooltip content="JSON 輸出">
-              <el-button :icon="icons.Code2" @click="handleShowJson" />
+              <el-button
+                :icon="icons.Code2"
+                @click="handleShowJson" />
             </el-tooltip>
             <el-tooltip content="重新布局">
-              <el-button :icon="icons.Layout" @click="handleLayout" />
+              <el-button
+                :icon="icons.Layout"
+                @click="handleLayout" />
             </el-tooltip>
           </el-button-group>
 
@@ -194,16 +218,19 @@
                 <el-dropdown-item
                   v-for="(direction, key) in layoutDirections"
                   :key="key"
-                  :command="key"
-                >
+                  :command="key">
                   {{ direction.label }}
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
 
-          <el-button type="primary" @click="handlePublish">
-            <Send class="mr-1" :size="14" />
+          <el-button
+            type="primary"
+            @click="handlePublish">
+            <Send
+              class="mr-1"
+              :size="14" />
             發布範本
           </el-button>
         </div>
@@ -214,8 +241,7 @@
         v-model="jsonDrawerVisible"
         title="工作流程 JSON"
         direction="rtl"
-        size="50%"
-      >
+        size="50%">
         <template #header>
           <div class="flex items-center justify-between w-full pr-4">
             <span>工作流程 JSON</span>
@@ -229,8 +255,7 @@
             sort
             boxed
             :expand-on-click="true"
-            class="custom-json-viewer"
-          />
+            class="custom-json-viewer" />
         </div>
       </el-drawer>
 
@@ -286,16 +311,22 @@
           @edgesChange="onEdgesChange"
           @dragover="handleDragOver"
           @drop="handleDrop"
-          @nodes-initialized="() => {}"
-        >
-          <Background pattern="lines" :gap="20" :size="1" />
+          @nodes-initialized="() => {}">
+          <Background
+            pattern="lines"
+            :gap="20"
+            :size="1" />
 
           <Controls />
           <!-- <MiniMap :pannable="true" :zoomable="true" /> -->
 
-          <Panel position="top-right" class="!bg-transparent !border-0">
+          <Panel
+            position="top-right"
+            class="!bg-transparent !border-0">
             <div class="bg-white p-2 rounded shadow-lg">
-              <el-switch v-model="snapToGrid" active-text="網格對齊" />
+              <el-switch
+                v-model="snapToGrid"
+                active-text="網格對齊" />
             </div>
           </Panel>
         </VueFlow>
@@ -305,38 +336,34 @@
     <!-- 右側屬性面板 -->
     <div
       class="border-l border-gray-200 h-full flex flex-col bg-white transition-all duration-300"
-      :class="[isRightCollapsed ? 'w-12' : 'w-96']"
-    >
+      :class="[isRightCollapsed ? 'w-12' : 'w-96']">
       <div
-        class="p-2.5 border-b border-gray-200 bg-slate-50 flex items-center space-x-1"
-      >
+        class="p-2.5 border-b border-gray-200 bg-slate-50 flex items-center space-x-1">
         <div class="flex items-center">
           <el-tooltip
             :content="isRightCollapsed ? '展開面板' : '收合面板'"
-            placement="left"
-          >
+            placement="left">
             <div
               class="p-1 rounded hover:bg-gray-100 cursor-pointer"
-              @click="handleRightPanelCollapse"
-            >
+              @click="handleRightPanelCollapse">
               <component
                 :is="isRightCollapsed ? 'PanelRightOpen' : 'PanelRightClose'"
                 class="text-gray-500"
-                :size="16"
-              />
+                :size="16" />
             </div>
           </el-tooltip>
         </div>
         <h3
           v-show="!isRightCollapsed"
-          class="text-sm font-medium text-gray-700"
-        >
+          class="text-sm font-medium text-gray-700">
           基本屬性
         </h3>
       </div>
 
       <div class="flex-1 overflow-y-auto">
-        <div v-show="!isRightCollapsed" class="p-2 space-y-4">
+        <div
+          v-show="!isRightCollapsed"
+          class="p-2 space-y-4">
           <!-- 基本屬性 -->
           <div class="space-y-2">
             <!-- 表單 -->
@@ -348,41 +375,54 @@
               :model="flowTemplate"
               :rules="formRules"
               label-width="80px"
-              label-position="left"
-            >
+              label-position="left">
               <!-- // 如何判斷範本名稱是否已存在-->
-              <el-form-item label="範本類型" prop="type">
+              <el-form-item
+                label="範本類型"
+                prop="type">
                 <el-select
                   v-model="flowTemplate.type"
                   placeholder="請選擇範本類型"
-                  :fit-input-width="true"
-                >
-                  <el-option label="business" value="business" />
+                  :fit-input-width="true">
+                  <el-option
+                    label="business"
+                    value="business" />
                 </el-select>
                 <el-tag type="info"
                   >先暫時固定 business (未來會有流程類型)</el-tag
                 >
               </el-form-item>
 
-              <el-form-item label="範本名稱" prop="name">
+              <el-form-item
+                label="範本名稱"
+                prop="name">
                 <el-input v-model="flowTemplate.name" />
               </el-form-item>
-              <el-form-item label="範本描述" prop="description">
+              <el-form-item
+                label="範本描述"
+                prop="description">
                 <el-input
                   v-model="flowTemplate.description"
                   type="textarea"
-                  :rows="5"
-                />
+                  :rows="5" />
               </el-form-item>
-              <el-form-item label="狀態" prop="status">
+              <el-form-item
+                label="狀態"
+                prop="status">
                 <el-radio-group v-model="flowTemplate.status">
-                  <el-radio-button label="active" value="active"
+                  <el-radio-button
+                    label="active"
+                    value="active"
                     >啟用</el-radio-button
                   >
-                  <el-radio-button label="inactive" value="inactive"
+                  <el-radio-button
+                    label="inactive"
+                    value="inactive"
                     >停用</el-radio-button
                   >
-                  <el-radio-button label="draft" value="draft"
+                  <el-radio-button
+                    label="draft"
+                    value="draft"
                     >草稿</el-radio-button
                   >
                 </el-radio-group>
@@ -392,8 +432,7 @@
                 <el-input
                   v-model="flowTemplate.metadata"
                   type="textarea"
-                  :rows="5"
-                />
+                  :rows="5" />
                 <el-tag type="info"> 暫時沒使用，備著 </el-tag>
               </el-form-item>
             </el-form>
@@ -401,8 +440,7 @@
         </div>
         <div
           v-show="isRightCollapsed"
-          class="p-4 text-sm writing-vertical-lr text-gray-700"
-        >
+          class="p-4 text-sm writing-vertical-lr text-gray-700">
           基本屬性
         </div>
       </div>
@@ -619,20 +657,10 @@ const loadTemplate = async () => {
   }
 };
 const nodeTypes = {
-  // 基礎節點類型
-  //custom: HttpRequestNode, // TODO: remove this
-  //default: BaseNode,
-  //HttpRequestNode,
-  // 業務輸入節點
-  //ComplaintSelectorNode, // 客訴單號選擇器
-  // 業務處理節點
-  //TopDefectsNode, // 前五大不良分析
-  //StatisticProcessNode, // 統計分析節點
-  // API 請求節點
-  //ApiRequestNode: HttpRequestNode, // TODO:暫時使用 CustomNode 作為 API 請求節點的基礎
+  //!TODO: 增加 開始、結束的自定義節點
 };
 
-// 註冊自定義節點類型
+// 註冊自定義節點類型 (!TODO: 需要優化, 目前是直接註冊所有節點類型, 未來需要改成按需註冊)
 const { flowNodeComponents, loadFlowNodeComponents } = useFlowNodeComponents();
 
 loadFlowNodeComponents();
@@ -1065,18 +1093,54 @@ const handlePreviewThumbnail = async () => {
 // 面板摺疊狀態
 const isCollapsed = ref(false);
 const isRightCollapsed = ref(false);
+
+// 從 localStorage 讀取面板狀態
+const loadPanelStates = () => {
+  try {
+    const leftPanelState = localStorage.getItem("flowTemplateDesign_leftPanel");
+    const rightPanelState = localStorage.getItem(
+      "flowTemplateDesign_rightPanel"
+    );
+
+    if (leftPanelState !== null) {
+      isCollapsed.value = JSON.parse(leftPanelState);
+    }
+
+    if (rightPanelState !== null) {
+      isRightCollapsed.value = JSON.parse(rightPanelState);
+    }
+  } catch (error) {
+    console.error("讀取面板狀態失敗:", error);
+  }
+};
+
+// 保存面板狀態到 localStorage
+const savePanelState = (panelType, isCollapsed) => {
+  try {
+    localStorage.setItem(
+      `flowTemplateDesign_${panelType}`,
+      JSON.stringify(isCollapsed)
+    );
+  } catch (error) {
+    console.error(`保存${panelType}面板狀態失敗:`, error);
+  }
+};
+
 // 處理面板摺疊
 const handlePanelCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
+  savePanelState("leftPanel", isCollapsed.value);
   handleFitView();
 };
 
 const handleRightPanelCollapse = () => {
   isRightCollapsed.value = !isRightCollapsed.value;
+  savePanelState("rightPanel", isRightCollapsed.value);
   handleFitView();
 };
 
 onMounted(() => {
+  loadPanelStates(); // 載入面板狀態
   loadNodeDefinitions(); // 載入節點定義
   loadTemplate();
   // 添加瀏覽器原生的離開提示

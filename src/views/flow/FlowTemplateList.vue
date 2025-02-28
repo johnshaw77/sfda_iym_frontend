@@ -1,25 +1,33 @@
 <!-- 流程模板管理頁面 -->
 <template>
   <div class="p-2">
-    <Teleport to="#header-actions" v-if="showHeaderContent">
-      <div v-if="showHeaderContent" class="flex items-center space-x-4">
+    <Teleport
+      to="#header-actions"
+      v-if="showHeaderContent">
+      <div
+        v-if="showHeaderContent"
+        class="flex items-center space-x-4">
         <el-radio-group v-model="viewMode">
-          <el-radio-button label="卡片" value="card" />
-          <el-radio-button label="列表" value="list" />
+          <el-radio-button
+            label="卡片"
+            value="card" />
+          <el-radio-button
+            label="列表"
+            value="list" />
         </el-radio-group>
         <el-select
           v-model="filters.status"
           placeholder="選擇狀態"
           clearable
-          class="!w-32"
-        >
+          class="!w-32">
           <el-option
             v-for="status in statusOptions"
             :key="status.value"
             :label="status.label"
-            :value="status.value"
-          >
-            <el-tag :type="getStatusType(status.value)" size="small">
+            :value="status.value">
+            <el-tag
+              :type="getStatusType(status.value)"
+              size="small">
               {{ status.label }}
             </el-tag>
           </el-option>
@@ -29,8 +37,7 @@
           v-model="filters.search"
           placeholder="搜尋流程模板"
           class="!w-60"
-          clearable
-        >
+          clearable>
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
@@ -40,14 +47,19 @@
           plain
           @click="handleRefresh"
           :loading="loading"
-          title="重新整理"
-        >
-          <RotateCw class="mr-1" :size="16" />
+          title="重新整理">
+          <RotateCw
+            class="mr-1"
+            :size="16" />
           重整
         </el-button>
 
-        <el-button type="primary" @click="handleAddTemplate">
-          <Plus class="mr-1" :size="16" />
+        <el-button
+          type="primary"
+          @click="handleAddTemplate">
+          <Plus
+            class="mr-1"
+            :size="16" />
           新增流程模板
         </el-button>
       </div>
@@ -56,15 +68,13 @@
     <!-- 範本列表容器 -->
     <div
       v-show="viewMode === 'card'"
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2"
-    >
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
       <!-- Skeleton 載入效果 -->
       <template v-if="loading">
         <div
           v-for="n in 8"
           :key="n"
-          class="bg-white rounded-lg shadow-md p-6 animate-pulse"
-        >
+          class="bg-white rounded-lg shadow-md p-6 animate-pulse">
           <div class="flex items-start justify-between">
             <div class="space-y-3 w-full">
               <div class="h-6 bg-gray-200 rounded w-3/4"></div>
@@ -97,8 +107,7 @@
         <div
           v-for="template in filteredTemplates"
           :key="template.id"
-          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
-        >
+          class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
           <div class="p-6">
             <!-- 範本標題和操作按鈕 -->
             <div class="flex items-start justify-between">
@@ -107,14 +116,15 @@
                   {{ template.name }}
                 </h3>
                 <div class="flex items-center mt-2 space-x-2">
-                  <el-tag size="small" effect="plain">{{
-                    template.type
-                  }}</el-tag>
+                  <el-tag
+                    size="small"
+                    effect="plain"
+                    >{{ template.type }}</el-tag
+                  >
                   <el-tag
                     :type="getStatusTagType(template.status)"
                     size="small"
-                    effect="light"
-                  >
+                    effect="light">
                     {{ getStatusLabel(template.status) }}
                   </el-tag>
                 </div>
@@ -122,35 +132,39 @@
               <el-dropdown trigger="click">
                 <MoreVertical
                   :size="20"
-                  class="text-gray-400 cursor-pointer hover:text-gray-600"
-                />
+                  class="text-gray-400 cursor-pointer hover:text-gray-600" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="handleEditTemplate(template)">
-                      <Edit2 class="mr-2" :size="14" />
+                      <Edit2
+                        class="mr-2"
+                        :size="14" />
                       編輯
                     </el-dropdown-item>
                     <el-dropdown-item
                       v-if="template.status === 'draft'"
-                      @click="handlePublishTemplate(template)"
-                    >
-                      <Send class="mr-2" :size="14" />
+                      @click="handlePublishTemplate(template)">
+                      <Send
+                        class="mr-2"
+                        :size="14" />
                       發布
                     </el-dropdown-item>
                     <el-dropdown-item
                       v-if="template.status === 'published'"
-                      @click="handleDeprecateTemplate(template)"
-                    >
-                      <Archive class="mr-2" :size="14" />
+                      @click="handleDeprecateTemplate(template)">
+                      <Archive
+                        class="mr-2"
+                        :size="14" />
                       棄用
                     </el-dropdown-item>
                     <el-dropdown-item
                       v-if="template.status === 'draft'"
                       divided
                       @click="handleDeleteTemplate(template)"
-                      class="text-red-500"
-                    >
-                      <Trash2 class="mr-2" :size="14" />
+                      class="text-red-500">
+                      <Trash2
+                        class="mr-2"
+                        :size="14" />
                       刪除
                     </el-dropdown-item>
                   </el-dropdown-menu>
@@ -166,19 +180,24 @@
             <!-- 範本資訊 -->
             <div class="mt-4 space-y-2">
               <div
-                class="flex items-center justify-between text-sm text-gray-500"
-              >
+                class="flex items-center justify-between text-sm text-gray-500">
                 <div class="flex items-center">
-                  <Tag :size="16" class="mr-2" />
+                  <Tag
+                    :size="16"
+                    class="mr-2" />
                   <span class="text-xs">版本 {{ template.version }}</span>
                 </div>
                 <div class="flex items-center">
-                  <User :size="16" class="mr-2" />
+                  <User
+                    :size="16"
+                    class="mr-2" />
                   <span class="text-xs">{{ template.creator?.username }}</span>
                 </div>
               </div>
               <div class="flex items-center text-sm text-gray-500">
-                <Calendar :size="16" class="mr-2" />
+                <Calendar
+                  :size="16"
+                  class="mr-2" />
                 <span class="text-xs"
                   >更新於 {{ formatTimestamp(template.updatedAt) }}</span
                 >
@@ -190,9 +209,10 @@
               <el-button
                 type="primary"
                 link
-                @click="handleDesignTemplate(template)"
-              >
-                <Pencil class="mr-1" :size="14" />
+                @click="handleDesignTemplate(template)">
+                <Pencil
+                  class="mr-1"
+                  :size="14" />
                 設計流程
               </el-button>
             </div>
@@ -205,57 +225,89 @@
       v-show="viewMode === 'list'"
       v-loading="loading"
       :data="filteredTemplates"
-      style="width: 100%"
-    >
+      style="width: 100%">
       <el-table-column
         type="index"
         label="序號"
         width="80"
         align="center"
-        sortable
-      />
-      <el-table-column prop="type" label="類型" width="120" sortable>
+        sortable />
+      <el-table-column
+        prop="type"
+        label="類型"
+        width="120"
+        sortable>
         <template #default="{ row }">
           <el-tag :type="getTypeTagType(row.type)">
             {{ getTypeLabel(row.type) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="名稱" width="180" sortable />
+      <el-table-column
+        prop="name"
+        label="名稱"
+        width="180"
+        sortable />
 
-      <el-table-column prop="description" label="描述" sortable />
-      <el-table-column prop="version" label="版本" width="60" />
-      <el-table-column prop="status" label="狀態" width="100" sortable>
+      <el-table-column
+        prop="description"
+        label="描述"
+        sortable />
+      <el-table-column
+        prop="version"
+        label="版本"
+        width="60" />
+      <el-table-column
+        prop="status"
+        label="狀態"
+        width="100"
+        sortable>
         <template #default="{ row }">
           <el-tag :type="getStatusTagType(row.status)">
             {{ getStatusLabel(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="創建時間" width="180" sortable>
+      <el-table-column
+        prop="createdAt"
+        label="建立時間"
+        width="180"
+        sortable>
         <template #default="{ row }">
           {{ formatTimestamp(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column prop="updatedAt" label="更新時間" width="180" sortable>
+      <el-table-column
+        prop="updatedAt"
+        label="更新時間"
+        width="180"
+        sortable>
         <template #default="{ row }">
           {{ formatTimestamp(row.updatedAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="250" fixed="right">
+      <el-table-column
+        label="操作"
+        width="250"
+        fixed="right">
         <template #default="{ row }">
           <el-button-group>
-            <el-button type="primary" link @click="handleEditTemplate(row)">
+            <el-button
+              type="primary"
+              link
+              @click="handleEditTemplate(row)">
               編輯
             </el-button>
             <el-button
               :type="row.status === 'active' ? 'warning' : 'success'"
               link
-              @click="handleToggleStatus(row)"
-            >
+              @click="handleToggleStatus(row)">
               {{ row.status === "active" ? "停用" : "啟用" }}
             </el-button>
-            <el-button type="danger" link @click="handleDelete(row)">
+            <el-button
+              type="danger"
+              link
+              @click="handleDelete(row)">
               刪除
             </el-button>
           </el-button-group>
@@ -269,57 +321,75 @@
       :title="isEdit ? '編輯流程模板' : '新增流程模板'"
       draggable
       top="5vh"
-      width="1000px"
-    >
+      width="1000px">
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
         label-width="120px"
-        class="mt-4"
-      >
+        class="mt-4">
         <div class="flex items-center justify-between space-x-2">
-          <el-form-item label="類型" prop="type">
+          <el-form-item
+            label="類型"
+            prop="type">
             <el-select
               v-model="form.type"
               placeholder="請選擇類型"
-              style="width: 150px"
-            >
-              <el-option label="業務流程" value="business" />
-              <el-option label="系統流程" value="system" />
-              <el-option label="分析流程" value="analysis" />
+              style="width: 150px">
+              <el-option
+                label="業務流程"
+                value="business" />
+              <el-option
+                label="系統流程"
+                value="system" />
+              <el-option
+                label="分析流程"
+                value="analysis" />
             </el-select>
           </el-form-item>
           <div class="flex items-center">
-            <el-form-item label="版本" prop="version">
+            <el-form-item
+              label="版本"
+              prop="version">
               <el-input
                 v-model="form.version"
                 placeholder="請輸入版本號，例如：1.0.0"
-                class="!w-14 !text-right"
-              />
+                class="!w-14 !text-right" />
             </el-form-item>
-            <el-form-item label="狀態" prop="status">
+            <el-form-item
+              label="狀態"
+              prop="status">
               <el-select
                 v-model="form.status"
                 placeholder="請選擇狀態"
-                style="width: 100px"
-              >
-                <el-option label="草稿" value="draft" />
-                <el-option label="啟用" value="active" />
-                <el-option label="停用" value="inactive" /> </el-select
+                style="width: 100px">
+                <el-option
+                  label="草稿"
+                  value="draft" />
+                <el-option
+                  label="啟用"
+                  value="active" />
+                <el-option
+                  label="停用"
+                  value="inactive" /> </el-select
             ></el-form-item>
           </div>
         </div>
-        <el-form-item label="名稱" prop="name">
-          <el-input v-model="form.name" placeholder="請輸入名稱" />
+        <el-form-item
+          label="名稱"
+          prop="name">
+          <el-input
+            v-model="form.name"
+            placeholder="請輸入名稱" />
         </el-form-item>
 
-        <el-form-item label="描述" prop="description">
+        <el-form-item
+          label="描述"
+          prop="description">
           <el-input
             v-model="form.description"
             type="textarea"
-            placeholder="請輸入描述"
-          />
+            placeholder="請輸入描述" />
         </el-form-item>
         <!-- <el-form-item label="版本" prop="version">
           <el-input
@@ -338,35 +408,42 @@
             <el-option label="停用" value="inactive" />
           </el-select>
         </el-form-item> -->
-        <el-form-item label="節點配置" prop="nodes">
+        <el-form-item
+          label="節點配置"
+          prop="nodes">
           <el-input
             v-model="form.nodes"
             type="textarea"
             :rows="4"
-            placeholder="請輸入 JSON 格式的節點配置"
-          />
+            placeholder="請輸入 JSON 格式的節點配置" />
         </el-form-item>
-        <el-form-item label="連線配置" prop="edges">
+        <el-form-item
+          label="連線配置"
+          prop="edges">
           <el-input
             v-model="form.edges"
             type="textarea"
             :rows="4"
-            placeholder="請輸入 JSON 格式的連線配置"
-          />
+            placeholder="請輸入 JSON 格式的連線配置" />
         </el-form-item>
-        <el-form-item label="元數據" prop="metadata">
+        <el-form-item
+          label="元數據"
+          prop="metadata">
           <el-input
             v-model="form.metadata"
             type="textarea"
             :rows="4"
-            placeholder="請輸入 JSON 格式的元數據配置（選填）"
-          />
+            placeholder="請輸入 JSON 格式的元數據配置（選填）" />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">確定</el-button>
+          <el-button
+            type="primary"
+            @click="handleSubmit"
+            >確定</el-button
+          >
         </div>
       </template>
     </el-dialog>

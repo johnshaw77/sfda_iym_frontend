@@ -1,5 +1,6 @@
-// store/flowState.js
 import { defineStore } from "pinia";
+import { ref, computed } from "vue";
+
 import {
   getFlowInstances,
   getFlowInstanceById,
@@ -9,246 +10,286 @@ import {
   pauseFlowInstance,
   resumeFlowInstance,
   stopFlowInstance,
-  executeNode,
+  executeNode as executeNodeAPI,
   getInstanceLogs,
   getNodeLogs,
 } from "@/api/modules/flow";
 
-export const useFlowStore = defineStore("flow", {
-  state: () => ({
-    currentInstance: null,
-    instances: [],
-    loading: false,
-    error: null,
-    nodeStates: new Map(),
-    executionLogs: [],
-  }),
+// 工作流程實例 store (用於設置實例所屬專案名稱，並在麵包屑中顯示)
+export const useFlowStateStore = defineStore("flowState", () => {
+  // 狀態
+  const currentInstance = ref(null);
+  const instances = ref([]);
+  const loading = ref(false);
+  const error = ref(null);
+  const executionLogs = ref([]);
 
-  getters: {
-    // 獲取特定節點的狀態
-    getNodeState: (state) => (nodeId) => {
-      return state.currentInstance?.nodeStates?.[nodeId] || { status: "idle" };
-    },
+  // Getters
+  const setCurrentInstance = (instance) => {
+    currentInstance.value = instance;
+  };
 
-    // 獲取特定節點的上下文數據
-    getNodeContext: (state) => (nodeId) => {
-      return state.currentInstance?.context?.[nodeId] || {};
-    },
+  const getNodeState = computed(() => (nodeId) => {
+    return currentInstance.value?.nodeStates?.[nodeId] || { status: "idle" };
+  });
 
-    // 獲取節點的日誌
-    getNodeLogs: (state) => (nodeId) => {
-      return (
-        state.currentInstance?.logs?.filter((log) => log.nodeId === nodeId) ||
-        []
-      );
-    },
+  const getNodeContext = computed(() => (nodeId) => {
+    return currentInstance.value?.context?.[nodeId] || {};
+  });
 
-    // 檢查實例是否可以開始執行
-    canStart: (state) => {
-      return state.currentInstance?.status === "draft";
-    },
+  const getNodeLogs = computed(() => (nodeId) => {
+    return (
+      currentInstance.value?.logs?.filter((log) => log.nodeId === nodeId) || []
+    );
+  });
 
-    // 檢查實例是否可以暫停
-    canPause: (state) => {
-      return state.currentInstance?.status === "running";
-    },
+  const canStart = computed(() => {
+    return currentInstance.value?.status === "draft";
+  });
 
-    // 檢查實例是否可以繼續執行
-    canResume: (state) => {
-      return state.currentInstance?.status === "paused";
-    },
+  const canPause = computed(() => {
+    return currentInstance.value?.status === "running";
+  });
 
-    // 檢查實例是否可以停止
-    canStop: (state) => {
-      return ["running", "paused"].includes(state.currentInstance?.status);
-    },
-  },
+  const canResume = computed(() => {
+    return currentInstance.value?.status === "paused";
+  });
 
-  actions: {
-    // 載入所有實例
-    async loadInstances(projectId) {
-      try {
-        this.loading = true;
-        const response = await getFlowInstances({ projectId });
-        this.instances = response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+  const canStop = computed(() => {
+    return ["running", "paused"].includes(currentInstance.value?.status);
+  });
+
+  // Actions
+  const loadInstances = async (projectId) => {
+    try {
+      loading.value = true;
+      const response = await getFlowInstances({ projectId });
+      instances.value = response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const loadInstance = async (instanceId) => {
+    try {
+      loading.value = true;
+      const response = await getFlowInstanceById(instanceId);
+      currentInstance.value = response.data;
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const createInstance = async (data) => {
+    try {
+      loading.value = true;
+      const response = await createFlowInstance(data);
+      instances.value.unshift(response.data);
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const updateInstance = async (instanceId, data) => {
+    try {
+      loading.value = true;
+      const response = await updateFlowInstance(instanceId, data);
+      if (currentInstance.value?.id === instanceId) {
+        currentInstance.value = response.data;
       }
-    },
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    // 載入單個實例
-    async loadInstance(instanceId) {
-      try {
-        this.loading = true;
-        const response = await getFlowInstanceById(instanceId);
-        this.currentInstance = response.data;
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+  const startInstance = async (instanceId) => {
+    try {
+      loading.value = true;
+      const response = await startFlowInstance(instanceId);
+      if (currentInstance.value?.id === instanceId) {
+        currentInstance.value = response.data;
       }
-    },
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    // 創建新實例
-    async createInstance(data) {
-      try {
-        this.loading = true;
-        const response = await createFlowInstance(data);
-        this.instances.unshift(response.data);
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+  const pauseInstance = async (instanceId) => {
+    try {
+      loading.value = true;
+      const response = await pauseFlowInstance(instanceId);
+      if (currentInstance.value?.id === instanceId) {
+        currentInstance.value = response.data;
       }
-    },
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    // 更新實例
-    async updateInstance(instanceId, data) {
-      try {
-        this.loading = true;
-        const response = await updateFlowInstance(instanceId, data);
-        if (this.currentInstance?.id === instanceId) {
-          this.currentInstance = response.data;
-        }
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+  const resumeInstance = async (instanceId) => {
+    try {
+      loading.value = true;
+      const response = await resumeFlowInstance(instanceId);
+      if (currentInstance.value?.id === instanceId) {
+        currentInstance.value = response.data;
       }
-    },
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    // 開始執行實例
-    async startInstance(instanceId) {
-      try {
-        this.loading = true;
-        const response = await startFlowInstance(instanceId);
-        if (this.currentInstance?.id === instanceId) {
-          this.currentInstance = response.data;
-        }
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+  const stopInstance = async (instanceId) => {
+    try {
+      loading.value = true;
+      const response = await stopFlowInstance(instanceId);
+      if (currentInstance.value?.id === instanceId) {
+        currentInstance.value = response.data;
       }
-    },
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    // 暫停實例
-    async pauseInstance(instanceId) {
-      try {
-        this.loading = true;
-        const response = await pauseFlowInstance(instanceId);
-        if (this.currentInstance?.id === instanceId) {
-          this.currentInstance = response.data;
-        }
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+  const executeNode = async (instanceId, nodeId, input) => {
+    if (!instanceId || !nodeId) {
+      throw new Error("執行節點時需要提供 instanceId 和 nodeId");
+    }
+    try {
+      loading.value = true;
+
+      // 更新節點狀態為執行中
+      if (currentInstance.value?.id === instanceId) {
+        const nodeStates = currentInstance.value.nodeStates || {};
+        currentInstance.value = {
+          ...currentInstance.value,
+          nodeStates: {
+            ...nodeStates,
+            [nodeId]: { status: "running" },
+          },
+        };
       }
-    },
 
-    // 繼續執行實例
-    async resumeInstance(instanceId) {
-      try {
-        this.loading = true;
-        const response = await resumeFlowInstance(instanceId);
-        if (this.currentInstance?.id === instanceId) {
-          this.currentInstance = response.data;
-        }
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+      const response = await executeNodeAPI(instanceId, nodeId, { input });
+      if (currentInstance.value?.id === instanceId) {
+        currentInstance.value = response.data;
       }
-    },
-
-    // 停止實例
-    async stopInstance(instanceId) {
-      try {
-        this.loading = true;
-        const response = await stopFlowInstance(instanceId);
-        if (this.currentInstance?.id === instanceId) {
-          this.currentInstance = response.data;
-        }
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+      return response.data;
+    } catch (err) {
+      // 更新節點狀態為錯誤
+      if (currentInstance.value?.id === instanceId) {
+        const nodeStates = currentInstance.value.nodeStates || {};
+        currentInstance.value = {
+          ...currentInstance.value,
+          nodeStates: {
+            ...nodeStates,
+            [nodeId]: {
+              status: "error",
+              error: err.message,
+            },
+          },
+        };
       }
-    },
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    // 執行節點
-    async executeNode(instanceId, nodeId, input) {
-      try {
-        this.loading = true;
-        const response = await executeNode(instanceId, nodeId, { input });
-
-        if (this.currentInstance?.id === instanceId) {
-          // 更新節點狀態
-          this.currentInstance = response.data;
-        }
-
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      } finally {
-        this.loading = false;
+  const loadInstanceLogs = async (instanceId) => {
+    try {
+      const response = await getInstanceLogs(instanceId);
+      if (currentInstance.value?.id === instanceId) {
+        executionLogs.value = response.data;
       }
-    },
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    }
+  };
 
-    // 獲取實例日誌
-    async loadInstanceLogs(instanceId) {
-      try {
-        const response = await getInstanceLogs(instanceId);
-        if (this.currentInstance?.id === instanceId) {
-          this.executionLogs = response.data;
-        }
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      }
-    },
+  const loadNodeLogs = async (instanceId, nodeId) => {
+    try {
+      const response = await getNodeLogs(instanceId, nodeId);
+      return response.data;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    }
+  };
 
-    // 獲取節點日誌
-    async loadNodeLogs(instanceId, nodeId) {
-      try {
-        const response = await getNodeLogs(instanceId, nodeId);
-        return response.data;
-      } catch (error) {
-        this.error = error.message;
-        throw error;
-      }
-    },
+  const clearCurrentInstance = () => {
+    currentInstance.value = null;
+    executionLogs.value = [];
+  };
 
-    // 清除當前實例
-    clearCurrentInstance() {
-      this.currentInstance = null;
-      this.nodeStates.clear();
-      this.executionLogs = [];
-    },
+  const clearError = () => {
+    error.value = null;
+  };
 
-    // 清除錯誤
-    clearError() {
-      this.error = null;
-    },
-  },
+  return {
+    // 狀態
+    currentInstance,
+    instances,
+    loading,
+    error,
+    executionLogs,
+
+    // Getters
+    setCurrentInstance,
+    getNodeState,
+    getNodeContext,
+    getNodeLogs,
+    canStart,
+    canPause,
+    canResume,
+    canStop,
+
+    // Actions
+    loadInstances,
+    loadInstance,
+    createInstance,
+    updateInstance,
+    startInstance,
+    pauseInstance,
+    resumeInstance,
+    stopInstance,
+    executeNode,
+    loadInstanceLogs,
+    loadNodeLogs,
+    clearCurrentInstance,
+    clearError,
+  };
 });
