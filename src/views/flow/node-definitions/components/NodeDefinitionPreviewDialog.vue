@@ -38,7 +38,6 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
 import { VueFlow } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 

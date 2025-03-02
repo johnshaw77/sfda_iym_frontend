@@ -1,13 +1,15 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center bg-gray-50 background"
-  >
+    class="min-h-screen flex items-center justify-center bg-gray-50 background">
     <div class="grid"></div>
     <div class="w-[420px] bg-white p-8 rounded-xl shadow-lg z-50">
       <!-- Logo -->
       <div class="mb-8">
         <div class="flex items-center justify-center space-x-2">
-          <img src="/logo_flowchart.svg" alt="logo" class="w-8 h-8" />
+          <img
+            src="/logo_flowchart.svg"
+            alt="logo"
+            class="w-8 h-8" />
           <span class="text-2xl text-center text-gray-600"
             >IYM良率分析系統</span
           >
@@ -15,51 +17,29 @@
       </div>
 
       <!-- 標題 -->
-      <h1 class="text-xl font-semibold text-gray-900 mb-2">登入</h1>
-      <p class="text-gray-500 text-sm mb-8">歡迎回來！請輸入您的帳號密碼</p>
-
-      <!-- 測試登入按鈕 -->
-      <div class="mb-2">
-        <el-button
-          type="info"
-          size="small"
-          class="w-full"
-          @click="handleTestLogin"
-        >
-          ADMIN 測試帳號登入
-        </el-button>
-      </div>
-      <div class="mb-4">
-        <el-button
-          type="success"
-          size="small"
-          class="w-full"
-          @click="handleReaderLogin"
-        >
-          一般用戶測試帳號登入
-        </el-button>
-      </div>
+      <!-- <h1 class="text-xl font-semibold text-gray-900">登入</h1> -->
+      <p class="text-gray-500 text-sm mb-1">歡迎回來！請輸入您的帳號密碼</p>
 
       <!-- 登入表單 -->
       <el-form
         ref="formRef"
         :model="formData"
         :rules="rules"
-        @submit.prevent="handleSubmit"
-      >
+        @submit.prevent="handleSubmit">
         <!-- 電子郵件 -->
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Email</label
           >
-          <el-form-item prop="email" class="mb-0">
+          <el-form-item
+            prop="email"
+            class="mb-0">
             <el-input
               v-model="formData.email"
               type="email"
               placeholder="Enter your email"
               size="large"
-              class="login-input"
-            />
+              class="login-input" />
           </el-form-item>
         </div>
 
@@ -68,24 +48,29 @@
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >密碼</label
           >
-          <el-form-item prop="password" class="mb-0">
+          <el-form-item
+            prop="password"
+            class="mb-0">
             <el-input
               v-model="formData.password"
               type="password"
               placeholder="••••••••"
               size="large"
               show-password
-              class="login-input"
-            />
+              class="login-input" />
           </el-form-item>
         </div>
 
         <!-- 記住我和忘記密碼 -->
         <div class="flex items-center justify-between mb-6">
-          <el-checkbox v-model="formData.remember" class="remember-me">
+          <el-checkbox
+            v-model="formData.remember"
+            class="remember-me">
             記住我一週
           </el-checkbox>
-          <el-link type="primary" @click="handleForgotPassword">
+          <el-link
+            type="primary"
+            @click="handleForgotPassword">
             忘記密碼？
           </el-link>
         </div>
@@ -96,11 +81,33 @@
           size="large"
           class="w-full mb-4 mt-4 text-lg"
           :loading="loading"
-          @click="handleSubmit"
-        >
+          @click="handleSubmit">
           登 入
         </el-button>
 
+        <!-- 測試登入按鈕 -->
+        <div class="flex justify-between align-center">
+          <div>
+            <el-button
+              type="info"
+              link
+              size="small"
+              class="w-full"
+              @click="handleTestLogin">
+              ADMIN 測試帳號登入
+            </el-button>
+          </div>
+          <div>
+            <el-button
+              type="success"
+              link
+              size="small"
+              class="w-full"
+              @click="handleReaderLogin">
+              一般用戶測試帳號登入
+            </el-button>
+          </div>
+        </div>
         <!-- Google 登入 -->
         <!-- <el-button
           size="large"
@@ -130,9 +137,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { ElMessage } from "element-plus";
+// import { ref, reactive } from "vue";
+// import { useRouter, useRoute } from "vue-router";
+// import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
@@ -263,22 +270,6 @@ const handleReaderLogin = () => {
   animation: gridAnimation 5s linear infinite;
 }
 
-.glow {
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(
-    circle at center,
-    rgba(120, 100, 255, 0.4) 0%,
-    rgba(120, 100, 255, 0.2) 20%,
-    rgba(120, 100, 255, 0.1) 40%,
-    transparent 60%
-  );
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  filter: blur(20px);
-}
-
 .content {
   position: relative;
   z-index: 1;
@@ -299,16 +290,6 @@ h1 {
   font-weight: 800;
 }
 
-p {
-  font-size: 20px;
-  line-height: 1.6;
-  color: rgba(30, 41, 59, 0.8);
-  margin-bottom: 40px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 @keyframes gridAnimation {
   0% {
     transform: perspective(10px) rotateX(0deg) translateY(0);
@@ -324,10 +305,6 @@ p {
   }
   p {
     font-size: 18px;
-  }
-  .glow {
-    width: 200px;
-    height: 200px;
   }
 }
 </style>

@@ -9,8 +9,7 @@
           class="search-input"
           clearable
           @clear="handleSearch"
-          @input="handleSearch"
-        >
+          @input="handleSearch">
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
@@ -21,13 +20,18 @@
           type="default"
           class="flex items-center"
           :loading="loading"
-          @click="handleRefresh"
-        >
-          <el-icon><RefreshCw class="mr-1" :size="16" /></el-icon>
+          @click="handleRefresh">
+          <el-icon
+            ><RefreshCw
+              class="mr-1"
+              :size="16"
+          /></el-icon>
           重整
         </el-button>
 
-        <el-button type="primary" @click="handleAddUser">
+        <el-button
+          type="primary"
+          @click="handleAddUser">
           <el-icon><Plus /></el-icon>新增用戶
         </el-button>
       </div>
@@ -36,12 +40,17 @@
         :data="loading ? Array(5).fill({}) : filteredUsers"
         style="width: 100%"
         :highlight-current-row="true"
-        @row-click="handleUserSelect"
-      >
-        <el-table-column type="index" label="序號" width="80" align="center">
+        @row-click="handleUserSelect">
+        <el-table-column
+          type="index"
+          label="序號"
+          width="80"
+          align="center">
           <template #default="scope">
             <template v-if="loading">
-              <el-skeleton-item variant="text" style="width: 100%" />
+              <el-skeleton-item
+                variant="text"
+                style="width: 100%" />
             </template>
             <template v-else>
               {{ scope.$index + 1 }}
@@ -49,20 +58,24 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="頭像" width="100" align="center">
+        <el-table-column
+          label="頭像"
+          width="100"
+          align="center">
           <template #default="{ row }">
             <template v-if="loading">
               <el-skeleton-item
                 variant="circle"
-                style="width: 40px; height: 40px"
-              />
+                style="width: 40px; height: 40px" />
             </template>
             <template v-else>
               <div
                 class="avatar-container"
-                @click.stop="handleAvatarClick(row)"
-              >
-                <el-avatar :size="40" :src="row.avatar" :alt="row.username">
+                @click.stop="handleAvatarClick(row)">
+                <el-avatar
+                  :size="40"
+                  :src="row.avatar"
+                  :alt="row.username">
                   {{ row.username?.charAt(0).toUpperCase() }}
                 </el-avatar>
                 <div class="avatar-overlay">
@@ -74,16 +87,20 @@
                 :ref="(el) => (avatarInputRefs[row.id] = el)"
                 class="hidden-file-input"
                 accept="image/*"
-                @change="(event) => handleAvatarChange(event, row)"
-              />
+                @change="(event) => handleAvatarChange(event, row)" />
             </template>
           </template>
         </el-table-column>
 
-        <el-table-column prop="username" label="用戶名" sortable>
+        <el-table-column
+          prop="username"
+          label="用戶名"
+          sortable>
           <template #default="{ row }">
             <template v-if="loading">
-              <el-skeleton-item variant="text" style="width: 80%" />
+              <el-skeleton-item
+                variant="text"
+                style="width: 80%" />
             </template>
             <template v-else>
               {{ row.username }}
@@ -91,10 +108,15 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="email" label="郵箱" sortable>
+        <el-table-column
+          prop="email"
+          label="郵箱"
+          sortable>
           <template #default="{ row }">
             <template v-if="loading">
-              <el-skeleton-item variant="text" style="width: 90%" />
+              <el-skeleton-item
+                variant="text"
+                style="width: 90%" />
             </template>
             <template v-else>
               {{ row.email }}
@@ -102,10 +124,16 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="status" label="狀態" width="100" align="center">
+        <el-table-column
+          prop="status"
+          label="狀態"
+          width="100"
+          align="center">
           <template #default="{ row }">
             <template v-if="loading">
-              <el-skeleton-item variant="text" style="width: 60px" />
+              <el-skeleton-item
+                variant="text"
+                style="width: 60px" />
             </template>
             <template v-else>
               <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
@@ -115,12 +143,18 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="已分配角色" min-width="200">
+        <el-table-column
+          label="已分配角色"
+          min-width="200">
           <template #default="{ row }">
             <template v-if="loading">
               <div class="flex gap-2">
-                <el-skeleton-item variant="text" style="width: 60px" />
-                <el-skeleton-item variant="text" style="width: 60px" />
+                <el-skeleton-item
+                  variant="text"
+                  style="width: 60px" />
+                <el-skeleton-item
+                  variant="text"
+                  style="width: 60px" />
               </div>
             </template>
             <template v-else>
@@ -129,24 +163,25 @@
                   content="點擊兩下可編輯角色"
                   placement="top"
                   effect="light"
-                  :show-after="500"
-                >
+                  :show-after="500">
                   <div
                     class="role-display"
-                    @dblclick="handleRoleEditStart(row)"
-                  >
+                    @dblclick="handleRoleEditStart(row)">
                     <template v-if="row.userRoles && row.userRoles.length">
                       <el-tag
                         v-for="userRole in row.userRoles"
                         :key="userRole.roleId"
                         class="role-tag"
                         size="small"
-                        :type="getRoleTagType(userRole.role.name)"
-                      >
+                        :type="getRoleTagType(userRole.role.name)">
                         {{ userRole.role.name }}
                       </el-tag>
                     </template>
-                    <span v-else class="no-roles">未分配角色</span>
+                    <span
+                      v-else
+                      class="no-roles"
+                      >未分配角色</span
+                    >
                   </div>
                 </el-tooltip>
               </template>
@@ -155,28 +190,24 @@
                 class="role-edit-container"
                 tabindex="0"
                 @blur="handleRoleEditBlur($event, row)"
-                @mousedown.stop="handleContainerMouseDown"
-              >
+                @mousedown.stop="handleContainerMouseDown">
                 <el-select
                   v-model="row.tempRoles"
                   multiple
                   tag-effect="plain"
                   :loading="row.rolesLoading"
                   placeholder="選擇角色"
-                  class="role-select"
-                >
+                  class="role-select">
                   <el-option
                     v-for="role in allRoles"
                     :key="role.id"
                     :label="role.name"
-                    :value="role.id"
-                  >
+                    :value="role.id">
                     <span>{{ role.name }}</span>
                     <el-tooltip
                       :content="role.description"
                       placement="right"
-                      effect="light"
-                    >
+                      effect="light">
                       <el-icon class="role-info-icon"><InfoFilled /></el-icon>
                     </el-tooltip>
                   </el-option>
@@ -186,11 +217,12 @@
                     type="primary"
                     size="small"
                     :loading="row.rolesLoading"
-                    @click="handleRoleUpdate(row)"
-                  >
+                    @click="handleRoleUpdate(row)">
                     更新
                   </el-button>
-                  <el-button size="small" @click="handleRoleEditCancel(row)">
+                  <el-button
+                    size="small"
+                    @click="handleRoleEditCancel(row)">
                     取消
                   </el-button>
                 </div>
@@ -199,12 +231,19 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right">
           <template #default="{ row }">
             <template v-if="loading">
               <div class="flex gap-2">
-                <el-skeleton-item variant="button" style="width: 60px" />
-                <el-skeleton-item variant="button" style="width: 60px" />
+                <el-skeleton-item
+                  variant="button"
+                  style="width: 60px" />
+                <el-skeleton-item
+                  variant="button"
+                  style="width: 60px" />
               </div>
             </template>
             <template v-else>
@@ -212,17 +251,19 @@
                 <el-button
                   type="primary"
                   :icon="Edit"
-                  size="small"
-                  @click.stop="handleEditUser(row)"
-                >
+                  @click.stop="handleEditUser(row)">
+                  <Pencil
+                    :size="14"
+                    class="mr-1" />
                   編輯
                 </el-button>
                 <el-button
                   type="danger"
                   :icon="Delete"
-                  size="small"
-                  @click.stop="handleDeleteUser(row)"
-                >
+                  @click.stop="handleDeleteUser(row)">
+                  <Trash
+                    :size="14"
+                    class="mr-1" />
                   刪除
                 </el-button>
               </el-button-group>
@@ -237,35 +278,48 @@
       v-model="dialogVisible"
       :title="isEdit ? '編輯用戶' : '新增用戶'"
       width="500px"
-      @close="handleDialogClose"
-    >
+      @close="handleDialogClose">
       <el-form
         ref="userFormRef"
         :model="userForm"
         :rules="userFormRules"
-        label-width="100px"
-      >
-        <el-form-item label="用戶名" prop="username">
+        label-width="100px">
+        <el-form-item
+          label="用戶名"
+          prop="username">
           <el-input v-model="userForm.username" />
         </el-form-item>
-        <el-form-item label="郵箱" prop="email">
-          <el-input v-model="userForm.email" :disabled="isEdit" />
-          <div class="form-item-tip" v-if="isEdit">
+        <el-form-item
+          label="郵箱"
+          prop="email">
+          <el-input
+            v-model="userForm.email"
+            :disabled="isEdit" />
+          <div
+            class="form-item-tip"
+            v-if="isEdit">
             <el-icon><InfoFilled /></el-icon>
             <span>郵箱是用戶的唯一標識，不可更改</span>
           </div>
         </el-form-item>
-        <el-form-item label="密碼" prop="password" v-if="!isEdit">
-          <el-input v-model="userForm.password" type="password" show-password />
+        <el-form-item
+          label="密碼"
+          prop="password"
+          v-if="!isEdit">
+          <el-input
+            v-model="userForm.password"
+            type="password"
+            show-password />
         </el-form-item>
-        <el-form-item label="狀態" prop="status">
+        <el-form-item
+          label="狀態"
+          prop="status">
           <el-switch
             v-model="userForm.status"
             :active-value="'active'"
             :inactive-value="'inactive'"
             active-text="啟用"
-            inactive-text="停用"
-          />
+            inactive-text="停用" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -273,23 +327,24 @@
         <el-button
           type="primary"
           @click="handleSubmitUser"
-          :loading="submitting"
-        >
+          :loading="submitting">
           確定
         </el-button>
       </template>
     </el-dialog>
 
     <!-- 刪除確認對話框 -->
-    <el-dialog v-model="deleteDialogVisible" title="確認刪除" width="400px">
+    <el-dialog
+      v-model="deleteDialogVisible"
+      title="確認刪除"
+      width="400px">
       <p>確定要刪除此用戶嗎？此操作不可恢復。</p>
       <template #footer>
         <el-button @click="deleteDialogVisible = false">取消</el-button>
         <el-button
           type="danger"
           @click="handleDeleteConfirm"
-          :loading="deleting"
-        >
+          :loading="deleting">
           確定刪除
         </el-button>
       </template>
@@ -298,9 +353,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Edit, Delete, Search, Upload, RefreshCw } from "lucide-vue-next";
 import { InfoFilled } from "@element-plus/icons-vue";
 import { useRbacStore } from "@/stores/rbac";
 import { useUserStore } from "@/stores/user";

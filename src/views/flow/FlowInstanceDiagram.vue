@@ -86,7 +86,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from "vue";
 import FlowCanvas from "./components/FlowCanvas.vue";
 //import NodeConfigPanel from "./components/NodeConfigPanel.vue";
 import FileUpload from "@/components/FileUpload.vue";

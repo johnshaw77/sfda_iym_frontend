@@ -47,8 +47,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+// import { computed, ref, onMounted } from "vue";
+// import { useRoute, useRouter } from "vue-router";
 import { ChevronLeft, ChevronRight, Settings } from "lucide-vue-next";
 import { useUserStore } from "@/stores/user";
 

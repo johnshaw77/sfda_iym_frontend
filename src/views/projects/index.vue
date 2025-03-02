@@ -213,10 +213,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated, onDeactivated, computed } from "vue";
-import { Plus, MoreVertical, Calendar, User, RefreshCw } from "lucide-vue-next";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { Grid, List } from "@element-plus/icons-vue";
 import {
   getAllProjects,
   createProject,

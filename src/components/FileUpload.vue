@@ -85,17 +85,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { ElMessage } from "element-plus";
-import {
-  Upload,
-  CloudUpload,
-  FileText,
-  Image as ImageIcon,
-  File,
-  Download,
-  Trash,
-} from "lucide-vue-next";
+// import { ref, computed } from "vue";
+// import { ElMessage } from "element-plus";
+// import {
+//   Upload,
+//   CloudUpload,
+//   FileText,
+//   Image as ImageIcon,
+//   File,
+//   Download,
+//   Trash,
+// } from "lucide-vue-next";
 import { updateDocument, deleteDocument, downloadDocument } from "@/api";
 
 const props = defineProps({

@@ -29,10 +29,6 @@
         label="所屬專案"
         width="180"
         v-if="showProjectColumn" />
-      <el-table-column
-        prop="creator.username"
-        label="上傳者"
-        width="120" />
 
       <el-table-column
         label="上傳者"
@@ -67,23 +63,28 @@
               v-if="isImage(row.docType)"
               type="primary"
               :icon="Search"
-              @click="handlePreview(row)"
-              link>
+              @click="handlePreview(row)">
+              <Eye
+                :size="14"
+                class="mr-1" />
               預覽
             </el-button>
             <el-button
               type="primary"
               :icon="Download"
-              link
               @click="handleDownload(row)">
+              <Download
+                :size="14"
+                class="mr-1" />
               下載
             </el-button>
             <el-button
               v-if="showDeleteButton"
               type="danger"
-              :icon="Delete"
-              link
               @click="handleDelete(row)">
+              <Trash
+                :size="14"
+                class="mr-1" />
               刪除
             </el-button>
           </el-button-group>
@@ -122,9 +123,7 @@
 </template>
 
 <script setup>
-import { ref, computed, defineProps, defineEmits } from "vue";
 import { Search, Download, Delete } from "@element-plus/icons-vue";
-import { ElMessage, ElMessageBox } from "element-plus";
 import { deleteDocument } from "@/api/modules/flowDocument";
 import { formatTimestamp } from "@/utils/dateUtils";
 

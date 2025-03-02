@@ -53,15 +53,6 @@
 </template>
 
 <script setup>
-import {
-  ref,
-  onMounted,
-  onActivated,
-  onDeactivated,
-  computed,
-  watch,
-} from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
 import { formatTimestamp } from "@/utils/dateUtils";
 import {
   getFlowNodeDefinitions,

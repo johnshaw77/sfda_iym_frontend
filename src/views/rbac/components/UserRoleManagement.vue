@@ -7,8 +7,7 @@
         placeholder="搜索用戶名或郵箱"
         clearable
         @clear="handleSearch"
-        @input="handleSearch"
-      >
+        @input="handleSearch">
         <template #prefix>
           <el-icon><Search /></el-icon>
         </template>
@@ -19,39 +18,50 @@
       :data="filteredUsers"
       style="width: 100%"
       v-loading="loading"
-      @sort-change="handleSortChange"
-    >
-      <el-table-column type="index" label="序號" width="80" align="center" />
-      <el-table-column prop="username" label="用戶名" sortable="custom" />
-      <el-table-column prop="email" label="郵箱" sortable="custom" />
+      @sort-change="handleSortChange">
+      <el-table-column
+        type="index"
+        label="序號"
+        width="80"
+        align="center" />
+      <el-table-column
+        prop="username"
+        label="用戶名"
+        sortable="custom" />
+      <el-table-column
+        prop="email"
+        label="郵箱"
+        sortable="custom" />
       <el-table-column
         label="當前角色"
         min-width="300"
         sortable="custom"
-        :sort-method="sortByRolesCount"
-      >
+        :sort-method="sortByRolesCount">
         <template #default="{ row }">
           <el-tag
             v-for="userRole in row.userRoles || []"
             :key="userRole.role.id"
             class="role-tag"
             :type="getRoleTagType(userRole.role.name)"
-            size="small"
-          >
+            size="small">
             {{ userRole.role.name }}
           </el-tag>
-          <el-tag v-if="!(row.userRoles || []).length" type="info" size="small">
+          <el-tag
+            v-if="!(row.userRoles || []).length"
+            type="info"
+            size="small">
             暫無角色
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120">
+      <el-table-column
+        label="操作"
+        width="120">
         <template #default="{ row }">
           <el-button
             type="primary"
             size="small"
-            @click="handleEditUserRoles(row)"
-          >
+            @click="handleEditUserRoles(row)">
             分配角色
           </el-button>
         </template>
@@ -59,28 +69,35 @@
     </el-table>
 
     <!-- 角色分配對話框 -->
-    <el-dialog v-model="dialogVisible" title="分配角色" width="500px">
+    <el-dialog
+      v-model="dialogVisible"
+      title="分配角色"
+      width="500px">
       <template v-if="selectedUser">
         <p class="user-info">
           用戶：{{ selectedUser.username }}
-          <el-tag size="small" type="info">{{ selectedUser.email }}</el-tag>
+          <el-tag
+            size="small"
+            type="info"
+            >{{ selectedUser.email }}</el-tag
+          >
         </p>
 
-        <el-form :model="roleForm" label-width="80px">
+        <el-form
+          :model="roleForm"
+          label-width="80px">
           <el-form-item label="角色">
             <el-checkbox-group v-model="roleForm.roles">
               <el-checkbox
                 v-for="role in availableRoles"
                 :key="role.id"
                 :label="role.id"
-                :disabled="role.name === 'SUPER_ADMIN' && !isSuperAdmin"
-              >
+                :disabled="role.name === 'SUPER_ADMIN' && !isSuperAdmin">
                 {{ role.name }}
                 <el-tooltip
                   :content="role.description"
                   placement="top"
-                  effect="light"
-                >
+                  effect="light">
                   <el-icon class="info-icon"><InfoFilled /></el-icon>
                 </el-tooltip>
               </el-checkbox>
@@ -92,7 +109,11 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit"> 確認 </el-button>
+          <el-button
+            type="primary"
+            @click="handleSubmit">
+            確認
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -100,8 +121,6 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { ElMessage } from "element-plus";
 import { Search, InfoFilled } from "@element-plus/icons-vue";
 import { useRbacStore } from "@/stores/rbac";
 import { getUsers } from "@/api/modules/user";

@@ -129,8 +129,6 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, computed } from "vue";
-import { ArrowBigDownDash } from "lucide-vue-next";
 import IconPicker from "@/components/IconPicker.vue";
 
 const props = defineProps({

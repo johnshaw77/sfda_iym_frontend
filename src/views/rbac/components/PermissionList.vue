@@ -7,13 +7,18 @@
           type="default"
           class="flex items-center"
           :loading="loading"
-          @click="handleRefresh"
-        >
-          <el-icon><RefreshCw class="mr-1" :size="16" /></el-icon>
+          @click="handleRefresh">
+          <el-icon
+            ><RefreshCw
+              class="mr-1"
+              :size="16"
+          /></el-icon>
           重整
         </el-button>
 
-        <el-button type="primary" @click="handleAdd">
+        <el-button
+          type="primary"
+          @click="handleAdd">
           <el-icon><Plus /></el-icon>新增權限
         </el-button>
       </div>
@@ -23,51 +28,69 @@
       :data="loading ? Array(5).fill({}) : permissions"
       style="width: 100%"
       v-loading="loading"
-      @sort-change="handleSortChange"
-    >
-      <el-table-column type="index" label="序號" width="80" align="center" />
-      <el-table-column prop="name" label="權限名稱" sortable="custom" />
-      <el-table-column prop="description" label="描述" sortable="custom" />
+      @sort-change="handleSortChange">
+      <el-table-column
+        type="index"
+        label="序號"
+        width="80"
+        align="center" />
+      <el-table-column
+        prop="name"
+        label="權限名稱"
+        sortable="custom" />
+      <el-table-column
+        prop="description"
+        label="描述"
+        sortable="custom" />
       <el-table-column
         label="使用該權限的角色"
         min-width="300"
         sortable="custom"
-        :sort-method="sortByRolesCount"
-      >
+        :sort-method="sortByRolesCount">
         <template #default="{ row }">
           <el-tooltip
             v-for="role in row.roles || []"
             :key="role.id"
             :content="role.description || '暫無描述'"
             placement="top"
-            effect="light"
-          >
-            <el-tag class="role-tag" type="success" size="small">
+            effect="light">
+            <el-tag
+              class="role-tag"
+              type="success"
+              size="small">
               {{ role.name }}
             </el-tag>
           </el-tooltip>
-          <el-tag v-if="!(row.roles || []).length" type="info" size="small">
+          <el-tag
+            v-if="!(row.roles || []).length"
+            type="info"
+            size="small">
             暫無角色使用
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column
+        label="操作"
+        width="200"
+        fixed="right">
         <template #default="{ row }">
           <el-button-group>
             <el-button
               type="primary"
               :icon="Edit"
-              size="small"
-              @click="handleEdit(row)"
-            >
+              @click="handleEdit(row)">
+              <Pencil
+                :size="14"
+                class="mr-1" />
               編輯
             </el-button>
             <el-button
               type="danger"
               :icon="Delete"
-              size="small"
-              @click="handleDelete(row)"
-            >
+              @click="handleDelete(row)">
+              <Trash
+                :size="14"
+                class="mr-1" />
               刪除
             </el-button>
           </el-button-group>
@@ -80,51 +103,56 @@
       :title="dialogType === 'add' ? '新增權限' : '編輯權限'"
       v-model="dialogVisible"
       width="500px"
-      @close="handleDialogClose"
-    >
+      @close="handleDialogClose">
       <el-form
         ref="formRef"
         :model="formData"
         :rules="formRules"
-        label-width="100px"
-      >
-        <el-form-item label="權限名稱" prop="name">
+        label-width="100px">
+        <el-form-item
+          label="權限名稱"
+          prop="name">
           <el-input
             v-model="formData.name"
             placeholder="請輸入權限名稱（僅限英文字母、數字）"
             @input="handleNameInput"
-            @keydown="handleNameKeydown"
-          />
+            @keydown="handleNameKeydown" />
           <div class="form-item-tip">
             權限名稱將自動轉為大寫，空格將轉換為下底線
           </div>
         </el-form-item>
-        <el-form-item label="權限描述" prop="description">
+        <el-form-item
+          label="權限描述"
+          prop="description">
           <el-input
             v-model="formData.description"
             type="textarea"
-            placeholder="請輸入權限描述"
-          />
+            placeholder="請輸入權限描述" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
+        <el-button
+          type="primary"
+          @click="handleSubmit"
+          :loading="submitting">
           確定
         </el-button>
       </template>
     </el-dialog>
 
     <!-- 刪除確認對話框 -->
-    <el-dialog v-model="deleteDialogVisible" title="確認刪除" width="400px">
+    <el-dialog
+      v-model="deleteDialogVisible"
+      title="確認刪除"
+      width="400px">
       <p>確定要刪除此權限嗎？此操作不可恢復。</p>
       <template #footer>
         <el-button @click="deleteDialogVisible = false">取消</el-button>
         <el-button
           type="danger"
           @click="handleDeleteConfirm"
-          :loading="deleting"
-        >
+          :loading="deleting">
           確定刪除
         </el-button>
       </template>
@@ -133,9 +161,6 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Edit, Delete, RefreshCw } from "lucide-vue-next";
 import { useRbacStore } from "@/stores/rbac";
 import {
   createPermission,

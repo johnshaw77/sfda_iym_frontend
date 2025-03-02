@@ -157,16 +157,6 @@
 
 <script setup>
 import {
-  ref,
-  onMounted,
-  computed,
-  onActivated,
-  onDeactivated,
-  watch,
-} from "vue";
-import { Search, Upload, RotateCw } from "lucide-vue-next";
-import { ElMessage, ElMessageBox } from "element-plus";
-import {
   getAllDocuments,
   getDocumentsByProject,
   uploadDocument,

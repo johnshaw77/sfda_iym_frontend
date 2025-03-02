@@ -64,8 +64,6 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-
 // 定義 props
 const props = defineProps({
   modelValue: {

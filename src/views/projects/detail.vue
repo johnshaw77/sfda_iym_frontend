@@ -423,9 +423,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated, onDeactivated, computed } from "vue";
-
-import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getProjectById,
   updateProject,
@@ -438,7 +435,6 @@ import {
   getFlowTemplates,
 } from "@/api/modules/flow";
 import { useUserStore } from "@/stores/user";
-import { useRouter, useRoute } from "vue-router";
 import { getDocumentsByProject } from "@/api/modules/flowDocument";
 import DocumentList from "@/views/documents/components/DocumentList.vue";
 

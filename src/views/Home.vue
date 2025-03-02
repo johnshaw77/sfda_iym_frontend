@@ -2,7 +2,9 @@
   <div class="container mx-auto p-4">
     <el-row :gutter="20">
       <!-- 歡迎卡片 -->
-      <el-col :span="24" class="mb-4">
+      <el-col
+        :span="24"
+        class="mb-4">
         <el-card class="welcome-card">
           <div class="flex items-center justify-between">
             <div>
@@ -13,7 +15,9 @@
                 今天是 {{ currentDate }}，祝您有個美好的一天！
               </p>
             </div>
-            <el-button type="primary" @click="handleCreateProject">
+            <el-button
+              type="primary"
+              @click="handleCreateProject">
               <el-icon class="mr-1"><Plus /></el-icon>
               新增專案
             </el-button>
@@ -23,7 +27,9 @@
 
       <!-- 統計卡片 -->
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card
+          shadow="hover"
+          class="stat-card">
           <template #header>
             <div class="flex items-center">
               <el-icon class="mr-2 text-blue-500"><Folder /></el-icon>
@@ -36,7 +42,9 @@
       </el-col>
 
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card
+          shadow="hover"
+          class="stat-card">
           <template #header>
             <div class="flex items-center">
               <el-icon class="mr-2 text-green-500"><Document /></el-icon>
@@ -49,7 +57,9 @@
       </el-col>
 
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card
+          shadow="hover"
+          class="stat-card">
           <template #header>
             <div class="flex items-center">
               <el-icon class="mr-2 text-yellow-500"><Connection /></el-icon>
@@ -62,7 +72,9 @@
       </el-col>
 
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
+        <el-card
+          shadow="hover"
+          class="stat-card">
           <template #header>
             <div class="flex items-center">
               <el-icon class="mr-2 text-purple-500"><User /></el-icon>
@@ -75,7 +87,9 @@
       </el-col>
 
       <!-- 最近專案 -->
-      <el-col :span="16" class="mt-4">
+      <el-col
+        :span="16"
+        class="mt-4">
         <el-card>
           <template #header>
             <div class="flex items-center justify-between">
@@ -83,22 +97,33 @@
               <el-button text>查看全部</el-button>
             </div>
           </template>
-          <el-table :data="recentProjects" style="width: 100%">
-            <el-table-column prop="name" label="專案名稱" />
-            <el-table-column prop="status" label="狀態">
+          <el-table
+            :data="recentProjects"
+            style="width: 100%">
+            <el-table-column
+              prop="name"
+              label="專案名稱" />
+            <el-table-column
+              prop="status"
+              label="狀態">
               <template #default="{ row }">
                 <el-tag :type="row.status === '進行中' ? 'success' : 'warning'">
                   {{ row.status }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="updatedAt" label="最後更新" width="180" />
+            <el-table-column
+              prop="updatedAt"
+              label="最後更新"
+              width="180" />
           </el-table>
         </el-card>
       </el-col>
 
       <!-- 待辦事項 -->
-      <el-col :span="8" class="mt-4">
+      <el-col
+        :span="8"
+        class="mt-4">
         <el-card>
           <template #header>
             <div class="flex items-center justify-between">
@@ -111,8 +136,7 @@
               v-for="(task, index) in tasks"
               :key="index"
               :type="task.type"
-              :timestamp="task.time"
-            >
+              :timestamp="task.time">
               {{ task.content }}
             </el-timeline-item>
           </el-timeline>
@@ -123,7 +147,6 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
 import {
   Plus,
   Folder,

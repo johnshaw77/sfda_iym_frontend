@@ -7,13 +7,18 @@
           type="default"
           class="flex items-center"
           :loading="loading"
-          @click="handleRefresh"
-        >
-          <el-icon><RefreshCw class="mr-1" :size="16" /></el-icon>
+          @click="handleRefresh">
+          <el-icon
+            ><RefreshCw
+              class="mr-1"
+              :size="16"
+          /></el-icon>
           重整
         </el-button>
 
-        <el-button type="primary" @click="handleCreateRole">
+        <el-button
+          type="primary"
+          @click="handleCreateRole">
           <el-icon><Plus /></el-icon>
           新增角色
         </el-button>
@@ -23,12 +28,17 @@
     <el-table
       :data="loading ? Array(5).fill({}) : roles"
       style="width: 100%"
-      @sort-change="handleSortChange"
-    >
-      <el-table-column type="index" label="序號" width="80" align="center">
+      @sort-change="handleSortChange">
+      <el-table-column
+        type="index"
+        label="序號"
+        width="80"
+        align="center">
         <template #default="scope">
           <template v-if="loading">
-            <el-skeleton-item variant="text" style="width: 100%" />
+            <el-skeleton-item
+              variant="text"
+              style="width: 100%" />
           </template>
           <template v-else>
             {{ scope.$index + 1 }}
@@ -36,10 +46,15 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="name" label="角色名稱" sortable="custom">
+      <el-table-column
+        prop="name"
+        label="角色名稱"
+        sortable="custom">
         <template #default="{ row }">
           <template v-if="loading">
-            <el-skeleton-item variant="text" style="width: 80%" />
+            <el-skeleton-item
+              variant="text"
+              style="width: 80%" />
           </template>
           <template v-else>
             {{ row.name }}
@@ -47,10 +62,15 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="description" label="描述" sortable="custom">
+      <el-table-column
+        prop="description"
+        label="描述"
+        sortable="custom">
         <template #default="{ row }">
           <template v-if="loading">
-            <el-skeleton-item variant="text" style="width: 90%" />
+            <el-skeleton-item
+              variant="text"
+              style="width: 90%" />
           </template>
           <template v-else>
             {{ row.description }}
@@ -58,7 +78,9 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="權限" min-width="300">
+      <el-table-column
+        label="權限"
+        min-width="300">
         <template #default="{ row }">
           <template v-if="loading">
             <div class="flex flex-wrap gap-2">
@@ -66,8 +88,7 @@
                 v-for="n in 4"
                 :key="n"
                 variant="text"
-                style="width: 80px"
-              />
+                style="width: 80px" />
             </div>
           </template>
           <template v-else>
@@ -75,13 +96,11 @@
               v-for="permission in row.rolePermissions"
               :key="permission.permission.id"
               class="permission-tag"
-              size="small"
-            >
+              size="small">
               <el-tooltip
                 :content="permission.permission.description"
                 placement="top"
-                effect="light"
-              >
+                effect="light">
                 <span>{{ permission.permission.name }}</span>
               </el-tooltip>
             </el-tag>
@@ -89,32 +108,39 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="操作" width="200">
+      <el-table-column
+        label="操作"
+        width="200"
+        fixed="right">
         <template #default="{ row }">
           <template v-if="loading">
             <div class="flex gap-2">
-              <el-skeleton-item variant="button" style="width: 60px" />
-              <el-skeleton-item variant="button" style="width: 60px" />
+              <el-skeleton-item
+                variant="button"
+                style="width: 60px" />
+              <el-skeleton-item
+                variant="button"
+                style="width: 60px" />
             </div>
           </template>
           <template v-else>
             <el-button-group>
               <el-button
                 type="primary"
-                size="small"
                 @click="handleEditRole(row)"
-                :disabled="row.name === 'SUPER_ADMIN'"
-              >
-                <Pencil :size="14" class="mr-1" />
+                :disabled="row.name === 'SUPER_ADMIN'">
+                <Pencil
+                  :size="14"
+                  class="mr-1" />
                 編輯
               </el-button>
               <el-button
                 type="danger"
-                size="small"
                 @click="handleDeleteRole(row)"
-                :disabled="row.name === 'SUPER_ADMIN'"
-              >
-                <Trash :size="14" class="mr-1" />
+                :disabled="row.name === 'SUPER_ADMIN'">
+                <Trash
+                  :size="14"
+                  class="mr-1" />
                 刪除
               </el-button>
             </el-button-group>
@@ -127,31 +153,36 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '編輯角色' : '新增角色'"
-      width="600px"
-    >
+      width="600px">
       <el-form
         ref="roleFormRef"
         :model="roleForm"
         :rules="rules"
-        label-width="100px"
-      >
-        <el-form-item label="角色名稱" prop="name">
+        label-width="100px">
+        <el-form-item
+          label="角色名稱"
+          prop="name">
           <el-input
             v-model="roleForm.name"
             @input="handleNameInput"
-            @keydown="handleNameKeydown"
-          />
+            @keydown="handleNameKeydown" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="roleForm.description" type="textarea" :rows="2" />
+        <el-form-item
+          label="描述"
+          prop="description">
+          <el-input
+            v-model="roleForm.description"
+            type="textarea"
+            :rows="2" />
         </el-form-item>
-        <el-form-item label="權限" prop="permissions">
+        <el-form-item
+          label="權限"
+          prop="permissions">
           <el-checkbox-group v-model="roleForm.permissions">
             <el-checkbox
               v-for="permission in availablePermissions"
               :key="permission.id"
-              :label="permission.id"
-            >
+              :label="permission.id">
               {{ permission.name }}
             </el-checkbox>
           </el-checkbox-group>
@@ -160,7 +191,11 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit"> 確認 </el-button>
+          <el-button
+            type="primary"
+            @click="handleSubmit">
+            確認
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -168,9 +203,6 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { Plus, Pencil, Trash, RefreshCw } from "lucide-vue-next";
 import { useRbacStore } from "@/stores/rbac";
 import {
   formatName,

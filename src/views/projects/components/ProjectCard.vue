@@ -99,9 +99,6 @@
 </template>
 
 <script setup>
-import { Plus, MoreVertical, Calendar, User } from "lucide-vue-next";
-import { computed } from "vue";
-
 // 定義 props
 const props = defineProps({
   projects: {

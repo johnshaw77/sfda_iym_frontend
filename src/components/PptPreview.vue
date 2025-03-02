@@ -5,15 +5,16 @@
     <div class="preview-toolbar">
       <div class="left-tools">
         <el-button-group>
-          <el-button :disabled="currentPage === 1" @click="handlePrevPage">
+          <el-button
+            :disabled="currentPage === 1"
+            @click="handlePrevPage">
             <template #icon>
               <el-icon><ArrowLeft /></el-icon>
             </template>
           </el-button>
           <el-button
             :disabled="currentPage === totalPages"
-            @click="handleNextPage"
-          >
+            @click="handleNextPage">
             <template #icon>
               <el-icon><ArrowRight /></el-icon>
             </template>
@@ -24,26 +25,34 @@
 
       <div class="right-tools">
         <el-button-group>
-          <el-button @click="handleZoomOut" :disabled="zoom <= 0.5">
+          <el-button
+            @click="handleZoomOut"
+            :disabled="zoom <= 0.5">
             <template #icon>
               <el-icon><Minus /></el-icon>
             </template>
           </el-button>
           <el-button>{{ Math.round(zoom * 100) }}%</el-button>
-          <el-button @click="handleZoomIn" :disabled="zoom >= 2">
+          <el-button
+            @click="handleZoomIn"
+            :disabled="zoom >= 2">
             <template #icon>
               <el-icon><Plus /></el-icon>
             </template>
           </el-button>
         </el-button-group>
 
-        <el-button class="ml-2" @click="toggleFullscreen">
+        <el-button
+          class="ml-2"
+          @click="toggleFullscreen">
           <template #icon>
             <el-icon><FullScreen /></el-icon>
           </template>
         </el-button>
 
-        <el-button class="ml-2" @click="handleDownload">
+        <el-button
+          class="ml-2"
+          @click="handleDownload">
           <template #icon>
             <el-icon><Download /></el-icon>
           </template>
@@ -52,15 +61,18 @@
     </div>
 
     <!-- 預覽區域 -->
-    <div class="preview-content" ref="previewRef">
+    <div
+      class="preview-content"
+      ref="previewRef">
       <div
         class="slide-container"
         :style="{
           transform: `scale(${zoom})`,
           opacity: loading ? 0 : 1,
-        }"
-      >
-        <div v-if="loading" class="loading-overlay">
+        }">
+        <div
+          v-if="loading"
+          class="loading-overlay">
           <el-icon class="is-loading"><Loading /></el-icon>
           <span>正在載入...</span>
         </div>
@@ -71,16 +83,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
-import {
-  ArrowLeft,
-  ArrowRight,
-  FullScreen,
-  Download,
-  Plus,
-  Minus,
-  Loading,
-} from "@element-plus/icons-vue";
+// import { ref, onMounted, watch } from "vue";
+// import {
+//   ArrowLeft,
+//   ArrowRight,
+//   FullScreen,
+//   Download,
+//   Plus,
+//   Minus,
+//   Loading,
+// } from "@element-plus/icons-vue";
 import PptxGenJS from "pptxgenjs";
 
 const props = defineProps({
