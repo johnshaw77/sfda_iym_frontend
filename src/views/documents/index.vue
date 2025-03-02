@@ -163,18 +163,9 @@ import {
 } from "@/api/modules/flowDocument";
 import { getAllProjects, getProjectInstances } from "@/api/modules/project";
 import DocumentList from "./components/DocumentList.vue";
+import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 
-// 控制 Teleport 內容顯示
-const showHeaderContent = ref(true);
-
-// KeepAlive 生命週期鉤子
-onActivated(() => {
-  showHeaderContent.value = true;
-});
-
-onDeactivated(() => {
-  showHeaderContent.value = false;
-});
+const { showHeaderContent } = useTeleportVisibility();
 
 // 狀態
 const loading = ref(false);

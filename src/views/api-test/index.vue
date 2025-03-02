@@ -215,7 +215,6 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { request } from "@/api/request";
 import { testExternalApi } from "@/api/modules/external";

@@ -220,12 +220,11 @@ import {
   deleteProject,
   getProjectInstances,
 } from "@/api/modules/project";
-import { Teleport } from "vue";
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "vue-router";
 import ProjectTable from "./components/ProjectTable.vue";
 import ProjectCard from "./components/ProjectCard.vue";
-
+import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 // 路由
 const router = useRouter();
 
@@ -235,6 +234,7 @@ const dialogVisible = ref(false);
 const isEdit = ref(false);
 const projects = ref([]);
 const viewMode = ref("card"); // 新增視圖模式狀態，預設為卡片視圖
+const { showHeaderContent } = useTeleportVisibility();
 
 // 表單相關
 const formRef = ref(null);
@@ -252,8 +252,6 @@ const rules = {
   status: [{ required: true, message: "請選擇專案狀態", trigger: "change" }],
 };
 
-// 控制 Teleport 內容顯示
-const showHeaderContent = ref(true);
 const filterStatus = ref("");
 
 // 用戶狀態
@@ -263,15 +261,6 @@ const userStore = useUserStore();
 const isAdmin = computed(() => {
   const userRole = userStore.user?.role;
   return userRole === "ADMIN" || userRole === "SUPERADMIN";
-});
-
-// KeepAlive 生命週期鉤子
-onActivated(() => {
-  showHeaderContent.value = true;
-});
-
-onDeactivated(() => {
-  showHeaderContent.value = false;
 });
 
 // 獲取專案列表

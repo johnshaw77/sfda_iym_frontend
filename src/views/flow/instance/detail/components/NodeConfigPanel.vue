@@ -1,8 +1,12 @@
 <template>
-  <div v-if="selectedNode" class="node-config-panel">
+  <div
+    v-if="selectedNode"
+    class="node-config-panel">
     <div class="panel-header">
       <h3 class="text-lg font-semibold">節點配置</h3>
-      <button @click="$emit('close')" class="text-gray-500 hover:text-gray-700">
+      <button
+        @click="$emit('close')"
+        class="text-gray-500 hover:text-gray-700">
         <X :size="16" />
       </button>
     </div>
@@ -10,8 +14,13 @@
     <div class="panel-content">
       <div class="form-group">
         <label>節點類型</label>
-        <select v-model="nodeData.type" class="form-select">
-          <option v-for="type in nodeTypes" :key="type.type" :value="type.type">
+        <select
+          v-model="nodeData.type"
+          class="form-select">
+          <option
+            v-for="type in nodeTypes"
+            :key="type.type"
+            :value="type.type">
             {{ type.label }}
           </option>
         </select>
@@ -19,30 +28,47 @@
 
       <div class="form-group">
         <label>節點名稱</label>
-        <input v-model="nodeData.label" type="text" class="form-input" />
+        <input
+          v-model="nodeData.label"
+          type="text"
+          class="form-input" />
       </div>
 
       <div class="form-group">
         <label>描述</label>
-        <textarea v-model="nodeData.content" class="form-textarea"></textarea>
+        <textarea
+          v-model="nodeData.content"
+          class="form-textarea"></textarea>
       </div>
 
-      <div class="form-group" v-if="nodeData.type === 'input'">
+      <div
+        class="form-group"
+        v-if="nodeData.type === 'input'">
         <label>數據來源</label>
         <div class="flex items-center space-x-2">
-          <button class="btn-secondary" @click="handleFileUpload">
-            <Upload :size="16" class="mr-2" />
+          <button
+            class="btn-secondary"
+            @click="handleFileUpload">
+            <Upload
+              :size="16"
+              class="mr-2" />
             上傳文件
           </button>
-          <span v-if="nodeData.file" class="text-sm text-gray-600">
+          <span
+            v-if="nodeData.file"
+            class="text-sm text-gray-600">
             {{ nodeData.file.name }}
           </span>
         </div>
       </div>
 
-      <div class="form-group" v-if="nodeData.type === 'analysis'">
+      <div
+        class="form-group"
+        v-if="nodeData.type === 'analysis'">
         <label>分析方法</label>
-        <select v-model="nodeData.analysisMethod" class="form-select">
+        <select
+          v-model="nodeData.analysisMethod"
+          class="form-select">
           <option value="correlation">相關性分析</option>
           <option value="regression">回歸分析</option>
           <option value="classification">分類分析</option>
@@ -50,9 +76,13 @@
         </select>
       </div>
 
-      <div class="form-group" v-if="nodeData.type === 'visualization'">
+      <div
+        class="form-group"
+        v-if="nodeData.type === 'visualization'">
         <label>圖表類型</label>
-        <select v-model="nodeData.chartType" class="form-select">
+        <select
+          v-model="nodeData.chartType"
+          class="form-select">
           <option value="line">折線圖</option>
           <option value="bar">柱狀圖</option>
           <option value="scatter">散點圖</option>
@@ -62,17 +92,22 @@
     </div>
 
     <div class="panel-footer">
-      <button class="btn-primary" @click="handleSave">保存</button>
-      <button class="btn-secondary" @click="$emit('close')">取消</button>
+      <button
+        class="btn-primary"
+        @click="handleSave">
+        保存
+      </button>
+      <button
+        class="btn-secondary"
+        @click="$emit('close')">
+        取消
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { Upload, X } from "lucide-vue-next";
 import { getFlowNodeDefinitions } from "@/api";
-import { ElMessage } from "element-plus";
 
 const props = defineProps({
   selectedNode: {

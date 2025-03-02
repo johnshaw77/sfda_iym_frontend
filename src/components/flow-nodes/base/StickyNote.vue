@@ -64,11 +64,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
 import { useVueFlow } from "@vue-flow/core";
 import { NodeResizer } from "@vue-flow/node-resizer";
 import "@vue-flow/node-resizer/dist/style.css";
 
+console.log("StickyNote");
 const props = defineProps({
   id: {
     type: String,

@@ -53,7 +53,6 @@
 </template>
 
 <script setup>
-import { formatTimestamp } from "@/utils/dateUtils";
 import {
   getFlowNodeDefinitions,
   createFlowNodeDefinition,
@@ -65,7 +64,7 @@ import NodeDefinitionTable from "./components/NodeDefinitionTable.vue";
 import NodeDefinitionEditDialog from "./components/NodeDefinitionEditDialog.vue";
 import NodeDefinitionPreviewDialog from "./components/NodeDefinitionPreviewDialog.vue";
 import * as LucideIcons from "lucide-vue-next";
-
+import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 const icons = LucideIcons;
 
 // 數據
@@ -74,17 +73,7 @@ const nodeDefinitions = ref([]);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const previewDialogVisible = ref(false);
-// 控制 Teleport 內容顯示
-const showHeaderContent = ref(true);
-
-// KeepAlive 生命週期鉤子
-onActivated(() => {
-  showHeaderContent.value = true;
-});
-
-onDeactivated(() => {
-  showHeaderContent.value = false;
-});
+const { showHeaderContent } = useTeleportVisibility();
 
 // 使用 Flow Components composable
 const {

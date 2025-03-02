@@ -69,7 +69,7 @@ const routes = [
   {
     path: "/flow-instances",
     name: "FlowInstances",
-    component: () => import("@/views/flow/FlowInstanceList.vue"),
+    component: () => import("@/views/flow/instance/list/index.vue"),
     meta: {
       title: "流程實例管理",
       icon: "GitBranch",
@@ -78,6 +78,20 @@ const routes = [
       showContentHeader: true,
     },
   },
+
+  {
+    path: "/flow-instances/:id",
+    name: "FlowInstanceDetail",
+    component: () => import("@/views/flow/instance/detail/index.vue"),
+    meta: {
+      title: "流程實例詳情",
+      icon: "GitBranch",
+      requiresAuth: true,
+      showContentHeader: true,
+      hidden: true,
+    },
+  },
+
   {
     path: "/flow-node-definitions",
     name: "FlowNodeDefinitions",
@@ -111,18 +125,6 @@ const routes = [
       icon: "Workflow",
       requiresAuth: true,
       requiresAdmin: true,
-      showContentHeader: true,
-      hidden: true,
-    },
-  },
-  {
-    path: "/flow-instances/:id",
-    name: "FlowInstanceDetail",
-    component: () => import("@/views/flow/FlowInstanceDetail.vue"),
-    meta: {
-      title: "流程實例詳情",
-      icon: "GitBranch",
-      requiresAuth: true,
       showContentHeader: true,
       hidden: true,
     },

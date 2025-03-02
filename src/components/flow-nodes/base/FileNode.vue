@@ -248,21 +248,20 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
 import { Handle } from "@vue-flow/core";
-import {
-  Eye,
-  Download,
-  Trash,
-  ZoomIn,
-  ZoomOut,
-  X,
-  Minimize2,
-  Maximize2,
-  ChevronLeft,
-  ChevronRight,
-  AlertTriangle,
-} from "lucide-vue-next";
+// import {
+//   Eye,
+//   Download,
+//   Trash,
+//   ZoomIn,
+//   ZoomOut,
+//   X,
+//   Minimize2,
+//   Maximize2,
+//   ChevronLeft,
+//   ChevronRight,
+//   AlertTriangle,
+// } from "lucide-vue-next";
 import { useFileNode } from "@/composables/flow/useFileNode";
 
 // 定義 props

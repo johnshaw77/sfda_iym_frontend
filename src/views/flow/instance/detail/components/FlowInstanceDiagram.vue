@@ -86,8 +86,7 @@
 </template>
 
 <script setup>
-import FlowCanvas from "./instance/detail/components/FlowCanvas.vue";
-//import NodeConfigPanel from "./components/NodeConfigPanel.vue";
+import FlowCanvas from "@/views/flow/instance/detail/components/FlowCanvas.vue";
 import FileUpload from "@/components/FileUpload.vue";
 import { FileText, Settings, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import JsonViewer from "vue-json-viewer";
@@ -165,6 +164,11 @@ const handleFileDeleted = (file) => {
     完整資料: file,
   });
 };
+
+// 當前工作流 ID
+const currentWorkflowId = computed(() => {
+  return props.flowInstance?.id || "";
+});
 
 // 組件卸載時清理事件監聽
 onUnmounted(() => {

@@ -202,12 +202,8 @@
 </template>
 
 <script setup>
-//import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { updateAvatar } from "@/api/modules/auth";
-import { ElMessage } from "element-plus";
-import { Bug, Sun, Moon } from "lucide-vue-next";
 
 const router = useRouter();
 const userStore = useUserStore();

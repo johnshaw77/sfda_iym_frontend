@@ -47,9 +47,7 @@
 </template>
 
 <script setup>
-// import { computed, ref, onMounted } from "vue";
-// import { useRoute, useRouter } from "vue-router";
-import { ChevronLeft, ChevronRight, Settings } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, Settings } from "lucide-vue-next"; //TODO: why can not remove this import??
 import { useUserStore } from "@/stores/user";
 
 const route = useRoute();

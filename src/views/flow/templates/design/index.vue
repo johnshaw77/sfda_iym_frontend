@@ -137,7 +137,7 @@ import { VueFlow, Panel, useVueFlow, ConnectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 
-import EdgeWithButton from "../../components/EdgeWithButton.vue";
+import EdgeWithButton from "../../../../components/flow-nodes/base/EdgeWithButton.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -156,9 +156,11 @@ import { useFlowNodes } from "@/composables/flow/useFlowNodes";
 import { useFlowEdges } from "@/composables/flow/useFlowEdges";
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import { useScreenshot } from "@/composables/useScreenshot"; //TODO: 待測，想擷取後上傳存檔當做封面
+import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 
 const route = useRoute();
 const router = useRouter();
+const { showHeaderContent } = useTeleportVisibility();
 
 // 使用 composables
 const {
@@ -214,7 +216,6 @@ const {
 const elements = ref([]);
 const snapToGrid = ref(true);
 const jsonDrawerVisible = ref(false);
-const showHeaderContent = ref(true);
 
 // 註冊自定義節點類型
 const { flowNodeComponents, loadFlowNodeComponents } = useFlowNodeComponents();
@@ -344,15 +345,6 @@ const onEdgeUpdate = (oldEdge, newConnection) => {
 const onEdgesChange = (changes) => {
   edgeOnEdgesChange(changes, () => (hasUnsavedChanges.value = true));
 };
-
-// 生命週期鉤子
-onActivated(() => {
-  showHeaderContent.value = true;
-});
-
-onDeactivated(() => {
-  showHeaderContent.value = false;
-});
 
 onMounted(async () => {
   // 載入面板狀態

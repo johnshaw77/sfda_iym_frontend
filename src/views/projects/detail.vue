@@ -437,7 +437,7 @@ import {
 import { useUserStore } from "@/stores/user";
 import { getDocumentsByProject } from "@/api/modules/flowDocument";
 import DocumentList from "@/views/documents/components/DocumentList.vue";
-
+import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 // 路由
 const router = useRouter();
 const route = useRoute();
@@ -456,8 +456,7 @@ const filterStatus = ref("");
 const docTypeFilter = ref("");
 const documents = ref([]);
 
-// 控制 Teleport 內容顯示
-const showHeaderContent = ref(true);
+const { showHeaderContent } = useTeleportVisibility();
 
 // 用戶狀態
 const userStore = useUserStore();
@@ -516,15 +515,6 @@ const filteredInstances = computed(() => {
 const filteredDocuments = computed(() => {
   if (!docTypeFilter.value) return documents.value;
   return documents.value.filter((doc) => doc.docType === docTypeFilter.value);
-});
-
-// KeepAlive 生命週期鉤子
-onActivated(() => {
-  showHeaderContent.value = true;
-});
-
-onDeactivated(() => {
-  showHeaderContent.value = false;
 });
 
 // 獲取專案詳情

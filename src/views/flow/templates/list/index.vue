@@ -110,7 +110,7 @@ import {
   deleteFlowTemplate,
 } from "@/api/modules/flow";
 import { useUserStore } from "@/stores/user";
-import { formatTimestamp } from "@/utils/dateUtils";
+import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 
 // 導入子組件
 import TemplateCardView from "./components/TemplateCardView.vue";
@@ -127,8 +127,8 @@ const formRef = ref(null);
 const userStore = useUserStore();
 const router = useRouter();
 
-// 控制 Teleport 內容顯示
-const showHeaderContent = ref(true);
+const { showHeaderContent } = useTeleportVisibility();
+
 const viewMode = ref("card");
 
 // 篩選器狀態
@@ -144,15 +144,6 @@ const statusOptions = [
   { label: "啟用", value: "active" },
   { label: "停用", value: "inactive" },
 ];
-
-// KeepAlive 生命週期鉤子
-onActivated(() => {
-  showHeaderContent.value = true;
-});
-
-onDeactivated(() => {
-  showHeaderContent.value = false;
-});
 
 // 表單數據
 const form = ref({

@@ -73,7 +73,7 @@
               v-for="nodeType in Object.values(NODE_TYPES)"
               :key="nodeType.type"
               size="small"
-              @click="() => onAddNode(nodeType)">
+              @click="() => handleAddNode(nodeType)">
               <component
                 :is="nodeType.icon"
                 :size="16"
@@ -88,14 +88,7 @@
               effect="light">
               <el-button
                 size="small"
-                @click="
-                  () =>
-                    onAddNode({
-                      type: 'sticky',
-                      label: '便利貼',
-                      icon: 'StickyNote',
-                    })
-                ">
+                @click="() => handleAddNode('sticky')">
                 <component
                   :is="StickyNoteIcon"
                   :size="16"
@@ -254,26 +247,25 @@ import {
 import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
-import { EDGE_TYPES } from "./config/edgeTypes";
-import {
-  Layout,
-  StickyNote as StickyNoteIcon,
-  X,
-  Database,
-  FileJson,
-  Maximize,
-  Undo2,
-  Redo2,
-  Maximize2,
-  Minimize2,
-  Copy,
-} from "lucide-vue-next";
+// import {
+//   Layout,
+//   StickyNote as StickyNoteIcon,
+//   X,
+//   Database,
+//   FileJson,
+//   Maximize,
+//   Undo2,
+//   Redo2,
+//   Maximize2,
+//   Minimize2,
+//   Copy,
+// } from "lucide-vue-next";
 import dagre from "@dagrejs/dagre"; // 自動布局
 import { ElMessageBox, ElMessage } from "element-plus";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 
-import StickyNote from "./StickyNote.vue";
+import StickyNote from "@/components/flow-nodes/base/StickyNote.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -282,7 +274,7 @@ import { uploadDocument } from "@/api/modules/flowDocument";
 import { updateFlowInstance } from "@/api/modules/flow";
 
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
-import FileNode from "./FileNode.vue";
+import FileNode from "@/components/flow-nodes/base/FileNode.vue";
 
 // 節點類型定義
 const NODE_TYPES = ref({});
@@ -313,9 +305,6 @@ Object.entries(flowNodeComponents.value).forEach(([key, value]) => {
   nodeTypes[componentName] = value.default || value;
 });
 
-// 當前工作流程 ID（這裡先用預設值）
-const currentWorkflowId = ref("69f40f6e-6718-4588-881f-373444fe5ecb");
-
 // 註冊自定義邊線類型(!TODO: 改)
 const edgeTypes = {
   button: "smoothstep",
@@ -339,6 +328,7 @@ const defaultEdgeOptions = {
   },
 };
 
+console.log("nodeTypes", nodeTypes);
 const {
   project,
   fitView,
@@ -550,7 +540,7 @@ const onPaneClick = () => {
   selectedNode.value = null;
 };
 
-const onAddNode = (type) => {
+const handleAddNode = (type) => {
   // 找出當前最小的 zIndex
   const minZIndex = Math.min(
     ...elements.value
@@ -558,9 +548,10 @@ const onAddNode = (type) => {
       .map((el) => el.zIndex || 0)
   );
   const id = `node_${Date.now()}`;
+  console.log("handleAddNode", type);
   const newNode = {
     id,
-    type: type === "sticky" ? "sticky" : "custom",
+    type: type === "sticky" ? "sticky" : "",
     data:
       type === "sticky"
         ? {

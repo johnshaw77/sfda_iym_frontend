@@ -83,16 +83,6 @@
 </template>
 
 <script setup>
-// import { ref, onMounted, watch } from "vue";
-// import {
-//   ArrowLeft,
-//   ArrowRight,
-//   FullScreen,
-//   Download,
-//   Plus,
-//   Minus,
-//   Loading,
-// } from "@element-plus/icons-vue";
 import PptxGenJS from "pptxgenjs";
 
 const props = defineProps({
