@@ -1,5 +1,5 @@
 <template>
-  <div class="px-2 py-2">
+  <div class="p-0">
     <!-- 專案列表內容 -->
     <!-- 使用 Teleport 將內容傳送到主佈局 -->
     <Teleport
@@ -150,7 +150,7 @@
     </div>
 
     <!-- 新增/編輯專案對話框 -->
-    <el-dialog
+    <!-- <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '編輯專案' : '新增專案'"
       width="500px"
@@ -208,7 +208,14 @@
           </el-button>
         </span>
       </template>
-    </el-dialog>
+    </el-dialog> -->
+    <!-- 編輯專案對話框 -->
+    <ProjectEditDialog
+      v-model="dialogVisible"
+      :project="project"
+      :loading="submitLoading"
+      @submit="handleSubmit"
+      @cancel="dialogVisible = false" />
   </div>
 </template>
 
@@ -221,7 +228,6 @@ import {
   getProjectInstances,
 } from "@/api/modules/project";
 import { useUserStore } from "@/stores/user";
-import { useRouter } from "vue-router";
 import ProjectTable from "./components/ProjectTable.vue";
 import ProjectCard from "./components/ProjectCard.vue";
 import { useTeleportVisibility } from "@/composables/useTeleportVisibility";

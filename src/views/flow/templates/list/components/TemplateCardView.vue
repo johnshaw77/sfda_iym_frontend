@@ -1,6 +1,6 @@
 <template>
   <div
-    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    class="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
     <el-card
       v-for="template in templates"
       :key="template.id"
@@ -41,12 +41,26 @@
 
       <div class="text-xs text-gray-500 mb-4">
         <div class="flex justify-between">
-          <span>創建者: {{ template.createdBy }}</span>
+          <span>建立者:</span>
+          <UserAvatar
+            :user="template.creator"
+            :size="16"
+            :show-name="true"
+            shape="square"
+            class="mr-1" />
+
           <span>{{ formatDate(template.createdAt) }}</span>
         </div>
         <div class="flex justify-between mt-1">
-          <span>更新者: {{ template.updatedBy }}</span>
-          <span>{{ formatDate(template.updatedAt) }}</span>
+          <span>更新者:</span>
+          <UserAvatar
+            :user="template.updater"
+            :size="16"
+            :show-name="true"
+            shape="square"
+            class="mr-1" />
+
+          <span>{{ formatTimestamp(template.updatedAt) }}</span>
         </div>
       </div>
 
@@ -123,7 +137,7 @@
 //   Trash2,
 // } from "lucide-vue-next";
 import { formatTimestamp } from "@/utils/dateUtils";
-
+import UserAvatar from "@/components/UserAvatar.vue";
 defineProps({
   templates: {
     type: Array,

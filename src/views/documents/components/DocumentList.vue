@@ -4,8 +4,7 @@
     <el-table
       v-loading="loading"
       :data="documents"
-      style="width: 100%"
-      border>
+      style="width: 100%">
       <el-table-column
         type="index"
         label="序號"
@@ -36,12 +35,13 @@
         align="center">
         <template #default="{ row }">
           <div class="flex items-center justify-center">
-            <el-avatar
+            <UserAvatar
+              v-if="row.creator"
+              :user="row.creator"
               :size="24"
-              :src="`http://localhost:3001/uploads/avatars/${row.creator.avatar}`">
-              {{ row.creator.username.charAt(0) }}
-            </el-avatar>
-            <span class="ml-2">{{ row.creator.username }}</span>
+              :show-name="true"
+              shape="square"
+              class="mr-1" />
           </div>
         </template>
       </el-table-column>
@@ -73,18 +73,13 @@
               type="primary"
               :icon="Download"
               @click="handleDownload(row)">
-              <Download
-                :size="14"
-                class="mr-1" />
               下載
             </el-button>
             <el-button
               v-if="showDeleteButton"
               type="danger"
+              :icon="Delete"
               @click="handleDelete(row)">
-              <Trash
-                :size="14"
-                class="mr-1" />
               刪除
             </el-button>
           </el-button-group>
@@ -125,6 +120,7 @@
 <script setup>
 import { Search, Download, Delete } from "@element-plus/icons-vue";
 import { deleteDocument } from "@/api/modules/flowDocument";
+import UserAvatar from "@/components/UserAvatar.vue";
 import { formatTimestamp } from "@/utils/dateUtils";
 
 const props = defineProps({

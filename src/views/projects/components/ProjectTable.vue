@@ -1,23 +1,35 @@
 <template>
-  <div class="project-table">
+  <div class="p-0">
     <el-table
       :data="filteredProjects"
       style="width: 100%"
-      v-loading="loading"
-      border>
+      v-loading="loading">
+      <el-table-column
+        type="index"
+        label=""
+        width="60" />
+      <el-table-column
+        prop="status"
+        width="100">
+        <template #default="{ row }">
+          <el-tag :type="getStatusType(row.status)">
+            {{ getStatusText(row.status) }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="name"
         label="專案名稱"
         min-width="180">
         <template #default="{ row }">
           <div class="flex items-center">
-            <el-tag
+            <!-- <el-tag
               :type="getStatusType(row.status)"
               class="mr-2"
               size="small"
               effect="plain">
               {{ getStatusText(row.status) }}
-            </el-tag>
+            </el-tag> -->
             <span class="font-medium">{{ row.name }}</span>
           </div>
         </template>
@@ -33,7 +45,7 @@
       </el-table-column>
 
       <el-table-column
-        label="創建時間"
+        label="建立時間"
         min-width="150">
         <template #default="{ row }">
           <div class="flex items-center">
@@ -44,13 +56,14 @@
       </el-table-column>
 
       <el-table-column
-        label="創建者"
+        label="建立者"
         min-width="120">
         <template #default="{ row }">
-          <div class="flex items-center">
+          <UserAvatar :user="row.creator" />
+          <!-- <div class="flex items-center">
             <User class="w-4 h-4 mr-1 text-gray-400" />
             <span>{{ row.createdBy?.name || "未知" }}</span>
-          </div>
+          </div> -->
         </template>
       </el-table-column>
 
@@ -90,6 +103,7 @@
 </template>
 
 <script setup>
+import UserAvatar from "@/components/UserAvatar.vue";
 // 定義 props
 const props = defineProps({
   projects: {

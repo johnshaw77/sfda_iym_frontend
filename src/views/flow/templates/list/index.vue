@@ -1,5 +1,5 @@
 <template>
-  <div class="p-2">
+  <div class="p-0">
     <Teleport
       to="#header-actions"
       v-if="showHeaderContent">

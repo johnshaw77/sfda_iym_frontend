@@ -362,7 +362,13 @@ onMounted(() => {
   }
 
   if (userStore.isAuthenticated) {
-    fetchUserInfo();
+    if (userStore.user) {
+      // 如果 store 中已有用戶資訊，直接使用
+      userInfo.value = userStore.user;
+    } else {
+      // 只有在沒有用戶資訊時才呼叫 API
+      fetchUserInfo();
+    }
   }
 });
 </script>

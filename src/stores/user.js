@@ -37,6 +37,9 @@ export const useUserStore = defineStore("user", () => {
 
   const isAuthenticated = computed(() => !!token.value);
 
+  // 用於存儲進行中的請求
+  let fetchUserPromise = null;
+
   // 檢查是否有任一權限
   const hasAnyPermission = (permissions) => {
     // 如果用戶未登入或沒有 roles，直接返回 false
@@ -179,8 +182,19 @@ export const useUserStore = defineStore("user", () => {
 
   // 獲取當前用戶信息
   const fetchUser = async () => {
+    // 如果已經有用戶資訊，直接返回
+    if (user.value) {
+      return { data: user.value };
+    }
+
+    // 如果已經有請求在進行中，返回該請求
+    if (fetchUserPromise) {
+      return fetchUserPromise;
+    }
+
     try {
-      const response = await getCurrentUser();
+      fetchUserPromise = getCurrentUser();
+      const response = await fetchUserPromise;
 
       if (!response.data) {
         throw new Error("未獲取到用戶資訊");
@@ -191,6 +205,11 @@ export const useUserStore = defineStore("user", () => {
     } catch (error) {
       console.error("獲取用戶信息失敗:", error);
       throw error;
+    } finally {
+      // 請求完成後重置 Promise
+      setTimeout(() => {
+        fetchUserPromise = null;
+      }, 1000); // 1秒內不重複請求
     }
   };
 

@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import { RotateCw, Plus, Trash2 } from "lucide-vue-next";
+//import { RotateCw, Plus, Trash2 } from "lucide-vue-next";
 
 const props = defineProps({
   queryParams: {
