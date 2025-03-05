@@ -213,6 +213,7 @@
     <ProjectEditDialog
       v-model="dialogVisible"
       :project="project"
+      :is-edit="isEdit"
       :loading="submitLoading"
       @submit="handleSubmit"
       @cancel="dialogVisible = false" />
@@ -230,15 +231,23 @@ import {
 import { useUserStore } from "@/stores/user";
 import ProjectTable from "./components/ProjectTable.vue";
 import ProjectCard from "./components/ProjectCard.vue";
+import ProjectEditDialog from "./components/ProjectEditDialog.vue";
 import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 // 路由
 const router = useRouter();
 
 // 狀態
 const loading = ref(false);
+const submitLoading = ref(false);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const projects = ref([]);
+const project = ref({
+  id: "",
+  name: "",
+  description: "",
+  status: "draft",
+});
 const viewMode = ref("card"); // 新增視圖模式狀態，預設為卡片視圖
 const { showHeaderContent } = useTeleportVisibility();
 
@@ -317,7 +326,8 @@ const getStatusText = (status) => {
 // 處理新增專案
 const handleCreateProject = () => {
   isEdit.value = false;
-  form.value = {
+  project.value = {
+    id: "",
     name: "",
     description: "",
     status: "draft",
@@ -326,19 +336,23 @@ const handleCreateProject = () => {
 };
 
 // 處理編輯專案
-const handleEditProject = (project) => {
+const handleEditProject = (projectData) => {
+  console.log("編輯專案:", projectData);
   isEdit.value = true;
-  form.value = {
-    id: project.id,
-    name: project.name,
-    description: project.description,
-    status: project.status,
+  project.value = {
+    id: projectData.id,
+    name: projectData.name,
+    description: projectData.description,
+    status: projectData.status,
   };
   dialogVisible.value = true;
 };
 
+import { useProjectStore } from "@/stores/project";
+const projectStore = useProjectStore();
 // 處理查看專案
 const handleViewProject = (project) => {
+  projectStore.setProjectName(project.name);
   router.push(`/projects/${project.id}`);
 };
 
@@ -367,25 +381,22 @@ const handleDeleteProject = async (project) => {
 };
 
 // 處理提交
-const handleSubmit = async () => {
-  if (!formRef.value) return;
-
+const handleSubmit = async (formData) => {
   try {
-    await formRef.value.validate();
-    loading.value = true;
+    submitLoading.value = true;
 
-    if (isEdit.value) {
-      await updateProject(form.value.id, {
-        name: form.value.name,
-        description: form.value.description,
-        status: form.value.status,
+    if (formData.id) {
+      await updateProject(formData.id, {
+        name: formData.name,
+        description: formData.description,
+        status: formData.status,
       });
       ElMessage.success("專案更新成功");
     } else {
       await createProject({
-        name: form.value.name,
-        description: form.value.description,
-        status: form.value.status,
+        name: formData.name,
+        description: formData.description,
+        status: formData.status,
       });
       ElMessage.success("專案創建成功");
     }
@@ -396,7 +407,7 @@ const handleSubmit = async () => {
     console.error("提交失敗:", error);
     ElMessage.error(error.response?.data?.message || "操作失敗");
   } finally {
-    loading.value = false;
+    submitLoading.value = false;
   }
 };
 

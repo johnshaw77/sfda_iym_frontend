@@ -1,6 +1,3 @@
-// composables/useTeleportVisibility.js
-import { ref, onActivated, onDeactivated } from "vue";
-
 export function useTeleportVisibility() {
   const showHeaderContent = ref(true);
 

@@ -39,6 +39,7 @@
     <ProjectEditDialog
       v-model="dialogVisible"
       :project="project"
+      :is-edit="isEdit"
       :loading="submitLoading"
       @submit="handleSubmit"
       @cancel="dialogVisible = false" />
@@ -80,6 +81,7 @@ const instancesLoading = ref(false);
 const documentsLoading = ref(false);
 const submitLoading = ref(false);
 const dialogVisible = ref(false);
+const isEdit = ref(false);
 const project = ref({});
 const instances = ref([]);
 const templates = ref([]);
@@ -176,6 +178,7 @@ const handleRefresh = () => {
 
 // 處理編輯專案
 const handleEditProject = () => {
+  isEdit.value = true;
   dialogVisible.value = true;
 };
 

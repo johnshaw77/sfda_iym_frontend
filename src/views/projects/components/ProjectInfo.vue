@@ -30,11 +30,12 @@
       <div class="flex flex-col">
         <div class="flex justify-between">
           <div class="text-xl font-bold text-gray-800mb-2">
+            {{ project.name }}
             <el-tag
               class="mr-1"
               :type="getStatusType(project.status)">
-              {{ getStatusText(project.status) }} </el-tag
-            >{{ project.name }}
+              {{ getStatusText(project.status) }}
+            </el-tag>
           </div>
           <div>
             <el-dropdown trigger="click">
@@ -58,7 +59,9 @@
           </div>
         </div>
         <div>
-          <p class="text-gray-600 mb-4">{{ project.description }}</p>
+          <p class="mt-4 text-gray-600 text-sm mb-4">
+            {{ project.description }}
+          </p>
           <div class="flex items-center justify-between w-full">
             <div class="flex items-center">
               <Calendar

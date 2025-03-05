@@ -2,7 +2,9 @@
 <template>
   <div class="node-handles">
     <!-- 輸入連接點 -->
-    <template v-for="handle in inputs" :key="handle.id">
+    <template
+      v-for="handle in inputs"
+      :key="handle.id">
       <Handle
         :id="handle.id"
         :type="handle.type"
@@ -14,16 +16,19 @@
             'handle-connected': isHandleConnected(handle.id),
             'handle-input': true,
           },
-        ]"
-      >
-        <span v-if="showLabels" class="handle-label">{{
-          handle.label || handle.id
-        }}</span>
+        ]">
+        <span
+          v-if="showLabels"
+          class="handle-label"
+          >{{ handle.label || handle.id }}</span
+        >
       </Handle>
     </template>
 
     <!-- 輸出連接點 -->
-    <template v-for="handle in outputs" :key="handle.id">
+    <template
+      v-for="handle in outputs"
+      :key="handle.id">
       <Handle
         :id="handle.id"
         :type="handle.type"
@@ -35,11 +40,12 @@
             'handle-connected': isHandleConnected(handle.id),
             'handle-output': true,
           },
-        ]"
-      >
-        <span v-if="showLabels" class="handle-label">{{
-          handle.label || handle.id
-        }}</span>
+        ]">
+        <span
+          v-if="showLabels"
+          class="handle-label"
+          >{{ handle.label || handle.id }}</span
+        >
       </Handle>
     </template>
   </div>
@@ -47,7 +53,6 @@
 
 <script setup>
 import { Handle } from "@vue-flow/core";
-import { computed, onMounted } from "vue";
 import { useVueFlow } from "@vue-flow/core";
 
 const props = defineProps({

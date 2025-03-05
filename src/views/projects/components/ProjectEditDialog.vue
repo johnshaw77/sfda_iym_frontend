@@ -109,44 +109,63 @@ const rules = {
 };
 
 // 對話框可見性
-const dialogVisible = ref(false);
+const dialogVisible = computed({
+  get: () => props.modelValue,
+  set: (value) => emit("update:modelValue", value),
+});
+
+// 初始化表單數據
+const initFormData = () => {
+  if (props.isEdit && props.project && Object.keys(props.project).length > 0) {
+    // 編輯模式，填充表單數據
+    formData.value = {
+      id: props.project.id || "",
+      name: props.project.name || "",
+      description: props.project.description || "",
+      status: props.project.status || "draft",
+    };
+  } else {
+    // 新增模式，重置表單
+    formData.value = {
+      id: "",
+      name: "",
+      description: "",
+      status: "draft",
+    };
+  }
+};
+
+// 監聽 project 變化
+watch(
+  () => props.project,
+  (newVal) => {
+    if (newVal && Object.keys(newVal).length > 0) {
+      formData.value = {
+        id: newVal.id || "",
+        name: newVal.name || "",
+        description: newVal.description || "",
+        status: newVal.status || "draft",
+      };
+    }
+  },
+  { immediate: true, deep: true }
+);
 
 // 監聽 modelValue 變化
 watch(
   () => props.modelValue,
   (newVal) => {
-    dialogVisible.value = newVal;
-    if (newVal && props.isEdit) {
-      // 編輯模式，填充表單數據
-      formData.value = {
-        id: props.project.id,
-        name: props.project.name,
-        description: props.project.description,
-        status: props.project.status,
-      };
-    } else if (newVal) {
-      // 新增模式，重置表單
-      formData.value = {
-        id: "",
-        name: "",
-        description: "",
-        status: "draft",
-      };
+    if (newVal) {
+      // 當對話框打開時，初始化表單數據
+      initFormData();
     }
-  }
-);
-
-// 監聽對話框可見性變化
-watch(
-  () => dialogVisible.value,
-  (newVal) => {
-    emit("update:modelValue", newVal);
-  }
+  },
+  { immediate: true }
 );
 
 // 處理取消
 const handleCancel = () => {
-  dialogVisible.value = false;
+  emit("update:modelValue", false);
   emit("cancel");
 };
 

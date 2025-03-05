@@ -1,6 +1,5 @@
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-gray-50 background">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50">
     <div class="grid"></div>
     <div class="w-[420px] bg-white p-8 rounded-xl shadow-lg z-50">
       <!-- Logo -->
@@ -137,9 +136,6 @@
 </template>
 
 <script setup>
-// import { ref, reactive } from "vue";
-// import { useRouter, useRoute } from "vue-router";
-// import { ElMessage } from "element-plus";
 import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
@@ -248,17 +244,6 @@ const handleReaderLogin = () => {
   @apply !text-[#1976D2] font-medium hover:!text-[#1565C0];
 }
 
-.background {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  mask-image: radial-gradient(circle at center, black, transparent 80%);
-  -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
-}
-
 .grid {
   position: absolute;
   width: 100%;
@@ -267,7 +252,7 @@ const handleReaderLogin = () => {
     linear-gradient(90deg, rgba(30, 41, 59, 0.1) 1px, transparent 1px);
   background-size: 38px 38px;
   transform-origin: center;
-  animation: gridAnimation 5s linear infinite;
+  animation: gridAnimation 3s linear infinite;
 }
 
 .content {

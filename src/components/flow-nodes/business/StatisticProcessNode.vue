@@ -61,10 +61,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
-import { BarChart2, BotMessageSquare } from "lucide-vue-next";
 import BaseNode from "../base/BaseNode.vue";
-import { ElMessage } from "element-plus";
 import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";

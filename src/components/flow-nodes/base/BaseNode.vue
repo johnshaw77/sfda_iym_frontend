@@ -250,14 +250,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick, onUnmounted } from "vue";
 import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import NodeHandles from "./NodeHandles.vue";
-import { Box, ChevronUp } from "lucide-vue-next";
 import { NodeResizer } from "@vue-flow/node-resizer";
 import "@vue-flow/node-resizer/dist/style.css";
-import { ElMessage } from "element-plus";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 
 // 定義 props
@@ -360,7 +357,6 @@ const { clearNodeError } = useFlowInstance();
 const nodeState = computed(() => {
   return flowStore.getNodeStateById(props.id);
 });
-console.log("241", nodeState.value);
 
 // 修改狀態類型映射
 const statusType = computed(() => {

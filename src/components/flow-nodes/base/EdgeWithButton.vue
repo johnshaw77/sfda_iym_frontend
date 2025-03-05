@@ -155,7 +155,6 @@ import {
   getBezierPath,
   useVueFlow,
 } from "@vue-flow/core";
-import { ElMessageBox, ElMessage } from "element-plus";
 
 const props = defineProps({
   id: {

@@ -131,8 +131,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated, onDeactivated, onUnmounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
 import { VueFlow, Panel, useVueFlow, ConnectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";

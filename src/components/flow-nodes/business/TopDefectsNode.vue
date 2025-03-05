@@ -55,8 +55,6 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { BarChart3 } from "lucide-vue-next";
 import BaseNode from "../base/BaseNode.vue";
 
 // 節點基本屬性

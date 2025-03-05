@@ -196,10 +196,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from "vue";
-import { TextCursorInput, Box } from "lucide-vue-next";
 import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
-import { ElMessage } from "element-plus";
 import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { createFlowInstance } from "@/api/modules/flow";

@@ -203,7 +203,6 @@ import { useIcons } from "@/composables/useIcons";
 const icon = useIcons();
 
 import { useFlowStore } from "@/stores/flowStore";
-import { GitBranch } from "lucide-vue-next";
 const flowStore = useFlowStore();
 
 const viewFlowMode = ref("flow"); // 默認為流程圖模式

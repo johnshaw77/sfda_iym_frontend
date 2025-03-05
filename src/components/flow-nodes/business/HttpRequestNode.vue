@@ -1,3 +1,4 @@
+/** * !TODO: 棄用 */
 <template>
   <BaseNode
     :id="id"

@@ -54,21 +54,19 @@
 </template>
 
 <script setup>
-// import { computed, ref, onMounted, watch } from "vue";
-// import { useRoute, useRouter } from "vue-router";
 import AppSidebar from "@/components/AppSidebar.vue";
 import AppHeader from "@/components/AppHeader.vue";
 import { ArrowRight } from "@element-plus/icons-vue";
 
 import { useFlowTemplateStore } from "@/stores/flowTemplate";
 import { useFlowStore } from "@/stores/flowStore";
-
+import { useProjectStore } from "@/stores/project";
 const route = useRoute();
 const router = useRouter();
 const sidebarRef = ref(null);
 const flowTemplateStore = useFlowTemplateStore();
 const flowStore = useFlowStore();
-
+const projectStore = useProjectStore();
 const sidebarCollapsed = computed(() => sidebarRef.value?.isCollapse || false);
 
 // 根據路由 meta 決定是否顯示內容區的 header
@@ -96,6 +94,7 @@ const breadcrumbs = computed(() => {
   const result = [];
 
   matched.forEach((route) => {
+    console.log("route", route);
     // 優先處理工作流程範本設計頁面
     if (route.name === "FlowTemplateDesign") {
       result.push({
@@ -117,6 +116,17 @@ const breadcrumbs = computed(() => {
       result.push({
         //path: route.path,
         title: flowStore.projectName || "載入中...",
+      });
+    }
+    // 優先處理專案詳情頁面
+    else if (route.name === "project-detail") {
+      result.push({
+        path: "/projects",
+        title: "專案管理",
+      });
+      result.push({
+        //path: route.path,
+        title: projectStore.projectName || "載入中...",
       });
     }
     // 其他一般路由的處理

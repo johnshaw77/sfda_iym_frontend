@@ -45,7 +45,7 @@ export const useUserStore = defineStore("user", () => {
     // 如果用戶未登入或沒有 roles，直接返回 false
     if (!user.value || !user.value.roles) return false;
 
-    console.log("45 hasAnyPermission", permissions, user.value?.roles);
+    // console.log("45 hasAnyPermission", permissions, user.value?.roles);
     const aaa = user.value.roles.some(
       (role) => role.name === "ADMIN" || role.name === "SUPERADMIN"
     );
@@ -56,11 +56,11 @@ export const useUserStore = defineStore("user", () => {
         (role) => role.name === "ADMIN" || role.name === "SUPERADMIN"
       )
     ) {
-      console.log("53 超級管理員");
+      // console.log("53 超級管理員");
       return true;
     }
 
-    console.log("56 user.value.roles", user.value.roles);
+    // console.log("56 user.value.roles", user.value.roles);
     // 獲取用戶所有權限
     const userPermissions = new Set();
     user.value.roles.forEach((role) => {
@@ -122,7 +122,7 @@ export const useUserStore = defineStore("user", () => {
   const handleLogin = async (credentials) => {
     try {
       const response = await login(credentials);
-      console.log("登入回應:", response); // 用於調試
+      // console.log("登入回應:", response); // 用於調試
 
       // 檢查回應格式
       if (!response.data) {
@@ -156,7 +156,7 @@ export const useUserStore = defineStore("user", () => {
 
       return response;
     } catch (error) {
-      console.error("登入失敗:", error);
+      // console.error("登入失敗:", error);
       if (error.response?.message) {
         throw new Error(error.response.message);
       } else {
@@ -180,7 +180,7 @@ export const useUserStore = defineStore("user", () => {
     }
   };
 
-  // 獲取當前用戶信息
+  // 獲取當前用戶信息，實現去重機制
   const fetchUser = async () => {
     // 如果已經有用戶資訊，直接返回
     if (user.value) {
@@ -209,7 +209,7 @@ export const useUserStore = defineStore("user", () => {
       // 請求完成後重置 Promise
       setTimeout(() => {
         fetchUserPromise = null;
-      }, 1000); // 1秒內不重複請求
+      }, 3000); // 3秒內不重複請求
     }
   };
 
