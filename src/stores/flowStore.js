@@ -34,10 +34,16 @@ export const useFlowStore = defineStore("flow", () => {
   const projectName = ref("");
   const projectId = ref("");
   const templateId = ref("");
+  const fromProject = ref(false); // 是否從專案詳情頁進入
+
+  // 設置是否從專案詳情頁進入
+  function setFromProject(value) {
+    fromProject.value = value;
+  }
 
   // 設置專案名稱
   function setProjectName(name) {
-    console.log("sssssss", name);
+    console.log("設置專案名稱", name);
     projectName.value = name;
   }
 
@@ -522,6 +528,7 @@ export const useFlowStore = defineStore("flow", () => {
     projectName,
     projectId,
     templateId,
+    fromProject,
 
     // Getters
     getNodeStateById,
@@ -535,6 +542,7 @@ export const useFlowStore = defineStore("flow", () => {
     hasNodeError,
 
     // Actions
+    setFromProject,
     setProjectName,
     setProjectId,
     setTemplateId,

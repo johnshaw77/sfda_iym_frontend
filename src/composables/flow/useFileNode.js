@@ -24,25 +24,77 @@ export function useFileNode() {
   // 計算屬性
   const isImage = computed(() => {
     return (data) => {
+      if (!data) return false;
+
+      // 檢查檔案類型
       const fileType = data.fileType?.toLowerCase();
-      return (
+      const fileName = data.fileName?.toLowerCase();
+
+      // 除錯日誌
+      console.log("檢查是否為圖片:", {
+        fileName,
+        fileType,
+        isImage:
+          fileType &&
+          ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(fileType),
+      });
+
+      // 先檢查 fileType，如果沒有則從檔名推斷
+      if (
         fileType &&
         ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(fileType)
-      );
+      ) {
+        return true;
+      }
+
+      // 從檔名推斷
+      if (fileName) {
+        const extension = fileName.split(".").pop();
+        return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(extension);
+      }
+
+      return false;
     };
   });
 
   const isPdf = computed(() => {
     return (data) => {
+      if (!data) return false;
+
+      // 檢查檔案類型
       const fileType = data.fileType?.toLowerCase();
-      return fileType === "pdf";
+      const fileName = data.fileName?.toLowerCase();
+
+      // 除錯日誌
+      console.log("檢查是否為PDF:", {
+        fileName,
+        fileType,
+        isPdf: fileType === "pdf",
+      });
+
+      // 先檢查 fileType
+      if (fileType === "pdf") {
+        return true;
+      }
+
+      // 從檔名推斷
+      if (fileName) {
+        const extension = fileName.split(".").pop();
+        return extension === "pdf";
+      }
+
+      return false;
     };
   });
 
   const isPreviewable = computed(() => {
     return (data) => {
+      if (!data) return false;
+
+      // 檢查檔案類型
       const fileType = data.fileType?.toLowerCase();
-      return [
+      const fileName = data.fileName?.toLowerCase();
+      const previewableTypes = [
         "jpg",
         "jpeg",
         "png",
@@ -56,16 +108,44 @@ export function useFileNode() {
         "xlsx",
         "ppt",
         "pptx",
-      ].includes(fileType);
+      ];
+
+      // 先檢查 fileType
+      if (fileType && previewableTypes.includes(fileType)) {
+        return true;
+      }
+
+      // 從檔名推斷
+      if (fileName) {
+        const extension = fileName.split(".").pop();
+        return previewableTypes.includes(extension);
+      }
+
+      return false;
     };
   });
 
   const showZoomControls = computed(() => {
     return (data) => {
+      if (!data) return false;
+
+      // 檢查檔案類型
       const fileType = data.fileType?.toLowerCase();
-      return ["jpg", "jpeg", "png", "gif", "webp", "svg", "pdf"].includes(
-        fileType
-      );
+      const fileName = data.fileName?.toLowerCase();
+      const zoomableTypes = ["jpg", "jpeg", "png", "gif", "webp", "svg", "pdf"];
+
+      // 先檢查 fileType
+      if (fileType && zoomableTypes.includes(fileType)) {
+        return true;
+      }
+
+      // 從檔名推斷
+      if (fileName) {
+        const extension = fileName.split(".").pop();
+        return zoomableTypes.includes(extension);
+      }
+
+      return false;
     };
   });
 

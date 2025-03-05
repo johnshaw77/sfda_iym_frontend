@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white p-2 pb-4 border-b border-gray-200">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold text-gray-800">專案統計資訊</h3>
+      <h3 class="text-lg font-semibold text-gray-800">📍 專案統計資訊</h3>
     </div>
 
     <div

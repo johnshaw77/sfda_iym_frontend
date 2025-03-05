@@ -30,7 +30,7 @@
       <div class="flex flex-col">
         <div class="flex justify-between">
           <div class="text-xl font-bold text-gray-800mb-2">
-            {{ project.name }}
+            🗂️ {{ project.name }}
             <el-tag
               class="mr-1"
               :type="getStatusType(project.status)">

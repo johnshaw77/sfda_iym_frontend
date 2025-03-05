@@ -51,7 +51,65 @@ import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
 const { showHeaderContent } = useTeleportVisibility();
 
 const flowStore = useFlowStore();
-const viewFlowMode = ref("list"); // 默認為列表模式
+const viewFlowMode = ref("flow"); // 默認為流程模式
+
+// 監聽視圖模式變化，確保麵包屑不會重置
+watch(viewFlowMode, (newMode) => {
+  console.log("視圖模式變化", newMode, "flowInstance", flowInstance.value);
+  // 如果已經載入了流程實例數據，則重新設置麵包屑
+  if (flowInstance.value) {
+    updateBreadcrumb();
+  }
+});
+
+// 更新麵包屑的輔助函數
+const updateBreadcrumb = () => {
+  console.log(
+    "更新麵包屑",
+    route.query,
+    flowInstance.value,
+    "當前視圖模式:",
+    viewFlowMode.value
+  );
+  // 檢查是否從專案詳情頁進入
+  if (route.query && route.query.from === "project") {
+    // 從專案詳情頁進入，設置專案名稱 -> 流程實例名稱的麵包屑
+    const projectName =
+      (route.query && route.query.projectName) ||
+      (flowInstance.value &&
+        flowInstance.value.project &&
+        flowInstance.value.project.name) ||
+      "專案詳情";
+    const instanceName =
+      (route.query && route.query.instanceName) ||
+      (flowInstance.value &&
+        flowInstance.value.template &&
+        flowInstance.value.template.name) ||
+      "流程實例";
+    console.log("設置麵包屑", `${projectName} / ${instanceName}`);
+
+    // 強制設置為字符串格式，確保分隔符存在
+    flowStore.setProjectName(`${projectName} / ${instanceName}`);
+    flowStore.setFromProject(true);
+    flowStore.setProjectId(
+      (route.query && route.query.projectId) ||
+        (flowInstance.value &&
+          flowInstance.value.project &&
+          flowInstance.value.project.id) ||
+        ""
+    );
+  } else {
+    // 從流程實例管理頁進入，保持原有的麵包屑
+    const instanceName =
+      (flowInstance.value &&
+        flowInstance.value.template &&
+        flowInstance.value.template.name) ||
+      "流程實例";
+    console.log("設置麵包屑", instanceName);
+    flowStore.setProjectName(instanceName);
+    flowStore.setFromProject(false);
+  }
+};
 
 const route = useRoute();
 const router = useRouter();
@@ -72,12 +130,22 @@ const loadFlowInstance = async () => {
     loading.value = true;
     const response = await getFlowInstanceById(route.params.id);
     flowInstance.value = response.data;
+    console.log("載入的流程實例數據:", flowInstance.value);
 
     // 設置專案名稱(給面包屑)
     if (flowInstance.value) {
-      flowStore.setProjectName(
-        `${flowInstance.value.project.name}-- status ${flowInstance.value}`
-      );
+      // 確保無論當前視圖模式是什麼，都正確設置麵包屑
+      updateBreadcrumb();
+
+      // 強制觸發一次麵包屑更新
+      nextTick(() => {
+        console.log("強制更新麵包屑");
+        const tempName = flowStore.projectName;
+        flowStore.setProjectName("");
+        setTimeout(() => {
+          flowStore.setProjectName(tempName);
+        }, 10);
+      });
     }
   } catch (error) {
     console.error("載入數據失敗:", error);
@@ -155,7 +223,14 @@ const handleDelete = async () => {
 };
 
 onMounted(() => {
-  loadFlowInstance();
+  console.log("組件掛載，當前視圖模式:", viewFlowMode.value);
+  loadFlowInstance().then(() => {
+    console.log("數據載入完成，當前視圖模式:", viewFlowMode.value);
+    // 確保在數據載入完成後，無論當前視圖模式是什麼，都正確設置麵包屑
+    if (flowInstance.value) {
+      updateBreadcrumb();
+    }
+  });
 });
 </script>
 

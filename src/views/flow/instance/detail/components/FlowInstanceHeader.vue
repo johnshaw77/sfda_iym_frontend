@@ -2,14 +2,26 @@
   <Teleport
     to="#header-actions"
     v-if="showHeaderContent">
+    <!-- 返回按鈕 -->
+    <el-button
+      plain
+      type="default"
+      @click="handleBack"
+      class="mr-2">
+      <ArrowLeft
+        class="mr-1"
+        :size="16" />
+      返回
+    </el-button>
+
     <el-button
       plain
       link
-      type="primary"
-      @click="viewFlowMode = !viewFlowMode">
+      type="primary">
       <el-segmented
         v-model="viewFlowMode"
         :options="viewModeoptions"
+        @change="handleModeChange"
         block>
         <template #default="scope">
           <div class="flex align-center justify-center">
@@ -26,7 +38,11 @@
 </template>
 
 <script setup>
-import { GitBranch, List } from "lucide-vue-next";
+import { GitBranch, List, ArrowLeft } from "lucide-vue-next";
+import { useTeleportVisibility } from "@/composables/useTeleportVisibility";
+import { useFlowStore } from "@/stores/flowStore";
+import { useRouter, useRoute } from "vue-router";
+import { nextTick } from "vue";
 
 const props = defineProps({
   showHeaderContent: {
@@ -41,6 +57,10 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue"]);
 
+const flowStore = useFlowStore();
+const router = useRouter();
+const route = useRoute();
+
 const viewModeoptions = [
   { label: "流程", value: "flow", icon: GitBranch },
   { label: "列表", value: "list", icon: List },
@@ -50,4 +70,32 @@ const viewFlowMode = computed({
   get: () => props.modelValue,
   set: (val) => emit("update:modelValue", val),
 });
+
+// 處理模式變化
+const handleModeChange = (val) => {
+  console.log("模式變化", val);
+  emit("update:modelValue", val);
+
+  // 強制觸發一次麵包屑更新
+  nextTick(() => {
+    console.log("模式變化後強制更新麵包屑");
+    const tempName = flowStore.projectName;
+    flowStore.setProjectName("");
+    setTimeout(() => {
+      flowStore.setProjectName(tempName);
+    }, 10);
+  });
+};
+
+// 處理返回
+const handleBack = () => {
+  // 檢查是否從專案詳情頁進入
+  if (flowStore.fromProject && flowStore.projectId) {
+    // 返回專案詳情頁
+    router.push(`/projects/${flowStore.projectId}`);
+  } else {
+    // 返回流程實例列表
+    router.push("/flow-instances");
+  }
+};
 </script>

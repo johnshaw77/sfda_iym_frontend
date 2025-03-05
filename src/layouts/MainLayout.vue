@@ -90,11 +90,9 @@ const cachedViews = computed(() => {
 // 生成麵包屑
 const breadcrumbs = computed(() => {
   const matched = route.matched;
-
   const result = [];
 
   matched.forEach((route) => {
-    console.log("route", route);
     // 優先處理工作流程範本設計頁面
     if (route.name === "FlowTemplateDesign") {
       result.push({
@@ -103,20 +101,74 @@ const breadcrumbs = computed(() => {
       });
       result.push({
         //path: route.path,
-        title: flowTemplateStore.templateName + " 設計" || "載入中...",
+        title: flowTemplateStore.templateName + " 設計" || "工作流程範本設計",
       });
     }
     // 優先處理工作流程實例詳情頁面
     else if (route.name === "FlowInstanceDetail") {
-      console.log("FlowInstanceDetailPath", route);
-      result.push({
-        path: "/flow-instances",
-        title: "工作流程實例",
-      });
-      result.push({
-        //path: route.path,
-        title: flowStore.projectName || "載入中...",
-      });
+      console.log(
+        "生成麵包屑",
+        "flowStore.projectName:",
+        flowStore.projectName,
+        "flowStore.fromProject:",
+        flowStore.fromProject,
+        "flowStore.projectId:",
+        flowStore.projectId,
+        "當前路由:",
+        route.fullPath
+      );
+
+      // 檢查是否從專案詳情頁進入
+      if (flowStore.fromProject) {
+        // 從專案詳情頁進入，顯示 專案管理 -> 專案名稱 -> 流程實例名稱
+        const projectNameWithInstance = flowStore.projectName || "";
+        console.log("projectNameWithInstance:", projectNameWithInstance);
+
+        let projectName = "專案詳情";
+        let instanceName = "流程實例";
+
+        if (projectNameWithInstance.includes(" / ")) {
+          const parts = projectNameWithInstance.split(" / ");
+          projectName = parts[0] || "專案詳情";
+          instanceName = parts[1] || "流程實例";
+        } else {
+          // 如果沒有分隔符，則整個字符串作為專案名稱
+          projectName = projectNameWithInstance || "專案詳情";
+          console.log("無分隔符 - projectName:", projectName);
+
+          // 嘗試從查詢參數獲取實例名稱(!TODO: 這邊有點怪怪的，如果從專案詳情頁進入，查詢參數會是空的)
+          if (route.query && route.query.instanceName) {
+            instanceName = route.query.instanceName;
+            console.log("從查詢參數獲取實例名稱:", instanceName);
+          }
+        }
+        result.push({
+          path: "/projects",
+          title: "專案管理",
+        });
+        result.push({
+          path: `/projects/${flowStore.projectId}`,
+          title: projectName,
+        });
+        result.push({
+          title: instanceName,
+        });
+      } else {
+        // 從流程實例管理頁進入，顯示 流程實例管理 -> 流程實例名稱
+        console.log(
+          "從流程實例管理頁進入",
+          "flowStore.projectName:",
+          flowStore.projectName
+        );
+
+        result.push({
+          path: "/flow-instances",
+          title: "工作流程實例",
+        });
+        result.push({
+          title: flowStore.projectName || "流程實例詳情",
+        });
+      }
     }
     // 優先處理專案詳情頁面
     else if (route.name === "project-detail") {

@@ -4,7 +4,7 @@
     nodeType="statistic-process"
     :title="title"
     :description="description"
-    :icon="icon"
+    icon="BarChart2"
     :status="status"
     :selected="selected"
     header-bg-color="#bfdeee"
@@ -86,11 +86,6 @@ const props = defineProps({
     default: false,
   },
 });
-
-// 視覺相關設定
-const headerBgColor = ref("#ff704d"); // 淺綠色背景
-const headerBorderColor = ref("#cfcfcf"); // 淺紅色邊框
-const icon = BarChart2;
 
 // 連接點配置
 const handles = {

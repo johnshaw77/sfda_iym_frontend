@@ -256,6 +256,7 @@ import NodeHandles from "./NodeHandles.vue";
 import { NodeResizer } from "@vue-flow/node-resizer";
 import "@vue-flow/node-resizer/dist/style.css";
 import { useFlowInstance } from "@/composables/useFlowInstance";
+import { Box, ChevronUp } from "lucide-vue-next";
 
 // 定義 props
 const props = defineProps({

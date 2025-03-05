@@ -230,7 +230,16 @@ const handleSubmit = async (formData) => {
 
 // 處理查看流程實例
 const handleViewInstance = (instance) => {
-  router.push(`/flow-instances/${instance.id}`);
+  console.log("查看流程實例", instance);
+  router.push({
+    path: `/flow-instances/${instance.id}`,
+    query: {
+      from: "project",
+      projectId: projectId.value,
+      projectName: project.value.name,
+      instanceName: instance.template?.name || "流程實例",
+    },
+  });
 };
 
 // 處理創建流程實例

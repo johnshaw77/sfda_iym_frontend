@@ -374,7 +374,7 @@ watch(previewVisible, (newValue) => {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 }
 
@@ -403,6 +403,7 @@ watch(previewVisible, (newValue) => {
   align-items: center;
   justify-content: center;
   background-color: #f8fafc;
+  border: 1px solid #e5e7eb;
 }
 
 .preview-image {
@@ -412,15 +413,20 @@ watch(previewVisible, (newValue) => {
 }
 
 .icon-wrapper {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background-color: #f8fafc;
-  margin-bottom: 8px;
+  background-color: #f0f9ff;
+  margin-bottom: 12px;
   position: relative;
+  border: 1px solid #e0f2fe;
+}
+
+.file-icon {
+  color: #0ea5e9;
 }
 
 .upload-overlay {
@@ -447,6 +453,7 @@ watch(previewVisible, (newValue) => {
   font-weight: 500;
   margin-bottom: 4px;
   word-break: break-word;
+  color: #1e293b;
 }
 
 .file-size {
@@ -459,6 +466,11 @@ watch(previewVisible, (newValue) => {
   display: flex;
   justify-content: center;
   gap: 8px;
+  margin-top: 8px;
+}
+
+.file-actions .el-button {
+  padding: 4px 8px;
 }
 
 /* 預覽對話框樣式 */
