@@ -43,7 +43,7 @@ export const useFlowStore = defineStore("flow", () => {
 
   // 設置專案名稱
   function setProjectName(name) {
-    console.log("設置專案名稱", name);
+    console.log("設置專案名稱1111111", name);
     projectName.value = name;
   }
 

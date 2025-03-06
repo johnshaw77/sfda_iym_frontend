@@ -106,22 +106,11 @@ const breadcrumbs = computed(() => {
     }
     // 優先處理工作流程實例詳情頁面
     else if (route.name === "FlowInstanceDetail") {
-      console.log(
-        "生成麵包屑",
-        "flowStore.projectName:",
-        flowStore.projectName,
-        "flowStore.fromProject:",
-        flowStore.fromProject,
-        "flowStore.projectId:",
-        flowStore.projectId,
-        "當前路由:",
-        route.fullPath
-      );
-
       // 檢查是否從專案詳情頁進入
       if (flowStore.fromProject) {
         // 從專案詳情頁進入，顯示 專案管理 -> 專案名稱 -> 流程實例名稱
         const projectNameWithInstance = flowStore.projectName || "";
+        console.log("flowStore.projectName:", flowStore.projectName);
         console.log("projectNameWithInstance:", projectNameWithInstance);
 
         let projectName = "專案詳情";

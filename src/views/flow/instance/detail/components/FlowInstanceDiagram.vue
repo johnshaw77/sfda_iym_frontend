@@ -177,8 +177,9 @@ onUnmounted(() => {
 });
 
 onMounted(() => {
-  console.log("flowInstance", props.flowInstance);
-  flowStore.setCurrentInstance(props.flowInstance);
+  // TODO: 不設置了，不然會搶了面包屑
+  // console.log("flowInstance", props.flowInstance);
+  // flowStore.setCurrentInstance(props.flowInstance);
 });
 </script>
 

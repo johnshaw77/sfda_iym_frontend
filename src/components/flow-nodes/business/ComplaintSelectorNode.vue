@@ -201,6 +201,7 @@ import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { createFlowInstance } from "@/api/modules/flow";
 import { useFlowInstance } from "@/composables/useFlowInstance";
+import { Box } from "@element-plus/icons-vue";
 
 const props = defineProps({
   id: {
