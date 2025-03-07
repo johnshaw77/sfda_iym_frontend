@@ -73,6 +73,7 @@ export default defineConfig({
     },
   },
   build: {
+    sourcemap: true, // 啟用 Source Maps,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -80,6 +81,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  server: {
+    sourcemap: true, // 確保在開發環境下生成 Source Maps
   },
   optimizeDeps: {
     include: ["pdfjs-dist"],

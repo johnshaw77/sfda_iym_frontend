@@ -55,59 +55,32 @@ const viewFlowMode = ref("flow"); // 默認為流程模式
 
 // 監聽視圖模式變化，確保麵包屑不會重置
 watch(viewFlowMode, (newMode) => {
-  console.log("視圖模式變化", newMode, "flowInstance", flowInstance.value);
+  // console.log("視圖模式變化", newMode, "flowInstance", flowInstance.value);
   // 如果已經載入了流程實例數據，則重新設置麵包屑
   if (flowInstance.value) {
-    updateBreadcrumb();
+    updateBreadcrumb(false); // 傳入 false 表示不需要重新載入專案資訊
   }
 });
 
 // 更新麵包屑的輔助函數
-const updateBreadcrumb = () => {
-  console.log(
-    "更新麵包屑",
-    route.query,
-    flowInstance.value,
-    "當前視圖模式:",
-    viewFlowMode.value
-  );
-  // 檢查是否從專案詳情頁進入
-  if (route.query && route.query.from === "project") {
-    // 從專案詳情頁進入，設置專案名稱 -> 流程實例名稱的麵包屑
-    const projectName =
-      (route.query && route.query.projectName) ||
-      (flowInstance.value &&
-        flowInstance.value.project &&
-        flowInstance.value.project.name) ||
-      "專案詳情";
-    const instanceName =
-      (route.query && route.query.instanceName) ||
-      (flowInstance.value &&
-        flowInstance.value.template &&
-        flowInstance.value.template.name) ||
-      "流程實例";
-    console.log("設置麵包屑", `${projectName} / ${instanceName}`);
+const updateBreadcrumb = (shouldLoadProject = true) => {
+  // 使用 setBreadcrumbInstance 設置麵包屑使用的流程實例
+  if (flowInstance.value) {
+    // 檢查是否從專案詳情頁進入
+    const fromProject = route.query && route.query.from === "project";
 
-    // 強制設置為字符串格式，確保分隔符存在
-    flowStore.setProjectName(`${projectName} / ${instanceName}`);
-    flowStore.setFromProject(true);
-    flowStore.setProjectId(
-      (route.query && route.query.projectId) ||
-        (flowInstance.value &&
-          flowInstance.value.project &&
-          flowInstance.value.project.id) ||
-        ""
-    );
-  } else {
-    // 從流程實例管理頁進入，保持原有的麵包屑
-    const instanceName =
-      (flowInstance.value &&
-        flowInstance.value.template &&
-        flowInstance.value.template.name) ||
-      "流程實例";
-    console.log("設置麵包屑", instanceName);
-    flowStore.setProjectName(instanceName);
-    flowStore.setFromProject(false);
+    // 設置麵包屑使用的流程實例
+    // 如果不需要重新載入專案資訊，則傳入 noLoadProject 參數
+    flowStore.setBreadcrumbInstance(flowInstance.value, {
+      fromProject,
+      noLoadProject: !shouldLoadProject,
+    });
+
+    console.log("已更新麵包屑路徑", {
+      breadcrumbPath: flowStore.getBreadcrumbPath,
+      fromProject,
+      shouldLoadProject,
+    });
   }
 };
 
@@ -132,20 +105,10 @@ const loadFlowInstance = async () => {
     flowInstance.value = response.data;
     console.log("載入的流程實例數據:", flowInstance.value);
 
-    // 設置專案名稱(給面包屑)
+    // 設置麵包屑
     if (flowInstance.value) {
       // 確保無論當前視圖模式是什麼，都正確設置麵包屑
       updateBreadcrumb();
-
-      // 強制觸發一次麵包屑更新
-      nextTick(() => {
-        console.log("強制更新麵包屑");
-        const tempName = flowStore.projectName;
-        flowStore.setProjectName("");
-        setTimeout(() => {
-          flowStore.setProjectName(tempName);
-        }, 10);
-      });
     }
   } catch (error) {
     console.error("載入數據失敗:", error);
@@ -223,9 +186,7 @@ const handleDelete = async () => {
 };
 
 onMounted(() => {
-  console.log("組件掛載，當前視圖模式:", viewFlowMode.value);
   loadFlowInstance().then(() => {
-    console.log("數據載入完成，當前視圖模式:", viewFlowMode.value);
     // 確保在數據載入完成後，無論當前視圖模式是什麼，都正確設置麵包屑
     if (flowInstance.value) {
       updateBreadcrumb();

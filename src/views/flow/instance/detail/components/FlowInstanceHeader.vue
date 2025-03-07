@@ -75,16 +75,6 @@ const viewFlowMode = computed({
 const handleModeChange = (val) => {
   console.log("模式變化", val);
   emit("update:modelValue", val);
-
-  // 強制觸發一次麵包屑更新
-  nextTick(() => {
-    console.log("模式變化後強制更新麵包屑");
-    const tempName = flowStore.projectName;
-    flowStore.setProjectName("");
-    setTimeout(() => {
-      flowStore.setProjectName(tempName);
-    }, 10);
-  });
 };
 
 // 處理返回

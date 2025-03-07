@@ -35,13 +35,21 @@ export const createFlowInstance = (data) => {
 /**
  * 更新流程實例
  * @param {string} id - 流程實例ID
- * @param {Object} data - 更新數據
+ * @param {object} data - 更新數據
  * @returns {Promise} - 請求Promise
  */
 export const updateFlowInstance = (id, data) => {
+  // 檢查是否只更新節點數據或狀態
+  const isDataUpdate =
+    data.nodeData !== undefined ||
+    data.nodeStates !== undefined ||
+    data.logs !== undefined ||
+    data.context !== undefined; // 上下文更新也視為數據更新
+
   return request({
     url: `/flow-instances/${id}`,
     method: "put",
+    params: isDataUpdate ? { _isDataUpdate: true } : undefined,
     data,
   });
 };
@@ -63,7 +71,7 @@ export const deleteFlowInstance = (instanceId, force = false) => {
 export const startFlowInstance = (instanceId) => {
   return request({
     url: `/flow-instances/${instanceId}/start`,
-    method: "post",
+    method: "put",
   });
 };
 

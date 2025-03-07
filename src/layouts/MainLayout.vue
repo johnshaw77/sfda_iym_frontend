@@ -106,57 +106,44 @@ const breadcrumbs = computed(() => {
     }
     // 優先處理工作流程實例詳情頁面
     else if (route.name === "FlowInstanceDetail") {
-      // 檢查是否從專案詳情頁進入
-      if (flowStore.fromProject) {
-        // 從專案詳情頁進入，顯示 專案管理 -> 專案名稱 -> 流程實例名稱
-        const projectNameWithInstance = flowStore.projectName || "";
-        console.log("flowStore.projectName:", flowStore.projectName);
-        console.log("projectNameWithInstance:", projectNameWithInstance);
+      // 使用新的麵包屑路徑管理
+      const breadcrumbPath = flowStore.getBreadcrumbPath;
 
-        let projectName = "專案詳情";
-        let instanceName = "流程實例";
-
-        if (projectNameWithInstance.includes(" / ")) {
-          const parts = projectNameWithInstance.split(" / ");
-          projectName = parts[0] || "專案詳情";
-          instanceName = parts[1] || "流程實例";
-        } else {
-          // 如果沒有分隔符，則整個字符串作為專案名稱
-          projectName = projectNameWithInstance || "專案詳情";
-          console.log("無分隔符 - projectName:", projectName);
-
-          // 嘗試從查詢參數獲取實例名稱(!TODO: 這邊有點怪怪的，如果從專案詳情頁進入，查詢參數會是空的)
-          if (route.query && route.query.instanceName) {
-            instanceName = route.query.instanceName;
-            console.log("從查詢參數獲取實例名稱:", instanceName);
-          }
-        }
-        result.push({
-          path: "/projects",
-          title: "專案管理",
-        });
-        result.push({
-          path: `/projects/${flowStore.projectId}`,
-          title: projectName,
-        });
-        result.push({
-          title: instanceName,
+      if (breadcrumbPath && breadcrumbPath.length > 0) {
+        // 使用 flowStore 中設置的麵包屑路徑
+        breadcrumbPath.forEach((item) => {
+          result.push({
+            path: item.path,
+            title: item.name,
+          });
         });
       } else {
-        // 從流程實例管理頁進入，顯示 流程實例管理 -> 流程實例名稱
-        console.log(
-          "從流程實例管理頁進入",
-          "flowStore.projectName:",
-          flowStore.projectName
-        );
-
-        result.push({
-          path: "/flow-instances",
-          title: "工作流程實例",
-        });
-        result.push({
-          title: flowStore.projectName || "流程實例詳情",
-        });
+        // 如果沒有設置麵包屑路徑，則使用默認的麵包屑
+        // 檢查是否從專案詳情頁進入
+        if (flowStore.fromProject) {
+          // 從專案詳情頁進入，顯示 專案管理 -> 專案名稱 -> 流程實例名稱
+          result.push({
+            path: "/projects",
+            title: "專案管理",
+          });
+          result.push({
+            path: `/projects/${flowStore.projectId}`,
+            title: flowStore.breadcrumbInstance?.project?.name || "專案詳情",
+          });
+          result.push({
+            title: flowStore.breadcrumbInstance?.template?.name || "流程實例",
+          });
+        } else {
+          // 從流程實例管理頁進入，顯示 流程實例管理 -> 流程實例名稱
+          result.push({
+            path: "/flow-instances",
+            title: "工作流程實例",
+          });
+          result.push({
+            title:
+              flowStore.breadcrumbInstance?.template?.name || "流程實例詳情",
+          });
+        }
       }
     }
     // 優先處理專案詳情頁面

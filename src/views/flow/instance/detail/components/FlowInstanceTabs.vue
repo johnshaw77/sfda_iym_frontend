@@ -75,17 +75,26 @@
           class="custom-json-viewer" />
       </el-card>
     </el-tab-pane>
+
+    <el-tab-pane
+      label="任務列表"
+      name="tasks">
+      <el-card>
+        <flow-task-list
+          :nodes="flowInstance?.nodes"
+          :edges="flowInstance?.edges" />
+      </el-card>
+    </el-tab-pane>
   </el-tabs>
 </template>
 
 <script setup>
 import { formatTimestamp } from "@/utils/dateUtils";
-import { Download } from "lucide-vue-next";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
-
+import FlowTaskList from "./FlowTaskList.vue";
 const props = defineProps({
   flowInstance: {
     type: Object,

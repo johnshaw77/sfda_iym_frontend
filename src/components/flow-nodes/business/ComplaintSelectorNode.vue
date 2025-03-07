@@ -4,10 +4,12 @@
     :title="title"
     nodeType="custom-input"
     :description="description"
-    :icon="icon"
+    icon="TextCursorInput"
     :status="status"
     :selected="selected"
     header-bg-color="#fee08b"
+    :min-height="600"
+    :auto-height="autoHeight"
     @click="handleNodeClick"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
@@ -156,7 +158,7 @@
             :key="index"
             class="text-xs p-1 border-b border-gray-200">
             <div class="flex justify-between">
-              <span>{{ formatTime(record.timestamp) }}</span>
+              <span>{{ formatTimestamp(record.timestamp) }}</span>
               <el-tag
                 size="small"
                 :type="record.success ? 'success' : 'danger'">
@@ -202,6 +204,7 @@ import { storeToRefs } from "pinia";
 import { createFlowInstance } from "@/api/modules/flow";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { Box } from "@element-plus/icons-vue";
+import { formatTimestamp } from "@/utils/dateUtils";
 
 const props = defineProps({
   id: {
@@ -223,6 +226,14 @@ const props = defineProps({
   icon: {
     type: Object,
     default: () => Box,
+  },
+  minHeight: {
+    type: Number,
+    default: 500,
+  },
+  autoHeight: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -336,13 +347,6 @@ const toggleErrorDetails = () => {
   showErrorDetails.value = !showErrorDetails.value;
 };
 
-// 格式化時間
-const formatTime = (timestamp) => {
-  if (!timestamp) return "";
-  const date = new Date(timestamp);
-  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-};
-
 // 格式化錯誤信息，使其更簡潔友好
 const formatErrorMessage = (message) => {
   if (!message) return "未知錯誤";
@@ -398,7 +402,7 @@ const handleRun = async () => {
       inputData,
       async (input) => {
         // 模擬處理過程
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
 
         // 返回處理結果
         return {
@@ -457,8 +461,8 @@ onMounted(async () => {
   if (previousSelection) {
     console.log("找到之前選擇的客訴單號:", previousSelection);
     // 可以選擇是否要恢復之前的選擇
-    // selectedComplaint.value = previousSelection.id;
-    // complaintDetail.value = previousSelection.detail;
+    selectedComplaint.value = previousSelection.id;
+    complaintDetail.value = previousSelection.detail;
   }
 });
 

@@ -58,7 +58,7 @@ export function useFlowInstance() {
     error.value = null;
 
     try {
-      console.log("創建臨時測試實例...");
+      console.log("ensureFlowInstance...");
 
       // 創建臨時實例數據
       const tempInstance = {
@@ -109,38 +109,6 @@ export function useFlowInstance() {
     try {
       // 確保有流程實例
       const instance = await ensureFlowInstance({ id: nodeId });
-
-      // 檢查流程實例狀態，如果不是暫停狀態，則嘗試暫停
-      if (instance.status !== "paused") {
-        console.log(`流程實例狀態為 ${instance.status}，嘗試暫停...`);
-        try {
-          // 添加防抖，避免多次調用
-          if (!window._pauseInstancePromise) {
-            window._pauseInstancePromise = flowStore
-              .pauseInstance(instance.id)
-              .then((result) => {
-                console.log("流程實例已暫停");
-                window._pauseInstancePromise = null;
-                return result;
-              })
-              .catch((error) => {
-                console.error("暫停流程實例失敗:", error);
-                window._pauseInstancePromise = null;
-                throw error;
-              });
-          }
-
-          await window._pauseInstancePromise;
-
-          // 重新獲取實例以確保狀態已更新
-          await flowStore.loadInstance(instance.id);
-        } catch (pauseError) {
-          console.error("暫停流程實例失敗:", pauseError);
-          throw new Error(
-            "執行節點前無法暫停流程實例: " + (pauseError.message || "未知錯誤")
-          );
-        }
-      }
 
       // 更新流程上下文中的執行歷史
       await updateFlowContextField("executionHistory", (history = []) => {
@@ -319,7 +287,7 @@ export function useFlowInstance() {
 
       // 獲取當前上下文
       const currentContext = flowStore.currentInstance.context || {};
-
+      console.log("currentContext", currentContext);
       // 獲取當前字段值
       const currentValue = currentContext[field];
 
@@ -333,9 +301,10 @@ export function useFlowInstance() {
         [field]: newValue,
       };
 
-      // 更新流程實例
+      // 更新流程實例，標記為數據更新而不是結構更新
       await flowStore.updateInstance(flowStore.currentInstance.id, {
         context: updatedContext,
+        _isDataUpdate: true, // 添加標記，表示這是數據更新而不是結構更新
       });
 
       console.log(`流程上下文字段 ${field} 已更新`);

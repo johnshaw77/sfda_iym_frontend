@@ -54,6 +54,7 @@ export function useFlowNodes() {
     event.dataTransfer.setData(
       "application/vueflow",
       JSON.stringify({
+        name: node.name,
         type: node.componentName.replace(".vue", ""),
         componentName: node.componentName,
         label: node.label,
@@ -91,6 +92,7 @@ export function useFlowNodes() {
       type: nodeData.componentName.replace(".vue", ""), // 使用 componentName 作為節點類型
       position,
       data: {
+        name: nodeData.name, // TODO: why label ?
         label: nodeData.name,
         type: nodeData.type,
         icon: nodeData.icon,
@@ -158,13 +160,6 @@ export function useFlowNodes() {
           analysisType: "",
           parameters: {},
           modelType: "",
-        };
-      case "http-request":
-        return {
-          method: "GET",
-          endpoint: "",
-          headers: {},
-          body: {},
         };
       default:
         return {};

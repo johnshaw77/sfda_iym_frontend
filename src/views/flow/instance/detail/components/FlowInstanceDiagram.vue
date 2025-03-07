@@ -92,7 +92,10 @@ import { FileText, Settings, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 import { useFlowStore } from "@/stores/flowStore";
+import { useRoute } from "vue-router";
+
 const flowStore = useFlowStore();
+const route = useRoute();
 
 const props = defineProps({
   flowInstance: {
@@ -177,9 +180,26 @@ onUnmounted(() => {
 });
 
 onMounted(() => {
-  // TODO: 不設置了，不然會搶了面包屑
-  // console.log("flowInstance", props.flowInstance);
-  // flowStore.setCurrentInstance(props.flowInstance);
+  // 設置當前流程實例（用於節點操作和數據處理）
+  flowStore.setCurrentInstance(props.flowInstance);
+
+  // 設置麵包屑使用的流程實例（僅提取必要資訊）
+  // 檢查是否從專案詳情頁進入
+  const fromProject = route.query && route.query.from === "project";
+
+  // 由於 setCurrentInstance 已經設置了專案 ID，這裡不需要再次載入專案資訊
+  flowStore.setBreadcrumbInstance(props.flowInstance, {
+    fromProject,
+    noLoadProject: true, // 避免重複載入專案資訊
+  });
+
+  console.log("已設置流程實例", {
+    currentInstance: flowStore.currentInstance,
+    breadcrumbInstance: flowStore.breadcrumbInstance,
+    breadcrumbPath: flowStore.getBreadcrumbPath,
+  });
+
+  // 初始化時檢查是否需要高亮節點
 });
 </script>
 

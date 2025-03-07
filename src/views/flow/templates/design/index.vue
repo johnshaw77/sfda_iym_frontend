@@ -135,7 +135,7 @@ import { VueFlow, Panel, useVueFlow, ConnectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 
-import EdgeWithButton from "../../../../components/flow-nodes/base/EdgeWithButton.vue";
+import EdgeWithButton from "@/components/flow-nodes/base/EdgeWithButton.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";

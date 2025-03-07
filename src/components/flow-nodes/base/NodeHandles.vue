@@ -103,11 +103,11 @@ onMounted(() => {});
 
 <style scoped>
 .node-handles {
-  @apply absolute inset-0 pointer-events-none;
+  @apply absolute inset-0 pointer-events-none z-50;
 }
 
 .handle {
-  @apply transition-all duration-200 pointer-events-auto;
+  @apply transition-all duration-200 pointer-events-auto z-50;
 }
 
 .handle:hover {
@@ -120,12 +120,12 @@ onMounted(() => {});
 
 /* 輸入連接點樣式（方形） */
 .handle-input {
-  @apply !w-3 !h-8 bg-gray-500 rounded-none;
+  @apply !w-3 !h-8 bg-gray-300 rounded-none;
 }
 
 /* 輸出連接點樣式（圓形） */
 .handle-output {
-  @apply !w-4 !h-4 bg-gray-500 rounded-full;
+  @apply !w-4 !h-4 bg-gray-300 rounded-full;
 }
 
 /* 位置相關樣式 */

@@ -11,7 +11,11 @@
       'flow-node--completed': status === 'completed',
       'flow-node--error': status === 'error' || status === 'failed',
     }"
-    :style="{ width: `${nodeWidth}px`, height: `${nodeHeight}px` }">
+    :style="{
+      width: `${nodeWidth}px`,
+      height: autoHeight ? 'auto' : `${nodeHeight}px`,
+    }"
+    ref="nodeWrapperRef">
     <!-- 顯示 resize 手柄 -->
     <NodeResizer
       v-if="showResizer"
@@ -42,6 +46,7 @@
             :class="[iconClasses[nodeType] || 'text-gray-600']"
             :size="32" />
           <span class="text-lg font-medium text-gray-900">{{ title }}</span>
+          Status: {{ status }}
         </div>
         <!-- 展開時的摺疊按鈕 -->
         <button
@@ -64,7 +69,8 @@
     <!-- 節點內容 -->
     <div
       class="node-content relative"
-      :style="contentStyle">
+      :style="contentStyle"
+      ref="nodeContentRef">
       <!-- 大圖示區域 -->
       <div
         v-show="!isExpanded"
@@ -106,12 +112,12 @@
             >執行</el-button
           >
 
-          <!-- <el-tag
+          <el-tag
             :type="statusType"
             size="small"
             :class="{ 'animate-pulse': nodeState.status === 'running' }">
             {{ statusText }}
-          </el-tag> -->
+          </el-tag>
         </div>
       </div>
     </div>
@@ -257,6 +263,7 @@ import { NodeResizer } from "@vue-flow/node-resizer";
 import "@vue-flow/node-resizer/dist/style.css";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { Box, ChevronUp } from "lucide-vue-next";
+import { onMounted, onUnmounted, ref, computed, watch, nextTick } from "vue";
 
 // 定義 props
 const props = defineProps({
@@ -346,6 +353,11 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  // 是否自動調整高度
+  autoHeight: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const flowStore = useFlowStore();
@@ -391,7 +403,6 @@ const headerClasses = {
   "data-input": "bg-blue-50 border-blue-100",
   "data-process": "bg-green-50 border-green-100",
   "data-output": "bg-purple-50 border-purple-100",
-  "api-request": "bg-orange-50 border-orange-100",
 };
 
 // 圖標顏色映射 TODO:modify this
@@ -400,7 +411,6 @@ const iconClasses = {
   "data-input": "text-blue-600",
   "data-process": "text-green-600",
   "data-output": "text-purple-600",
-  "api-request": "text-orange-600",
 };
 
 const defaultHandles = computed(() => {
@@ -504,13 +514,13 @@ const handleRun = async () => {
   // 實際的執行邏輯應該由子類別通過監聽 run 事件來實現
 };
 
-// 定義事件
+// 定義 emits
 const emit = defineEmits([
   "click",
+  "run",
   "handle-connect",
   "handle-disconnect",
-  "update:data",
-  "run",
+  "nodeSizeChange", // 添加節點尺寸變化事件
 ]);
 
 // 處理連接事件
@@ -646,6 +656,106 @@ const formatExecutionTime = (time) => {
   return `${time.toFixed(2)}秒`;
 };
 
+// 節點包裝器引用
+const nodeWrapperRef = ref(null);
+// 節點內容引用
+const nodeContentRef = ref(null);
+// ResizeObserver 實例
+let resizeObserver = null;
+
+// 更新節點高度
+const updateNodeHeight = async () => {
+  if (!props.autoHeight || !nodeWrapperRef.value || !nodeContentRef.value)
+    return;
+
+  await nextTick();
+
+  // 獲取內容高度
+  const contentHeight = nodeContentRef.value.scrollHeight;
+  // 獲取節點頭部高度
+  const headerHeight =
+    nodeWrapperRef.value.querySelector(".node-header")?.offsetHeight || 0;
+  // 獲取節點狀態區域高度
+  const statusHeight =
+    nodeWrapperRef.value.querySelector(".node-status")?.offsetHeight || 0;
+
+  // 計算總高度，加上一些額外的間距
+  const totalHeight = contentHeight + headerHeight + statusHeight + 20;
+
+  // 確保高度不小於最小高度
+  const finalHeight = Math.max(totalHeight, props.minHeight);
+
+  console.log(`節點 ${props.id} 高度計算:`, {
+    contentHeight,
+    headerHeight,
+    statusHeight,
+    totalHeight,
+    finalHeight,
+  });
+
+  // 更新節點高度
+  if (nodeWrapperRef.value) {
+    nodeWrapperRef.value.style.height = `${finalHeight}px`;
+  }
+
+  // 通知 Vue Flow 節點尺寸已變更
+  emit("nodeSizeChange", { id: props.id, height: finalHeight });
+};
+
+// 監聽內容變化
+watch(
+  () => props.isExpanded,
+  async () => {
+    await nextTick();
+    updateNodeHeight();
+  },
+  { immediate: true }
+);
+
+// 監聽節點選擇狀態變化
+watch(
+  () => props.selected,
+  async () => {
+    await nextTick();
+    updateNodeHeight();
+  },
+  { immediate: true }
+);
+
+// 監聽節點狀態變化
+watch(
+  () => props.status,
+  async () => {
+    await nextTick();
+    updateNodeHeight();
+  },
+  { immediate: true }
+);
+
+// 監聽節點內容變化
+onMounted(() => {
+  nextTick(() => {
+    updateNodeHeight();
+
+    // 創建 ResizeObserver 來監聽內容尺寸變化
+    if (window.ResizeObserver && nodeContentRef.value) {
+      resizeObserver = new ResizeObserver(() => {
+        updateNodeHeight();
+      });
+
+      resizeObserver.observe(nodeContentRef.value);
+    }
+  });
+});
+
+// 清理 ResizeObserver
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+});
+
 // 暴露方法和屬性
 defineExpose({
   nodeState,
@@ -659,8 +769,9 @@ defineExpose({
 
 <style scoped>
 .node-wrapper {
-  @apply bg-white rounded-lg border transition-all duration-200 min-w-[200px];
-  box-shadow: 0 1px 13px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  @apply relative bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col;
+  transition: all 0.3s ease;
+  min-height: v-bind('minHeight + "px"');
 }
 
 .node-wrapper:hover {
@@ -680,7 +791,8 @@ defineExpose({
 }
 
 .node-content {
-  @apply relative overflow-hidden;
+  @apply relative overflow-visible;
+  min-height: 50px;
 }
 
 .node-status {
@@ -888,5 +1000,21 @@ defineExpose({
   100% {
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
   }
+}
+
+/* 確保連結點能夠正確顯示 */
+:deep(.vue-flow__handle) {
+  z-index: 50;
+  position: absolute;
+}
+
+:deep(.vue-flow__handle.left) {
+  left: 0;
+  transform: translateX(-50%);
+}
+
+:deep(.vue-flow__handle.right) {
+  right: 0;
+  transform: translateX(50%);
 }
 </style>
