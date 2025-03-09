@@ -21,7 +21,27 @@
           :alt="decodedFileNameValue"
           class="preview-image" />
       </div>
-      <!-- 上傳中或非圖片類型顯示圖標 -->
+      <!-- 影片預覽 - 只在上傳完成且是影片類型時顯示 -->
+      <div
+        v-else-if="isVideoFile && data.uploadProgress === 100"
+        class="node-preview"
+        @click.stop="handlePreviewFile">
+        <div class="video-overlay">
+          <Play
+            :size="24"
+            class="play-icon" />
+        </div>
+        <video
+          ref="nodeVideoRef"
+          :src="data.fileUrl"
+          class="preview-video"
+          preload="metadata"
+          muted
+          disablePictureInPicture
+          disableRemotePlayback
+          @loadedmetadata="captureVideoThumbnail"></video>
+      </div>
+      <!-- 上傳中或非圖片/影片類型顯示圖標 -->
       <div
         v-else
         class="icon-wrapper">
@@ -196,6 +216,24 @@
             @mouseleave.stop="stopDrag" />
         </div>
 
+        <!-- 影片預覽 -->
+        <div
+          v-else-if="isVideoFile"
+          class="video-preview">
+          <video
+            ref="videoRef"
+            :src="data.fileUrl"
+            class="video-player"
+            controls
+            autoplay
+            muted
+            playsinline
+            @loadedmetadata="onVideoMetadataLoaded"
+            @canplay="handleVideoCanPlay">
+            您的瀏覽器不支持影片播放。
+          </video>
+        </div>
+
         <!-- PDF 預覽 -->
         <div
           v-else-if="isPdfFile"
@@ -206,27 +244,20 @@
                 <el-button-group>
                   <el-button
                     size="small"
-                    @click="handlePrevPage"
-                    :disabled="currentPage <= 1">
-                    <ChevronLeft :size="16" />
-                  </el-button>
-                  <el-button
-                    size="small"
-                    @click="handleNextPage"
-                    :disabled="currentPage >= totalPages">
-                    <ChevronRight :size="16" />
+                    @click="handleDownloadFile">
+                    <Download :size="16" />
                   </el-button>
                 </el-button-group>
-                <span class="text-sm">
-                  {{ currentPage }} / {{ totalPages }}
-                </span>
+                <span class="text-sm ml-2"> 使用 PDF.js 查看器預覽 </span>
               </div>
             </div>
           </div>
           <iframe
-            :src="`${data.fileUrl}#page=${currentPage}`"
+            :src="getPdfViewerUrl(data.fileUrl)"
             class="pdf-iframe"
-            frameborder="0"></iframe>
+            frameborder="0"
+            referrerpolicy="no-referrer"
+            allow="fullscreen"></iframe>
         </div>
 
         <!-- 其他檔案類型預覽 -->
@@ -255,6 +286,20 @@
 <script setup>
 import { Handle } from "@vue-flow/core";
 import { useFileNode } from "@/composables/flow/useFileNode";
+import {
+  Eye,
+  Download,
+  Trash,
+  ZoomIn,
+  ZoomOut,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  X,
+  AlertTriangle,
+  Play,
+} from "lucide-vue-next";
 
 // 定義 props
 const props = defineProps({
@@ -309,6 +354,12 @@ const {
   onDrag,
   stopDrag,
   onConnect,
+  isVideo,
+  onVideoMetadataLoaded,
+  captureVideoThumbnail,
+  handleVideoCanPlay,
+  handlePdfLoad,
+  getPdfViewerUrl,
 } = useFileNode();
 
 // 計算屬性
@@ -322,6 +373,7 @@ const truncatedFileNameValue = computed(() =>
   truncatedFileName.value(props.data)
 );
 const decodedFileNameValue = computed(() => decodedFileName.value(props.data));
+const isVideoFile = computed(() => isVideo.value(props.data));
 
 // 處理預覽
 const handlePreviewFile = () => {
@@ -523,6 +575,21 @@ watch(previewVisible, (newValue) => {
   transition: transform 0.2s ease;
 }
 
+.video-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  overflow: hidden;
+}
+
+.video-player {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .pdf-preview {
   flex: 1;
   display: flex;
@@ -561,5 +628,61 @@ watch(previewVisible, (newValue) => {
   align-items: center;
   justify-content: center;
   color: #64748b;
+}
+
+.preview-video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.video-progress-container {
+  width: 200px;
+  margin: 0 10px;
+}
+
+.video-progress-slider :deep(.el-slider__runway) {
+  margin: 8px 0;
+}
+
+.video-progress-slider :deep(.el-slider__bar) {
+  background-color: #3b82f6;
+}
+
+.video-progress-slider :deep(.el-slider__button) {
+  border-color: #3b82f6;
+  width: 12px;
+  height: 12px;
+}
+
+.video-time {
+  color: #e5e7eb;
+  min-width: 90px;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 45%;
+  cursor: pointer !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.node-preview:hover .video-overlay {
+  cursor: pointer !important;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.play-icon {
+  color: white;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
 }
 </style>

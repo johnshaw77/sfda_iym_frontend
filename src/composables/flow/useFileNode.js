@@ -1,7 +1,28 @@
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { useFullscreen } from "@vueuse/core";
 import { uploadDocument } from "@/api/modules/flowDocument";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+// 設置 PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+// 獲取 PDF.js viewer 的 URL
+const getPdfViewerUrl = (pdfUrl) => {
+  // 檢查是否為開發環境
+  const isDev = process.env.NODE_ENV === "development";
+
+  // 在開發環境中使用 CDN 的 PDF.js viewer
+  if (isDev) {
+    return `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(
+      pdfUrl
+    )}`;
+  }
+
+  // 在生產環境中使用本地的 PDF.js viewer
+  return `/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`;
+};
 
 export function useFileNode() {
   // 檔案預覽相關狀態
@@ -19,6 +40,15 @@ export function useFileNode() {
   // PDF 相關狀態
   const currentPage = ref(1);
   const totalPages = ref(1);
+  const pdfObject = ref(null);
+
+  // 影片相關狀態
+  const videoRef = ref(null);
+  const nodeVideoRef = ref(null);
+  const isVideoPlaying = ref(false);
+  const isVideoMuted = ref(false);
+  const videoCurrentTime = ref(0);
+  const videoDuration = ref(0);
 
   // 全螢幕控制
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
@@ -131,6 +161,32 @@ export function useFileNode() {
     };
   });
 
+  // 添加影片檔案類型判斷
+  const isVideo = computed(() => {
+    return (data) => {
+      if (!data) return false;
+
+      // 檢查檔案類型
+      const fileType = data.fileType?.toLowerCase();
+      const fileName = data.fileName?.toLowerCase();
+
+      // 先檢查 fileType
+      if (fileType && fileType.startsWith("video/")) {
+        return true;
+      }
+
+      // 從檔名推斷
+      if (fileName) {
+        const extension = fileName.split(".").pop();
+        return ["mp4", "avi", "mov", "wmv", "webm", "ogg", "mkv"].includes(
+          extension
+        );
+      }
+
+      return false;
+    };
+  });
+
   const isPdf = computed(() => {
     return (data) => {
       if (!data) return false;
@@ -182,6 +238,13 @@ export function useFileNode() {
         "xlsx",
         "ppt",
         "pptx",
+        "mp4",
+        "avi",
+        "mov",
+        "wmv",
+        "webm",
+        "ogg",
+        "mkv",
       ];
 
       // 先檢查 fileType
@@ -193,6 +256,11 @@ export function useFileNode() {
       if (fileName) {
         const extension = fileName.split(".").pop();
         return previewableTypes.includes(extension);
+      }
+
+      // 檢查是否為影片類型
+      if (isVideo.value(data)) {
+        return true;
       }
 
       return false;
@@ -239,6 +307,21 @@ export function useFileNode() {
       } catch (e) {
         return data.fileName;
       }
+    };
+  });
+
+  // 生成 PDF 預覽 URL
+  const pdfViewerUrl = computed(() => {
+    return (data) => {
+      if (!data || !data.fileUrl) return "";
+
+      // 檢查是否為 PDF 檔案
+      if (!isPdf.value(data)) return "";
+
+      // 使用 PDF.js 的 viewer.html 來預覽 PDF
+      // 需要將檔案 URL 編碼並作為參數傳遞
+      const encodedFileUrl = encodeURIComponent(data.fileUrl);
+      return `${PDF_VIEWER_URL}?file=${encodedFileUrl}`;
     };
   });
 
@@ -362,9 +445,10 @@ export function useFileNode() {
     // 重置 PDF 頁面
     if (isPdf.value(data)) {
       currentPage.value = 1;
-      // 這裡可以添加獲取 PDF 總頁數的邏輯
-      totalPages.value = 1; // 假設為 1，實際應該從 PDF 中獲取
+      // 總頁數會在 PDF 載入後通過 handlePdfLoad 設置
     }
+
+    // 影片預覽會通過 autoplay 屬性和 canplay 事件自動處理播放
   };
 
   const handleDownload = (data) => {
@@ -427,6 +511,47 @@ export function useFileNode() {
   const handleNextPage = () => {
     if (currentPage.value < totalPages.value) {
       currentPage.value++;
+    }
+  };
+
+  // PDF 載入處理
+  const handlePdfLoad = async (event) => {
+    console.log("PDF 已載入", event);
+
+    try {
+      // 獲取 PDF 檔案的 URL
+      const pdfUrl = event.target.src.split("#")[0];
+
+      // 使用 fetch 先獲取 PDF 檔案的 ArrayBuffer，避免跨域問題
+      const response = await fetch(pdfUrl);
+      if (!response.ok) {
+        throw new Error(`無法獲取 PDF: ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+
+      // 使用 PDF.js 載入 PDF 檔案
+      const loadingTask = pdfjsLib.getDocument({
+        data: arrayBuffer,
+        cMapUrl: "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/cmaps/",
+        cMapPacked: true,
+      });
+
+      // 獲取 PDF 文檔
+      const pdf = await loadingTask.promise;
+
+      // 設置總頁數
+      totalPages.value = pdf.numPages;
+      console.log(`PDF 總頁數: ${totalPages.value}`);
+
+      // 確保當前頁碼不超過總頁數
+      if (currentPage.value > totalPages.value) {
+        currentPage.value = 1;
+      }
+    } catch (error) {
+      console.error("載入 PDF 失敗:", error);
+      totalPages.value = 1; // 設置默認值
+      ElMessage.warning(`PDF 載入失敗: ${error.message}`);
     }
   };
 
@@ -660,6 +785,70 @@ export function useFileNode() {
     }
   };
 
+  // 影片控制函數
+  const formatVideoTime = (seconds) => {
+    if (!seconds) return "00:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const onVideoMetadataLoaded = () => {
+    if (!videoRef.value) return;
+    videoDuration.value = videoRef.value.duration;
+  };
+
+  // 處理影片可以播放事件
+  const handleVideoCanPlay = () => {
+    if (!videoRef.value) return;
+
+    // 先取消靜音，然後嘗試播放
+    videoRef.value.muted = false;
+
+    // 嘗試播放影片
+    const playPromise = videoRef.value.play();
+
+    // 處理可能的播放錯誤
+    if (playPromise !== undefined) {
+      playPromise.catch((error) => {
+        console.log("自動播放失敗:", error);
+        // 如果無法自動播放，可能是因為瀏覽器政策要求用戶交互
+        // 在這種情況下，我們可以保持靜音狀態並再次嘗試播放
+        if (videoRef.value) {
+          videoRef.value.muted = true;
+          videoRef.value.play().catch((e) => {
+            console.log("靜音自動播放也失敗:", e);
+          });
+        }
+      });
+    }
+  };
+
+  // 捕獲影片縮圖
+  const captureVideoThumbnail = () => {
+    if (!nodeVideoRef.value) return;
+
+    // 設置影片時間為 0.1 秒，以獲取第一幀
+    nodeVideoRef.value.currentTime = 0.1;
+
+    // 當影片時間更新後，會觸發 timeupdate 事件
+    const handleTimeUpdate = () => {
+      // 移除事件監聽器，避免重複執行
+      nodeVideoRef.value.removeEventListener("timeupdate", handleTimeUpdate);
+
+      // 確保影片已經加載到指定時間
+      if (nodeVideoRef.value.currentTime > 0) {
+        // 可以在這裡添加其他邏輯，例如顯示縮圖
+        console.log("影片縮圖已捕獲");
+      }
+    };
+
+    // 添加 timeupdate 事件監聽器
+    nodeVideoRef.value.addEventListener("timeupdate", handleTimeUpdate);
+  };
+
   return {
     // 狀態
     previewVisible,
@@ -670,21 +859,27 @@ export function useFileNode() {
     sourceVisible,
     isUploading,
     uploadProgress,
-    isFullscreen,
     currentPage,
     totalPages,
-
-    // 檔案類型相關
-    ALLOWED_FILE_TYPES,
-    isFileTypeAllowed,
+    pdfObject,
+    isFullscreen,
+    // 影片相關
+    videoRef,
+    nodeVideoRef,
+    isVideoPlaying,
+    isVideoMuted,
+    videoCurrentTime,
+    videoDuration,
 
     // 計算屬性
     isImage,
+    isVideo,
     isPdf,
     isPreviewable,
     showZoomControls,
     truncatedFileName,
     decodedFileName,
+    pdfViewerUrl,
 
     // 方法
     getFileIcon,
@@ -694,18 +889,26 @@ export function useFileNode() {
     handleDownload,
     handleDelete,
     handleCommand,
-    handleZoomIn,
-    handleZoomOut,
     handlePrevPage,
     handleNextPage,
+    handlePdfLoad,
+    handleZoomIn,
+    handleZoomOut,
     toggleFullscreen,
     startDrag,
     onDrag,
     stopDrag,
     onConnect,
-
-    // 新增方法
+    // 影片相關方法
+    formatVideoTime,
+    onVideoMetadataLoaded,
+    captureVideoThumbnail,
+    handleVideoCanPlay,
+    // PDF 相關方法
+    getPdfViewerUrl,
+    // 上傳相關
     uploadFile,
+    isFileTypeAllowed,
     handleFileDrop,
   };
 }
