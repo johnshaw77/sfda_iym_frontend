@@ -199,6 +199,8 @@ import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { logger } from "@/utils/logger";
+import { useNodeExecution } from "@/composables/useNodeExecution";
+import { globalEventBus, NodeEventType } from "@/utils/eventBus";
 
 // 定義 props
 const props = defineProps({
@@ -253,9 +255,30 @@ const handleDisconnect = (data) => {
   emit("handle-disconnect", { id: props.id, ...data });
 };
 
-// 使用流程實例 composable
-const { executeNode, clearNodeError, flowStore } = useFlowInstance();
-const { currentInstance } = storeToRefs(flowStore);
+// 節點引用
+const nodeRef = ref(null);
+
+// 使用統一的節點執行邏輯
+const nodeExecution = useNodeExecution({
+  nodeId: props.id,
+  nodeType: "CorrelationAnalysisNode",
+  nodeName: "相關性分析",
+  nodeRef,
+});
+
+// 從 nodeExecution 中解構需要的方法和狀態
+const {
+  executing,
+  errorMessage,
+  errorDetails,
+  outputData,
+  executeNode,
+  updateNodeStatus,
+  handleClearError,
+  restoreFromSharedData,
+  updateSharedData,
+  getSharedData,
+} = nodeExecution;
 
 // 表單數據
 const formData = ref({
@@ -309,16 +332,6 @@ const handleAnalyze = async () => {
   try {
     analyzing.value = true;
 
-    // 更新節點狀態為執行中
-    if (nodeRef.value) {
-      nodeRef.value.updateNodeStatus("running");
-    } else {
-      flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
-        status: "running",
-        _isDataUpdate: true,
-      });
-    }
-
     // 準備輸入數據
     const inputData = {
       method: formData.value.method,
@@ -331,8 +344,8 @@ const handleAnalyze = async () => {
     logger.info("CorrelationAnalysisNode", "開始執行相關性分析");
     logger.debug("CorrelationAnalysisNode", "輸入數據:", inputData);
 
-    // 使用 executeNode 執行節點
-    const result = await executeNode(props.id, inputData, async (input) => {
+    // 使用統一的節點執行邏輯執行節點
+    const result = await executeNode(inputData, async (input) => {
       // 模擬分析過程
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -343,70 +356,14 @@ const handleAnalyze = async () => {
     logger.info("CorrelationAnalysisNode", "相關性分析完成");
     ElMessage.success("相關性分析完成");
 
-    // 更新結果數據
-    analysisResult.value = result;
-
-    // 構建完整的結果對象，確保包含所有必要信息
-    const completeResult = {
-      correlationMatrix: result.correlationMatrix,
-      significantPairs: result.significantPairs,
-      method: formData.value.method,
-      significanceLevel: formData.value.significanceLevel,
-      timestamp: new Date().toISOString(),
-      nodeId: props.id,
-      nodeName: "相關性分析",
-      ...result,
-    };
-
-    // 更新節點狀態為完成
-    if (nodeRef.value) {
-      nodeRef.value.updateNodeStatus("completed", completeResult);
-    } else {
-      flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
-        status: "completed",
-        data: completeResult,
-        _isDataUpdate: true,
-      });
-    }
-
-    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
-    const event = new CustomEvent("node:stateChange", {
-      detail: {
-        nodeId: props.id,
-        status: "completed",
-        result: completeResult,
-        timestamp: new Date().toISOString(),
-      },
-    });
-    window.dispatchEvent(event);
-
-    logger.info("CorrelationAnalysisNode", "節點執行完成，已觸發狀態變更事件");
-
     analyzing.value = false;
-    return completeResult;
+    return result;
   } catch (error) {
     logger.error("CorrelationAnalysisNode", "相關性分析失敗:", error);
     ElMessage.error(`分析失敗: ${error.message || "未知錯誤"}`);
-
-    // 更新節點狀態為錯誤
-    if (nodeRef.value) {
-      nodeRef.value.updateNodeStatus("error", null, error);
-    } else {
-      flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
-        status: "error",
-        error: error.message || "未知錯誤",
-        _isDataUpdate: true,
-      });
-    }
-
     analyzing.value = false;
     throw error;
   }
-};
-
-// 清除錯誤
-const handleClearError = async () => {
-  await clearNodeError(props.id);
 };
 
 // 生成模擬結果
@@ -476,6 +433,7 @@ const generateSimulatedResults = (input) => {
 
 // 獲取節點上下文
 const getNodeContext = () => {
+  const flowStore = useFlowStore();
   return flowStore.getNodeContextById(props.id);
 };
 
@@ -492,6 +450,22 @@ watch(
 
 // 組件掛載時初始化
 onMounted(() => {
+  // 嘗試從共享數據中恢復節點狀態
+  const previousData = restoreFromSharedData();
+  if (previousData) {
+    // 恢復之前的分析結果
+    if (previousData.method) formData.value.method = previousData.method;
+    if (previousData.significanceLevel)
+      formData.value.significanceLevel = previousData.significanceLevel;
+    if (previousData.colorMap) formData.value.colorMap = previousData.colorMap;
+    if (previousData.threshold)
+      formData.value.threshold = previousData.threshold;
+    if (previousData.columns)
+      formData.value.inputColumns = previousData.columns;
+    if (previousData.outputFormat)
+      formData.value.outputFormat = previousData.outputFormat;
+  }
+
   // 如果已有上下文數據，則恢復表單狀態
   if (getNodeContext() && getNodeContext().input) {
     const input = getNodeContext().input;
@@ -503,6 +477,12 @@ onMounted(() => {
     if (input.columns) formData.value.inputColumns = input.columns;
     if (input.outputFormat) formData.value.outputFormat = input.outputFormat;
   }
+});
+
+// 暴露方法給父元件
+defineExpose({
+  handleAnalyze,
+  handleClearError,
 });
 </script>
 

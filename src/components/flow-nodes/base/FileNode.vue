@@ -152,134 +152,138 @@
     </el-dropdown>
 
     <!-- 檔案預覽對話框 -->
-    <el-dialog
-      v-model="previewVisible"
-      :title="data.fileName"
-      :fullscreen="isFullscreen"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :show-close="false"
-      class="file-preview-dialog"
-      width="60%"
-      top="5vh"
-      :draggable="true"
-      @click.stop>
-      <template #header="{ close, titleId, titleClass }">
-        <div class="flex items-center justify-between w-full">
-          <h4
-            :id="titleId"
-            :class="titleClass">
-            {{ data.fileName }}
-          </h4>
-          <div class="flex items-center space-x-2">
-            <!-- 縮放控制，只對圖片和PDF顯示，不對PPT顯示 -->
-            <el-button-group v-if="showZoomControlsValue">
-              <el-button @click="handleZoomOut">
-                <ZoomOut :size="16" />
-              </el-button>
-              <el-button @click="handleZoomIn">
-                <ZoomIn :size="16" />
-              </el-button>
-            </el-button-group>
-            <!-- 全螢幕切換，對所有類型顯示 -->
-            <el-button @click="toggleFullscreen">
-              <component
-                :is="isFullscreen ? Minimize2 : Maximize2"
-                :size="16" />
-            </el-button>
-            <!-- 關閉按鈕 -->
-            <el-button @click="close">
-              <X :size="16" />
-            </el-button>
-          </div>
-        </div>
-      </template>
-
+    <Teleport to="body">
       <div
-        class="preview-content"
-        :class="{ 'is-fullscreen': isFullscreen }">
-        <!-- 圖片預覽 -->
+        v-if="previewVisible"
+        class="custom-dialog-container">
         <div
-          v-if="isImageFile"
-          class="image-preview">
-          <img
-            ref="imageRef"
-            :src="data.fileUrl"
-            :alt="data.fileName"
-            :style="{
-              transform: `scale(${zoomLevel})`,
-              cursor: isDragging ? 'grabbing' : 'grab',
-            }"
-            @mousedown.stop="startDrag"
-            @mousemove.stop="onDrag"
-            @mouseup.stop="stopDrag"
-            @mouseleave.stop="stopDrag" />
-        </div>
+          class="custom-dialog-overlay"
+          @click="handleClosePreview"></div>
+        <div
+          class="custom-dialog"
+          :class="{ 'is-fullscreen': isFullscreen }">
+          <div class="custom-dialog-header">
+            <h4 class="custom-dialog-title">{{ data.fileName }}</h4>
+            <div class="custom-dialog-buttons">
+              <!-- 縮放控制，只對圖片和PDF顯示，不對PPT顯示 -->
+              <div
+                v-if="showZoomControlsValue"
+                class="button-group">
+                <button
+                  class="custom-button"
+                  @click="handleZoomOut">
+                  <ZoomOut :size="16" />
+                </button>
+                <button
+                  class="custom-button"
+                  @click="handleZoomIn">
+                  <ZoomIn :size="16" />
+                </button>
+              </div>
+              <!-- 全螢幕切換，對所有類型顯示 -->
+              <button
+                class="custom-button"
+                @click="toggleFullscreen">
+                <component
+                  :is="isFullscreen ? Minimize2 : Maximize2"
+                  :size="16" />
+              </button>
+              <!-- 關閉按鈕 -->
+              <button
+                class="custom-button"
+                @click="handleClosePreview">
+                <X :size="16" />
+              </button>
+            </div>
+          </div>
 
-        <!-- 影片預覽 -->
-        <div
-          v-else-if="isVideoFile"
-          class="video-preview">
-          <video
-            ref="videoRef"
-            :src="data.fileUrl"
-            class="video-player"
-            controls
-            autoplay
-            muted
-            playsinline
-            @loadedmetadata="onVideoMetadataLoaded"
-            @canplay="handleVideoCanPlay">
-            您的瀏覽器不支持影片播放。
-          </video>
-        </div>
+          <div
+            class="preview-content"
+            :class="{ 'is-fullscreen': isFullscreen }">
+            <!-- 圖片預覽 -->
+            <div
+              v-if="isImageFile"
+              class="image-preview">
+              <img
+                ref="imageRef"
+                :src="data.fileUrl"
+                :alt="data.fileName"
+                :style="{
+                  transform: `scale(${zoomLevel})`,
+                  cursor: isDragging ? 'grabbing' : 'grab',
+                }"
+                @mousedown.stop="startDrag"
+                @mousemove.stop="onDrag"
+                @mouseup.stop="stopDrag"
+                @mouseleave.stop="stopDrag" />
+            </div>
 
-        <!-- PDF 預覽 -->
-        <div
-          v-else-if="isPdfFile"
-          class="pdf-preview">
-          <div class="pdf-controls">
-            <div class="flex items-center justify-between w-full px-4">
-              <div class="flex items-center space-x-2">
-                <el-button-group>
-                  <el-button
-                    size="small"
-                    @click="handleDownloadFile">
-                    <Download :size="16" />
-                  </el-button>
-                </el-button-group>
-                <span class="text-sm ml-2"> 使用 PDF.js 查看器預覽 </span>
+            <!-- 影片預覽 -->
+            <div
+              v-else-if="isVideoFile"
+              class="video-preview">
+              <video
+                ref="videoRef"
+                :src="data.fileUrl"
+                class="video-player"
+                controls
+                autoplay
+                muted
+                playsinline
+                @loadedmetadata="onVideoMetadataLoaded"
+                @canplay="handleVideoCanPlay">
+                您的瀏覽器不支持影片播放。
+              </video>
+            </div>
+
+            <!-- PDF 預覽 -->
+            <div
+              v-else-if="isPdfFile"
+              class="pdf-preview">
+              <div class="pdf-controls">
+                <div class="flex items-center justify-between w-full px-4">
+                  <div class="flex items-center space-x-2">
+                    <div class="button-group">
+                      <button
+                        class="custom-button"
+                        @click="handleDownloadFile">
+                        <Download :size="16" />
+                      </button>
+                    </div>
+                    <span class="text-sm ml-2"> 使用 PDF.js 查看器預覽 </span>
+                  </div>
+                </div>
+              </div>
+              <iframe
+                :src="getPdfViewerUrl(data.fileUrl)"
+                class="pdf-iframe"
+                frameborder="0"
+                referrerpolicy="no-referrer"
+                allow="fullscreen"></iframe>
+            </div>
+
+            <!-- 其他檔案類型預覽 -->
+            <div
+              v-else
+              class="generic-preview">
+              <iframe
+                v-if="data.fileUrl"
+                :src="data.fileUrl"
+                class="generic-iframe"
+                frameborder="0"></iframe>
+              <div
+                v-else
+                class="preview-error">
+                <AlertTriangle
+                  :size="48"
+                  class="text-yellow-500 mb-2" />
+                <p>無法預覽此檔案類型</p>
               </div>
             </div>
           </div>
-          <iframe
-            :src="getPdfViewerUrl(data.fileUrl)"
-            class="pdf-iframe"
-            frameborder="0"
-            referrerpolicy="no-referrer"
-            allow="fullscreen"></iframe>
-        </div>
-
-        <!-- 其他檔案類型預覽 -->
-        <div
-          v-else
-          class="generic-preview">
-          <iframe
-            v-if="data.fileUrl"
-            :src="data.fileUrl"
-            class="generic-iframe"
-            frameborder="0"></iframe>
-          <div
-            v-else
-            class="preview-error">
-            <AlertTriangle
-              :size="48"
-              class="text-yellow-500 mb-2" />
-            <p>無法預覽此檔案類型</p>
-          </div>
         </div>
       </div>
-    </el-dialog>
+    </Teleport>
   </div>
 </template>
 
@@ -300,6 +304,7 @@ import {
   AlertTriangle,
   Play,
 } from "lucide-vue-next";
+import { Teleport, nextTick } from "vue";
 
 // 定義 props
 const props = defineProps({
@@ -349,7 +354,6 @@ const {
   handleZoomOut,
   handlePrevPage,
   handleNextPage,
-  toggleFullscreen,
   startDrag,
   onDrag,
   stopDrag,
@@ -377,7 +381,32 @@ const isVideoFile = computed(() => isVideo.value(props.data));
 
 // 處理預覽
 const handlePreviewFile = () => {
-  handlePreview(props.data);
+  // 直接設置 previewVisible 為 true，而不是調用 handlePreview
+  previewVisible.value = true;
+
+  // 確保對話框在全屏模式下正確顯示
+  nextTick(() => {
+    // 強制將對話框移至 body 元素下
+    const dialogContainers = document.querySelectorAll(
+      ".custom-dialog-container"
+    );
+    dialogContainers.forEach((container) => {
+      if (!document.body.contains(container)) {
+        document.body.appendChild(container);
+      }
+      container.style.zIndex = "9999999";
+    });
+
+    // 確保對話框在最上層
+    document.querySelectorAll(".custom-dialog").forEach((dialog) => {
+      dialog.style.zIndex = "9999999";
+    });
+
+    // 確保遮罩層在最上層
+    document.querySelectorAll(".custom-dialog-overlay").forEach((overlay) => {
+      overlay.style.zIndex = "9999990";
+    });
+  });
 };
 
 // 處理下載
@@ -401,13 +430,30 @@ const handleCommandWrapper = (command) => {
   });
 };
 
-// 監聽預覽狀態變化
-watch(previewVisible, (newValue) => {
-  if (newValue && isPdfFile.value) {
-    // PDF 頁面控制已經移到 useFileNode 中處理
-    // 這裡只需要確保 UI 更新
-  }
-});
+// 處理關閉預覽
+const handleClosePreview = () => {
+  previewVisible.value = false;
+};
+
+// 增強版的 toggleFullscreen 方法
+const toggleFullscreen = () => {
+  // 切換全屏狀態
+  isFullscreen.value = !isFullscreen.value;
+
+  // 全屏切換後確保對話框正確顯示
+  nextTick(() => {
+    // 強制將對話框移至 body 元素下
+    const dialogContainers = document.querySelectorAll(
+      ".custom-dialog-container"
+    );
+    dialogContainers.forEach((container) => {
+      if (!document.body.contains(container)) {
+        document.body.appendChild(container);
+      }
+      container.style.zIndex = "999999";
+    });
+  });
+};
 </script>
 
 <style scoped>
@@ -539,25 +585,42 @@ watch(previewVisible, (newValue) => {
   padding: 4px 8px;
 }
 
-/* 預覽對話框樣式 */
+/* 檔案預覽對話框樣式 */
+.file-preview-dialog {
+  z-index: 99999 !important;
+}
+
 .file-preview-dialog :deep(.el-dialog__header) {
   padding: 12px 20px;
   margin-right: 0;
   border-bottom: 1px solid #e2e8f0;
+  z-index: 99999 !important;
 }
 
 .file-preview-dialog :deep(.el-dialog__body) {
   padding: 0;
+  z-index: 99999 !important;
+}
+
+/* 確保對話框在全屏模式下顯示 */
+:deep(.el-dialog__wrapper) {
+  z-index: 99999 !important;
+}
+
+:deep(.el-overlay) {
+  z-index: 99990 !important;
 }
 
 .preview-content {
-  height: 70vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  height: calc(80vh - 50px); /* 減去標題欄高度 */
+  overflow: hidden;
 }
 
 .preview-content.is-fullscreen {
-  height: 100vh;
+  height: calc(100vh - 50px);
 }
 
 .image-preview {
@@ -684,5 +747,106 @@ watch(previewVisible, (newValue) => {
   height: 48px;
   cursor: pointer;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+/* 自定義對話框樣式 */
+.custom-dialog-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999999 !important; /* 確保比 CSS 全屏的 z-index 高 */
+}
+
+.custom-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999990 !important; /* 確保比 CSS 全屏的 z-index 高 */
+}
+
+.custom-dialog {
+  position: relative;
+  width: 60%;
+  max-height: 80vh;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999999 !important; /* 確保比 CSS 全屏的 z-index 高 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.custom-dialog.is-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+}
+
+.custom-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.custom-dialog-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0;
+}
+
+.custom-dialog-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-group {
+  display: flex;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.custom-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button-group .custom-button {
+  border: none;
+  border-right: 1px solid #e2e8f0;
+  border-radius: 0;
+}
+
+.button-group .custom-button:last-child {
+  border-right: none;
+}
+
+.custom-button:hover {
+  background-color: #f8fafc;
+}
+
+.custom-button:active {
+  background-color: #e2e8f0;
 }
 </style>

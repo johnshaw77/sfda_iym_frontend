@@ -5,7 +5,7 @@
     @dragover.prevent="handleDragOver"
     @dragleave.prevent="handleDragLeave"
     @drop.prevent="handleDrop"
-    :class="{ 'is-dragover': isDragOver }"
+    :class="{ 'is-dragover': isDragOver, 'css-fullscreen': isFullscreen }"
     ref="flowCanvasRef">
     <div class="flex-1">
       <VueFlow
@@ -116,8 +116,8 @@
             <el-tooltip
               :content="
                 isFullscreen
-                  ? `退出全屏 (F11 或 ${ctrlOrCmd}${shiftSymbol}F)`
-                  : `全屏 (F11 或 ${ctrlOrCmd}${shiftSymbol}F)`
+                  ? `退出全屏 (${ctrlOrCmd}${shiftSymbol}F)`
+                  : `全屏 (${ctrlOrCmd}${shiftSymbol}F)`
               "
               placement="top"
               effect="light">
@@ -242,11 +242,12 @@ import { useWorkflowManager } from "@/composables/useWorkflowManager";
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import { useFileNode } from "@/composables/flow/useFileNode";
 import { logger } from "@/utils/logger";
+import { globalEventBus, NodeEventType } from "@/utils/eventBus";
 
 //import FlowTaskList from "./FlowTaskList.vue";
 import { useFullscreen } from "@vueuse/core";
 import JsonViewer from "@/components/JsonViewer.vue";
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Maximize2,
@@ -698,12 +699,11 @@ const handleKeyDown = (event) => {
     event.preventDefault();
   }
 
-  // 全屏快捷鍵 - F11 或 Ctrl+Shift+F
+  // 全屏快捷鍵 - Ctrl+Shift+F
   if (
-    event.key === "F11" ||
-    ((event.metaKey || event.ctrlKey) &&
-      event.shiftKey &&
-      event.key.toLowerCase() === "f")
+    (event.metaKey || event.ctrlKey) &&
+    event.shiftKey &&
+    event.key.toLowerCase() === "f"
   ) {
     event.preventDefault();
     handleToggleFullscreen();
@@ -728,10 +728,11 @@ onMounted(() => {
 
   // 監聽節點狀態變更事件
   logger.info("FlowCanvas", "添加節點狀態變更事件監聽器");
-  window.addEventListener("node:stateChange", handleNodeStateChange);
+  globalEventBus.on(NodeEventType.STATE_CHANGE, handleNodeStateChange);
 
   // 監聽節點大小變更事件
-  window.addEventListener("node:sizeChange", handleNodeSizeChange);
+  logger.info("FlowCanvas", "添加節點大小變更事件監聽器");
+  globalEventBus.on(NodeEventType.SIZE_CHANGE, handleNodeSizeChange);
 
   // 初始化元素
   initializeElements();
@@ -746,8 +747,8 @@ onMounted(() => {
 // 清理
 onUnmounted(() => {
   // 移除事件監聽器
-  window.removeEventListener("node:stateChange", handleNodeStateChange);
-  window.removeEventListener("node:sizeChange", handleNodeSizeChange);
+  globalEventBus.off(NodeEventType.STATE_CHANGE, handleNodeStateChange);
+  globalEventBus.off(NodeEventType.SIZE_CHANGE, handleNodeSizeChange);
 });
 
 // 拖放相關(檔案拖放上傳)
@@ -933,21 +934,34 @@ const handleDrop = async (event) => {
   }
 };
 
-// 全屏狀態(TODO: 改用 vueuse 的 useFullscreen)
+// 全屏狀態(使用 CSS 模擬全屏，而不是瀏覽器的全屏 API)
 const flowCanvasRef = ref(null);
-
-// 使用 VueUse 的 useFullscreen
-const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(flowCanvasRef);
+const isFullscreen = ref(false);
 
 // 處理全屏切換並適應視窗大小
 const handleToggleFullscreen = () => {
-  toggleFullscreen();
+  isFullscreen.value = !isFullscreen.value;
+
   // 進入全屏後自動適應視窗大小
-  if (!isFullscreen.value) {
+  if (isFullscreen.value) {
     setTimeout(() => {
       handleFitView();
     }, 300);
   }
+
+  // 全屏切換後確保對話框正確顯示
+  nextTick(() => {
+    // 強制將對話框移至 body 元素下
+    const dialogContainers = document.querySelectorAll(
+      ".custom-dialog-container"
+    );
+    dialogContainers.forEach((container) => {
+      if (!document.body.contains(container)) {
+        document.body.appendChild(container);
+      }
+      container.style.zIndex = "999999";
+    });
+  });
 };
 
 // 判斷是否為 Mac 平台
@@ -958,7 +972,9 @@ const shiftSymbol = isMac ? "⇧" : "Shift+";
 // 高亮顯示節點
 
 // 添加處理節點尺寸變化的方法
-const handleNodeSizeChange = ({ id, height }) => {
+const handleNodeSizeChange = (payload) => {
+  const { id, height } = payload;
+
   // 找到對應的節點
   const nodes = elements.value.filter((el) => !el.source); // 過濾出所有節點（不包含邊）
   const nodeIndex = nodes.findIndex((node) => node.id === id);
@@ -982,12 +998,12 @@ const handleNodeSizeChange = ({ id, height }) => {
   // 通知 Vue Flow 更新
   useVueFlow().updateNodeInternals([id]);
 
-  //console.log(`節點 ${id} 高度已更新為 ${height}px`);
+  logger.debug("FlowCanvas", `節點 ${id} 高度已更新為 ${height}px`);
 };
 
 // 處理節點狀態變更事件
-const handleNodeStateChange = async (event) => {
-  const { nodeId, status, result, error } = event.detail;
+const handleNodeStateChange = async (payload) => {
+  const { nodeId, status, result, error } = payload;
 
   logger.info("FlowCanvas", `節點 ${nodeId} 狀態變更為 ${status}`);
   logger.debug("FlowCanvas", "狀態變更詳情:", { status, result, error });
@@ -1393,5 +1409,49 @@ const initializeElements = () => {
 :fullscreen .vue-flow__panel button:hover {
   transform: scale(1.05);
   transition: transform 0.2s ease;
+}
+
+/* CSS 模擬全屏樣式 */
+.css-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background-color: white !important;
+}
+
+.css-fullscreen .vue-flow {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.css-fullscreen .vue-flow__panel {
+  z-index: 9010 !important;
+}
+
+.css-fullscreen .vue-flow__panel.top-right {
+  top: 10px !important;
+  right: 10px !important;
+}
+
+.css-fullscreen .vue-flow__controls {
+  bottom: 40px !important;
+}
+
+.css-fullscreen .vue-flow__minimap {
+  bottom: 40px !important;
+  right: 10px !important;
+}
+
+/* CSS 全屏模式下按鈕懸停效果增強 */
+.css-fullscreen .vue-flow__panel button:hover {
+  transform: scale(1.05) !important;
+  transition: transform 0.2s ease !important;
 }
 </style>

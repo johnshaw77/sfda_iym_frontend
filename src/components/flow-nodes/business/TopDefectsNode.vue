@@ -62,6 +62,8 @@ import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { BarChart3 } from "lucide-vue-next";
 import { logger } from "@/utils/logger";
+import { useNodeExecution } from "@/composables/useNodeExecution";
+import { globalEventBus, NodeEventType } from "@/utils/eventBus";
 
 // 節點基本屬性
 const props = defineProps({
@@ -101,23 +103,28 @@ const handles = {
   ],
 };
 
-// 使用流程實例 composable
-const {
-  executeNode,
-  clearNodeError,
-  flowStore,
-  updateSharedData,
-  getSharedData,
-} = useFlowInstance();
-
 // 節點引用
 const nodeRef = ref(null);
 
-// 節點狀態
-const executing = ref(false);
-const errorMessage = ref("");
-const errorDetails = ref(null);
-const outputData = ref(null);
+// 使用統一的節點執行邏輯
+const nodeExecution = useNodeExecution({
+  nodeId: props.id,
+  nodeType: "TopDefectsNode",
+  nodeName: props.title,
+  nodeRef,
+});
+
+// 從 nodeExecution 中解構需要的方法和狀態
+const {
+  executing,
+  errorMessage,
+  errorDetails,
+  outputData,
+  executeNode,
+  updateNodeStatus,
+  handleClearError,
+  restoreFromSharedData,
+} = nodeExecution;
 
 // 1-100 隨機數
 const getRandomNumber = () => {
@@ -170,7 +177,11 @@ const processData = (inputData) => {
     setTimeout(() => {
       // 如果有來自上一個節點的數據，可以在這裡處理
       if (inputData.sourceNodeOutput) {
-        console.log("收到上一個節點的數據:", inputData.sourceNodeOutput);
+        logger.debug(
+          "TopDefectsNode",
+          "收到上一個節點的數據:",
+          inputData.sourceNodeOutput
+        );
         // 這裡可以根據上一個節點的數據調整不良率分析結果
       }
 
@@ -193,140 +204,40 @@ const processData = (inputData) => {
   });
 };
 
-// 統一的狀態更新方法
-const updateNodeStatus = (newStatus, result = null, error = null) => {
-  logger.debug("TopDefectsNode", `更新節點 ${props.id} 狀態為 ${newStatus}`);
-
-  // 如果有節點引用，使用 BaseNode 中的方法更新狀態
-  if (nodeRef.value) {
-    logger.debug("TopDefectsNode", `使用 nodeRef 更新狀態`);
-    nodeRef.value.updateNodeStatus(newStatus, result, error);
-  } else {
-    // 如果節點引用不可用，直接更新 flowStore
-    logger.debug("TopDefectsNode", `nodeRef 不可用，直接更新 flowStore`);
-    flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
-      status: newStatus,
-      data: result,
-      error: error ? error.message || "未知錯誤" : null,
-      _isDataUpdate: true, // 標記為數據更新
-    });
-  }
-};
-
 // 實作 handleRun 方法，處理節點執行
 const handleRun = async (context = {}) => {
-  logger.info("TopDefectsNode", `前五大不良分析節點 handleRun 被調用`);
-  logger.debug("TopDefectsNode", "上下文數據:", context);
-
-  // 檢查是否有來自上一個節點的數據
-  if (context && context.sourceNodeId) {
-    logger.info(
-      "TopDefectsNode",
-      `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
-    );
-
-    // 如果有上下文數據，可以在這裡處理
-    if (context.sourceNodeOutput) {
-      logger.debug("TopDefectsNode", `收到上一個節點的輸出數據`);
-    }
-  }
-
-  executing.value = true;
-
   try {
-    // 更新節點狀態為執行中
-    updateNodeStatus("running");
+    // 使用統一的節點執行邏輯執行節點
+    const result = await executeNode(context, processData);
 
-    // 準備輸入數據
-    const inputData = {
-      // 如果有上下文數據，則包含在輸入數據中
-      ...(context || {}),
-      timestamp: new Date().toISOString(),
-    };
+    // 更新本地數據
+    if (result && result.topDefects) {
+      topDefects.value = result.topDefects;
+    }
+    if (result && result.totalDefects) {
+      totalDefects.value = result.totalDefects;
+    }
 
-    logger.info("TopDefectsNode", "準備執行前五大不良分析");
-    logger.debug("TopDefectsNode", "輸入數據:", inputData);
-
-    // 使用 executeNode 執行節點
-    const result = await executeNode(props.id, inputData, processData);
-
-    // 將分析結果保存到共享數據中
-    await updateSharedData(props.id, {
-      detail: result,
-      timestamp: new Date().toISOString(),
-      nodeId: props.id,
-      nodeName: props.title,
-    });
-
-    outputData.value = result;
     ElMessage.success("前五大不良分析完成");
-
-    // 構建完整的結果對象，確保包含所有必要信息
-    const completeResult = {
-      topDefects: topDefects.value,
-      totalDefects: totalDefects.value,
-      timestamp: new Date().toISOString(),
-      nodeId: props.id,
-      nodeName: props.title,
-      ...result,
-    };
-
-    // 更新節點狀態為完成，並傳遞完整結果
-    updateNodeStatus("completed", completeResult);
-
-    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
-    const event = new CustomEvent("node:stateChange", {
-      detail: {
-        nodeId: props.id,
-        status: "completed",
-        result: completeResult,
-        timestamp: new Date().toISOString(),
-      },
-    });
-    window.dispatchEvent(event);
-
-    logger.info("TopDefectsNode", "節點執行完成，已觸發狀態變更事件");
-
-    return completeResult;
+    return result;
   } catch (error) {
     logger.error("TopDefectsNode", "前五大不良分析失敗", error);
     ElMessage.error(`前五大不良分析失敗: ${error.message || "未知錯誤"}`);
-
-    // 設置錯誤狀態
-    errorMessage.value = error.message || "執行節點時發生未知錯誤";
-    errorDetails.value = {
-      message: error.message,
-      stack: error.stack,
-    };
-
-    // 更新節點狀態為錯誤
-    updateNodeStatus("error", null, error);
-
     throw error;
-  } finally {
-    executing.value = false;
-    // 重置 loading 狀態
-    nodeRef.value?.setRunningState(false);
   }
-};
-
-// 清除錯誤
-const handleClearError = async () => {
-  await clearNodeError(props.id);
 };
 
 // 檢查是否有之前的分析結果
 onMounted(async () => {
-  // 嘗試從共享數據中獲取之前的分析結果
-  const previousData = getSharedData(props.id);
-  if (previousData && previousData.detail) {
-    console.log("找到之前的分析結果:", previousData);
+  // 嘗試從共享數據中恢復節點狀態
+  const previousData = restoreFromSharedData();
+  if (previousData) {
     // 恢復之前的分析結果
-    if (previousData.detail.topDefects) {
-      topDefects.value = previousData.detail.topDefects;
+    if (previousData.topDefects) {
+      topDefects.value = previousData.topDefects;
     }
-    if (previousData.detail.totalDefects) {
-      totalDefects.value = previousData.detail.totalDefects;
+    if (previousData.totalDefects) {
+      totalDefects.value = previousData.totalDefects;
     }
   }
 });

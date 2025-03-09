@@ -196,8 +196,8 @@
             nodeRef &&
             nodeRef.nodeState &&
             nodeRef.nodeState.status === "completed"
-              ? "重新執行"
-              : "確認選擇"
+              ? "重新執行分析"
+              : "執行客訴分析"
           }}
         </el-button>
       </div>
@@ -214,6 +214,8 @@ import { useFlowInstance } from "@/composables/useFlowInstance";
 import { Box } from "@element-plus/icons-vue";
 import { formatTimestamp } from "@/utils/dateUtils";
 import { logger } from "@/utils/logger";
+import { useNodeExecution } from "@/composables/useNodeExecution";
+import { globalEventBus, NodeEventType } from "@/utils/eventBus";
 
 const props = defineProps({
   id: {
@@ -250,23 +252,34 @@ const props = defineProps({
 const flowStore = useFlowStore();
 const { currentInstance, projectId } = storeToRefs(flowStore);
 
-// 使用流程實例 composable
+// 節點引用
+const nodeRef = ref(null);
+
+// 使用統一的節點執行邏輯
+const nodeExecution = useNodeExecution({
+  nodeId: props.id,
+  nodeType: "ComplaintSelectorNode",
+  nodeName: props.title,
+  nodeRef,
+});
+
+// 從 nodeExecution 中解構需要的方法和狀態
 const {
-  ensureFlowInstance,
+  executing,
+  errorMessage,
+  errorDetails,
   executeNode,
-  clearNodeError,
+  updateNodeStatus,
+  handleClearError,
   updateSharedData,
   getSharedData,
   updateGlobalVariable,
-} = useFlowInstance();
+} = nodeExecution;
 
 // 節點狀態
 const selectedComplaint = ref(null);
 const complaintDetail = ref(null);
 const loading = ref(false);
-const executing = ref(false);
-const errorMessage = ref("");
-const errorDetails = ref(null);
 const executionHistory = ref([]);
 const showHistory = ref(false);
 const showErrorDetails = ref(false);
@@ -311,15 +324,11 @@ const getStatusType = (status) => {
 const handleComplaintChange = async (value) => {
   if (!value) {
     complaintDetail.value = null;
-    // 統一使用 updateNodeStatus 方法更新狀態
-    updateNodeStatus("default");
     return;
   }
 
   try {
     loading.value = true;
-    // 統一使用 updateNodeStatus 方法更新狀態
-    updateNodeStatus("running");
 
     // 模擬API調用獲取客訴單詳情
     // 實際項目中應該調用真實API
@@ -345,36 +354,14 @@ const handleComplaintChange = async (value) => {
       description: `${value} 問題描述`,
     };
 
-    // 統一使用 updateNodeStatus 方法更新狀態
-    updateNodeStatus("info", complaintDetail.value);
+    // 只更新節點的資訊狀態，但不觸發執行
+    logger.info("ComplaintSelectorNode", `已選擇客訴單號: ${value}`);
+    logger.debug("ComplaintSelectorNode", "客訴單詳情:", complaintDetail.value);
   } catch (error) {
     ElMessage.error("獲取客訴單詳情失敗");
-    console.error("獲取客訴單詳情失敗:", error);
-    // 統一使用 updateNodeStatus 方法更新狀態
-    updateNodeStatus("error", null, error);
+    logger.error("ComplaintSelectorNode", "獲取客訴單詳情失敗:", error);
   } finally {
     loading.value = false;
-  }
-};
-
-// 統一的狀態更新方法
-const updateNodeStatus = (newStatus, result = null, error = null) => {
-  console.log(
-    `[ComplaintSelectorNode] 更新節點 ${props.id} 狀態為 ${newStatus}`
-  );
-
-  // 如果有節點引用，使用 BaseNode 中的方法更新狀態
-  if (nodeRef.value) {
-    console.log(`[ComplaintSelectorNode] 使用 nodeRef 更新狀態`);
-    nodeRef.value.updateNodeStatus(newStatus, result, error);
-  } else {
-    // 如果節點引用不可用，直接更新 flowStore
-    console.log(`[ComplaintSelectorNode] nodeRef 不可用，直接更新 flowStore`);
-    flowStore.updateNodeState(props.id, {
-      status: newStatus,
-      data: result,
-      error: error ? error.message || "未知錯誤" : null,
-    });
   }
 };
 
@@ -405,7 +392,6 @@ const formatErrorMessage = (message) => {
   return message;
 };
 
-const nodeRef = ref(null);
 // 實作 handleRun 方法，覆蓋 BaseNode 的空方法
 const handleRun = async (context = {}) => {
   // 檢查是否有來自上一個節點的數據
@@ -437,102 +423,71 @@ const handleRun = async (context = {}) => {
     return;
   }
 
-  try {
-    // 設置狀態為運行中
-    executing.value = true;
-    updateNodeStatus("running");
+  logger.info(
+    "ComplaintSelectorNode",
+    `開始執行客訴分析，單號: ${selectedComplaint.value}`
+  );
 
-    errorMessage.value = "";
-    errorDetails.value = null;
+  // 更新節點狀態為執行中
+  updateNodeStatus("running");
 
-    // 準備輸入數據
-    const inputData = {
-      complaintId: selectedComplaint.value,
-      complaintDetail: complaintDetail.value,
-      timestamp: new Date().toISOString(),
-      nodeType: "ComplaintSelectorNode", // 確保指定節點類型
+  // 準備處理函數
+  const processFunction = async (input) => {
+    // 模擬處理過程
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    logger.info("ComplaintSelectorNode", "客訴數據處理完成");
+
+    // 返回處理結果
+    return {
+      ...input,
+      processed: true,
+      processingTime: new Date().toISOString(),
     };
+  };
 
-    // 使用 executeNode 執行節點
-    const result = await executeNode(props.id, inputData, async (input) => {
-      // 模擬處理過程
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  // 準備輸入數據
+  const inputData = {
+    complaintId: selectedComplaint.value,
+    complaintDetail: complaintDetail.value,
+    timestamp: new Date().toISOString(),
+    nodeType: "ComplaintSelectorNode", // 確保指定節點類型
+  };
 
-      // 返回處理結果
-      return {
-        ...input,
-        processed: true,
-        processingTime: new Date().toISOString(),
-      };
-    });
-
-    // 更新本地狀態
-    executing.value = false;
+  try {
+    // 使用統一的節點執行邏輯執行節點
+    const result = await executeNode(inputData, processFunction);
 
     ElMessage.success(`客訴單號 ${selectedComplaint.value} 處理成功`);
-
-    // 將選擇的客訴單號保存到共享數據和全域變數中
-    await updateSharedData(props.id, {
-      id: selectedComplaint.value,
-      detail: complaintDetail.value,
-      timestamp: new Date().toISOString(),
-      nodeId: props.id,
-      nodeName: props.title,
-    });
 
     // 設置全域變數，方便其他節點使用
     await updateGlobalVariable("complaintId", selectedComplaint.value);
     await updateGlobalVariable("complaintDetail", complaintDetail.value);
 
-    // 構建完整的結果對象，確保包含所有必要信息
-    const completeResult = {
+    // 添加到執行歷史
+    executionHistory.value.unshift({
+      timestamp: new Date(),
+      success: true,
       complaintId: selectedComplaint.value,
-      complaintDetail: complaintDetail.value,
-      timestamp: new Date().toISOString(),
-      nodeId: props.id,
-      nodeName: props.title,
-      processed: true,
-      ...result,
-    };
-
-    // 更新節點狀態為完成，並傳遞完整結果
-    updateNodeStatus("completed", completeResult);
-
-    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
-    const event = new CustomEvent("node:stateChange", {
-      detail: {
-        nodeId: props.id,
-        status: "completed",
-        result: completeResult,
-        timestamp: new Date().toISOString(),
-      },
     });
-    window.dispatchEvent(event);
 
-    logger.info("ComplaintSelectorNode", "節點執行完成，已觸發狀態變更事件");
+    logger.info("ComplaintSelectorNode", "客訴分析執行完成，結果已保存");
 
-    return completeResult;
+    return result;
   } catch (error) {
     logger.error("ComplaintSelectorNode", "執行節點時發生錯誤:", error);
-    executing.value = false;
+    ElMessage.error(`執行失敗: ${error.message || "未知錯誤"}`);
 
-    // 更新錯誤狀態
-    errorMessage.value = error.message || "執行節點時發生未知錯誤";
-    errorDetails.value = {
-      message: error.message,
-      stack: error.stack,
-    };
-
-    // 更新節點狀態為錯誤
-    updateNodeStatus("error", null, error);
+    // 添加到執行歷史
+    executionHistory.value.unshift({
+      timestamp: new Date(),
+      success: false,
+      complaintId: selectedComplaint.value,
+      error: error.message || "未知錯誤",
+    });
 
     throw error;
   }
-};
-
-// 清除錯誤
-const handleClearError = async () => {
-  await clearNodeError(props.id);
 };
 
 // 檢查是否有之前選擇的客訴單號
@@ -540,7 +495,8 @@ onMounted(async () => {
   // 嘗試從共享數據中獲取之前選擇的客訴單號
   const previousSelection = getSharedData(props.id);
   if (previousSelection) {
-    console.log("找到之前選擇的客訴單號:", previousSelection);
+    logger.info("ComplaintSelectorNode", "找到之前選擇的客訴單號");
+    logger.debug("ComplaintSelectorNode", "之前的選擇:", previousSelection);
     // 可以選擇是否要恢復之前的選擇
     selectedComplaint.value = previousSelection.id;
     complaintDetail.value = previousSelection.detail;
