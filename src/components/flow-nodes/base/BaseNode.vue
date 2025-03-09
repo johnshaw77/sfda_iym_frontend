@@ -4,12 +4,15 @@
     class="node-wrapper"
     :class="{
       'border-blue-500 shadow-blue-100': selected,
+      'border-purple-500 shadow-purple-300 bg-purple-50 border-[5px]':
+        nodeState.status === 'running',
       'cursor-pointer': !disabled,
       'opacity-50 cursor-not-allowed': disabled,
       'flow-node--selected': selected,
-      'flow-node--running': status === 'running',
-      'flow-node--completed': status === 'completed',
-      'flow-node--error': status === 'error' || status === 'failed',
+      'flow-node--running': nodeState.status === 'running',
+      'flow-node--completed': nodeState.status === 'completed',
+      'flow-node--error':
+        nodeState.status === 'error' || nodeState.status === 'failed',
     }"
     :style="{
       width: `${nodeWidth}px`,
@@ -37,6 +40,9 @@
           headerClasses[nodeType] ||
           'bg-gray-50 border-gray-50',
         { 'cursor-grab': !disabled },
+        {
+          'bg-purple-100 border-purple-200': nodeState.status === 'running',
+        },
       ]"
       :style="customHeaderStyle">
       <div class="flex items-center justify-between">
@@ -46,18 +52,12 @@
             :class="[iconClasses[nodeType] || 'text-gray-600']"
             :size="32" />
           <span class="text-lg font-medium text-gray-900">{{ title }}</span>
-          Status: {{ status }}
+          <el-tag
+            size="small"
+            :type="statusType">
+            {{ statusText }}
+          </el-tag>
         </div>
-        <!-- 展開時的摺疊按鈕 -->
-        <button
-          v-if="isExpanded"
-          class="p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
-          @click="handleToggleExpand">
-          <component
-            :is="ChevronUp"
-            class="text-gray-400 hover:text-gray-600"
-            :size="20" />
-        </button>
       </div>
       <div
         v-if="description"
@@ -68,56 +68,60 @@
 
     <!-- 節點內容 -->
     <div
-      class="node-content relative"
-      :style="contentStyle"
+      class="node-content relative p-4"
       ref="nodeContentRef">
-      <!-- 大圖示區域 -->
-      <div
-        v-show="!isExpanded"
-        ref="iconAreaRef"
-        class="icon-area"
-        :class="{ 'icon-area-collapsed': !isExpanded }"
-        @click="handleToggleExpand">
-        <component
-          :is="icon"
-          :class="[iconClasses[nodeType] || 'text-gray-600']"
-          :size="64" />
-      </div>
-
-      <!-- 可展開的內容區域 -->
-      <div
-        ref="expandableContentRef"
-        class="expandable-content"
-        :class="{ 'expandable-content-expanded': isExpanded }">
-        <!-- 節點內容區域 -->
-        <slot></slot>
-        <el-divider />
-      </div>
+      <!-- 節點內容區域 -->
+      <slot></slot>
+      <el-divider />
     </div>
 
     <!-- 節點狀態 -->
-    <div
-      v-if="status"
-      class="node-status">
+    <div class="node-status">
       <div class="flex items-center justify-between text-xs">
-        <span class="text-gray-500">狀態</span>
+        <span class="text-gray-500"> </span>
         <div class="flex items-center space-x-2">
           <el-button
             type="success"
             size="small"
-            @click="$emit('run')"
-            :loading-icon="Refresh"
+            @click="handleRunClick"
+            :loading-icon="RefreshCw"
             :loading="running"
             :disabled="nodeState.status === 'running'"
-            >執行</el-button
+            >{{ hasExecutedBefore ? "重新執行" : "執行" }}</el-button
           >
-
+          123
           <el-tag
             :type="statusType"
             size="small"
             :class="{ 'animate-pulse': nodeState.status === 'running' }">
-            {{ statusText }}
+            {{ statusText }}-{{ nodeState.status }}
           </el-tag>
+
+          <el-popover
+            placement="top"
+            width="300"
+            trigger="click">
+            <template #reference>
+              <el-button
+                type="info"
+                size="small"
+                circle
+                icon="InfoFilled" />
+            </template>
+            <div class="p-2">
+              <h4 class="text-sm font-bold mb-2">節點狀態信息</h4>
+              <div class="text-xs space-y-1">
+                <div><strong>節點ID:</strong> {{ id }}</div>
+                <div><strong>狀態:</strong> {{ nodeState.status }}</div>
+                <div>
+                  <strong>更新時間:</strong> {{ nodeState.updatedAt || "未知" }}
+                </div>
+                <div v-if="nodeState.error">
+                  <strong>錯誤:</strong> {{ nodeState.error }}
+                </div>
+              </div>
+            </div>
+          </el-popover>
         </div>
       </div>
     </div>
@@ -212,7 +216,8 @@
           <el-button
             type="primary"
             size="small"
-            @click="$emit('run')">
+            @click="handleRunClick"
+            :loading="running">
             重試執行
           </el-button>
           <el-button
@@ -244,7 +249,7 @@
 
     <!-- 節點錯誤指示器 -->
     <div
-      v-if="status === 'error' || status === 'failed'"
+      v-if="nodeState.status === 'error' || nodeState.status === 'failed'"
       class="flow-node__error-indicator">
       <el-tooltip
         :content="errorMessage || '節點執行失敗'"
@@ -262,7 +267,7 @@ import NodeHandles from "./NodeHandles.vue";
 import { NodeResizer } from "@vue-flow/node-resizer";
 import "@vue-flow/node-resizer/dist/style.css";
 import { useFlowInstance } from "@/composables/useFlowInstance";
-import { Box, ChevronUp } from "lucide-vue-next";
+import { Box, RefreshCw } from "lucide-vue-next";
 import { onMounted, onUnmounted, ref, computed, watch, nextTick } from "vue";
 
 // 定義 props
@@ -289,10 +294,6 @@ const props = defineProps({
   icon: {
     type: Object,
     default: () => Box,
-  },
-  status: {
-    type: String,
-    default: "idle",
   },
   selected: {
     type: Boolean,
@@ -366,10 +367,88 @@ const { currentInstance } = storeToRefs(flowStore);
 // 使用流程實例 composable
 const { clearNodeError } = useFlowInstance();
 
-// 計算節點的實際狀態
-const nodeState = computed(() => {
-  return flowStore.getNodeStateById(props.id);
+// 將計算屬性改為 ref
+const nodeState = ref({ status: "default" });
+
+// 獲取節點上下文數據
+const nodeContext = computed(() => {
+  return flowStore.getNodeContextById(props.id);
 });
+
+// 獲取節點日誌
+const nodeLogs = computed(() => {
+  return flowStore.getNodeLogsById(props.id);
+});
+
+// 添加發送狀態變更事件的方法
+const sendStateChangeEvent = (status, result = null, error = null) => {
+  console.log(
+    `[${new Date().toISOString()}] 節點 ${props.id} 發送狀態變更事件: ${status}`
+  );
+
+  // 發送節點狀態變更事件，通知工作流管理器
+  const event = new CustomEvent("flow:nodeStateChange", {
+    detail: {
+      nodeId: props.id,
+      status: status,
+      result: result || nodeContext.value?.output,
+      error: error || nodeState.value.error,
+      timestamp: new Date().toISOString(), // 添加時間戳，幫助追蹤事件順序
+    },
+  });
+  window.dispatchEvent(event);
+};
+
+// 統一的狀態更新方法
+const updateNodeStatus = (nodeId, newStatus, result = null, error = null) => {
+  // 如果第一個參數不是 nodeId，而是 newStatus，則調整參數順序
+  if (
+    typeof nodeId === "string" &&
+    (nodeId === "running" ||
+      nodeId === "completed" ||
+      nodeId === "error" ||
+      nodeId === "default" ||
+      nodeId === "info")
+  ) {
+    error = result;
+    result = newStatus;
+    newStatus = nodeId;
+    nodeId = props.id;
+  }
+
+  console.log(
+    `[BaseNode] 更新節點 ${nodeId} 狀態為 ${newStatus}，當前節點ID: ${props.id}`
+  );
+
+  // 確保只更新當前節點的狀態，而不是其他節點
+  if (nodeId !== props.id) {
+    console.warn(
+      `[BaseNode] 嘗試從節點 ${props.id} 更新其他節點 ${nodeId} 的狀態，這可能導致狀態混亂。已忽略此操作。`
+    );
+    return;
+  }
+
+  // 更新 flowStore 中的狀態
+  const updatedState = {
+    status: newStatus,
+    data: result,
+    error: error ? error.message || "未知錯誤" : null,
+    updatedAt: new Date().toISOString(),
+  };
+
+  console.log(`[BaseNode] 準備更新 flowStore 中的節點狀態:`, updatedState);
+
+  // 更新本地 ref 狀態
+  nodeState.value = { ...nodeState.value, ...updatedState };
+
+  // 更新 flowStore 中的狀態
+  flowStore.updateNodeState(nodeId, updatedState);
+
+  console.log(`[BaseNode] 狀態更新完成，當前節點狀態:`, nodeState.value);
+
+  // 發送狀態變更事件
+  sendStateChangeEvent(newStatus, result, error);
+};
 
 // 修改狀態類型映射
 const statusType = computed(() => {
@@ -380,6 +459,7 @@ const statusType = computed(() => {
     error: "danger",
     paused: "warning",
     pending: "info",
+    default: "info",
   };
   return typeMap[nodeState.value.status] || "info";
 });
@@ -393,8 +473,54 @@ const statusText = computed(() => {
     error: "錯誤",
     paused: "已暫停",
     pending: "等待中",
+    default: "預設",
   };
   return textMap[nodeState.value.status] || nodeState.value.status;
+});
+
+// 判斷節點是否已經執行過
+const hasExecutedBefore = computed(() => {
+  // 檢查節點狀態是否為已完成
+  if (nodeState.value.status === "completed") {
+    return true;
+  }
+
+  // 檢查節點上下文是否有數據
+  if (nodeContext.value && Object.keys(nodeContext.value).length > 0) {
+    return true;
+  }
+
+  // 檢查 sharedData 或 globalVariables 中是否有該節點的數據
+  const sharedData = currentInstance.value?.context?.sharedData || {};
+  const globalVariables = currentInstance.value?.context?.globalVariables || {};
+
+  // 檢查 sharedData 中是否有與該節點相關的數據
+  // 遍歷 sharedData 中的所有項目，檢查是否有任何項目的 nodeId 與當前節點 ID 匹配
+  const hasSharedData = Object.values(sharedData).some((item) => {
+    // 檢查項目是否為對象且包含 nodeId 屬性
+    return item && typeof item === "object" && item.nodeId === props.id;
+  });
+
+  if (hasSharedData) {
+    return true;
+  }
+
+  // 檢查 globalVariables 中是否有與該節點相關的變數
+  const hasGlobalVar = Object.entries(globalVariables).some(([key, value]) => {
+    // 檢查鍵值是否包含節點 ID
+    if (key.includes(props.id)) {
+      return value !== undefined && value !== null;
+    }
+
+    // 檢查變數中是否有 sourceNodeId 欄位與當前節點 ID 匹配
+    if (value && typeof value === "object" && value.sourceNodeId === props.id) {
+      return true;
+    }
+
+    return false;
+  });
+
+  return hasGlobalVar;
 });
 
 // 節點類型樣式映射
@@ -496,22 +622,67 @@ const customHeaderClass = computed(() => {
   return "";
 });
 
-// 獲取節點上下文數據
-const nodeContext = computed(() => {
-  return flowStore.getNodeContextById(props.id);
-});
-
-// 獲取節點日誌
-const nodeLogs = computed(() => {
-  return flowStore.getNodeLogsById(props.id);
-});
-
 const running = ref(false);
 // 修改測試執行函數為空方法，讓子類別必須自行實作
 const handleRun = async () => {
   console.log("BaseNode handleRun 被調用，但這是一個空方法，應該由子類別實作");
   // 不再拋出錯誤，而是提供一個默認的空實現
   // 實際的執行邏輯應該由子類別通過監聽 run 事件來實現
+};
+
+// 處理執行按鈕點擊
+const handleRunClick = async (context = {}) => {
+  // 防止重複點擊
+  if (running.value) {
+    console.log("節點正在執行中，忽略重複點擊");
+    return;
+  }
+
+  // 設置載入中狀態
+  running.value = true;
+
+  try {
+    console.log(
+      `[${new Date().toISOString()}] 節點 ${
+        props.id
+      } handleRunClick 被調用，上下文:`,
+      context
+    );
+
+    // 觸發 run 事件，並傳遞上下文數據
+    emit("run", context);
+
+    // 由於實際執行是在父組件中處理的，這裡我們不自動重置狀態
+    // 而是等待父組件通過 setRunningState 方法通知執行完成
+  } catch (error) {
+    console.error("執行節點時發生錯誤:", error);
+    running.value = false;
+
+    // 更新錯誤狀態
+    updateNodeStatus("error", null, error);
+  }
+};
+
+// 設置執行狀態，供父組件調用
+const setRunningState = (isRunning) => {
+  running.value = isRunning;
+  console.log("isRunning", props.id, isRunning);
+  // 同時更新 nodeState.status
+  if (isRunning) {
+    nodeState.value = {
+      ...nodeState.value,
+      status: "running",
+    };
+    // 發送狀態變更事件
+    updateNodeStatus("running");
+  } else if (nodeState.value.status === "running") {
+    // 只有當當前狀態為 running 時才更新為 default
+    // 避免覆蓋其他狀態（如 completed 或 error）
+    nodeState.value = {
+      ...nodeState.value,
+      status: "default",
+    };
+  }
 };
 
 // 定義 emits
@@ -533,60 +704,122 @@ const handleDisconnect = (data) => {
   emit("handle-disconnect", { id: props.id, ...data });
 };
 
-// 展開狀態
-const isExpanded = ref(true);
+// 節點包裝器引用
+const nodeWrapperRef = ref(null);
+// 節點內容引用
+const nodeContentRef = ref(null);
+// ResizeObserver 實例
+let resizeObserver = null;
 
-// 參考元素
-const iconAreaRef = ref(null);
-const expandableContentRef = ref(null);
-const contentHeight = ref(0);
+// 更新節點高度
+const updateNodeHeight = async () => {
+  if (!props.autoHeight || !nodeWrapperRef.value || !nodeContentRef.value)
+    return;
 
-// 計算內容區域高度
-const updateContentHeight = () => {
-  if (isExpanded.value) {
-    const expandedContent = expandableContentRef.value;
-    if (expandedContent) {
-      contentHeight.value = expandedContent.scrollHeight;
-    }
-  } else {
-    const iconArea = iconAreaRef.value;
-    if (iconArea) {
-      contentHeight.value = iconArea.scrollHeight;
-    }
+  await nextTick();
+
+  // 獲取內容高度
+  const contentHeight = nodeContentRef.value.scrollHeight;
+  // 獲取節點頭部高度
+  const headerHeight =
+    nodeWrapperRef.value.querySelector(".node-header")?.offsetHeight || 0;
+  // 獲取節點狀態區域高度
+  const statusHeight =
+    nodeWrapperRef.value.querySelector(".node-status")?.offsetHeight || 0;
+
+  // 計算總高度，加上一些額外的間距
+  const totalHeight = contentHeight + headerHeight + statusHeight + 20;
+
+  // 確保高度不小於最小高度
+  const finalHeight = Math.max(totalHeight, props.minHeight);
+
+  // 更新節點高度
+  if (nodeWrapperRef.value) {
+    nodeWrapperRef.value.style.height = `${finalHeight}px`;
   }
+
+  // 通知 Vue Flow 節點尺寸已變更
+  emit("nodeSizeChange", { id: props.id, height: finalHeight });
 };
 
-// 監聽展開狀態變化
-watch(isExpanded, () => {
-  nextTick(() => {
-    updateContentHeight();
-  });
-});
+// 監聽節點選擇狀態變化
+watch(
+  () => props.selected,
+  async () => {
+    await nextTick();
+    updateNodeHeight();
+  },
+  { immediate: true }
+);
 
-// 計算內容樣式
-const contentStyle = computed(() => ({
-  height: `${contentHeight.value}px`,
-  transition: "height 0.3s ease-in-out",
-}));
+// 監聽節點狀態變化
+watch(
+  () => props.status,
+  async () => {
+    await nextTick();
+    updateNodeHeight();
+  },
+  { immediate: true }
+);
 
-// 處理展開/摺疊
-const handleToggleExpand = () => {
-  isExpanded.value = !isExpanded.value;
-};
-
+// 在 onMounted 中初始化 nodeState
 onMounted(() => {
-  updateContentHeight();
-  // 監聽視窗大小變化
-  window.addEventListener("resize", updateContentHeight);
+  // 從 flowStore 獲取初始狀態
+  const initialState = flowStore.getNodeStateById(props.id);
+  console.log(`[BaseNode ${props.id}] 初始化節點狀態:`, initialState);
+  nodeState.value = initialState;
+
+  nextTick(() => {
+    updateNodeHeight();
+
+    // 創建 ResizeObserver 來監聽內容尺寸變化
+    if (window.ResizeObserver && nodeContentRef.value) {
+      resizeObserver = new ResizeObserver(() => {
+        updateNodeHeight();
+      });
+
+      resizeObserver.observe(nodeContentRef.value);
+    }
+  });
+
+  // 添加節點執行事件監聽器
+  const handleExecuteNodeEvent = (event) => {
+    const { nodeId, ...context } = event.detail;
+
+    // 檢查是否是當前節點
+    if (nodeId === props.id) {
+      console.log(
+        `[${new Date().toISOString()}] 節點 ${nodeId} 收到執行事件，準備執行，上下文:`,
+        context
+      );
+      // 調用 handleRun 方法，並傳遞上下文數據
+      handleRunClick(context);
+    }
+  };
+
+  // 添加事件監聽器
+  window.addEventListener("flow:executeNode", handleExecuteNodeEvent);
+
+  // 保存事件監聽器引用，以便在 onUnmounted 中移除
+  nodeWrapperRef.value._handleExecuteNodeEvent = handleExecuteNodeEvent;
 });
 
+// 清理 ResizeObserver 和事件監聽器
 onUnmounted(() => {
-  window.removeEventListener("resize", updateContentHeight);
-});
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
 
-const executeNode = async () => {
-  throw new Error("executeNode must be implemented by child component");
-};
+  // 移除節點執行事件監聽器
+  if (nodeWrapperRef.value && nodeWrapperRef.value._handleExecuteNodeEvent) {
+    window.removeEventListener(
+      "flow:executeNode",
+      nodeWrapperRef.value._handleExecuteNodeEvent
+    );
+    nodeWrapperRef.value._handleExecuteNodeEvent = null;
+  }
+});
 
 // 錯誤詳情顯示控制
 const showErrorDetails = ref(false);
@@ -622,9 +855,6 @@ const handleClearError = async () => {
       await clearNodeError(props.id);
 
       // 重置本地狀態
-      status.value = "default";
-      errorMessage.value = "";
-      errorDetails.value = null;
       showErrorDetails.value = false;
       showFullError.value = false;
 
@@ -632,7 +862,6 @@ const handleClearError = async () => {
     }
   } catch (error) {
     console.error("清除錯誤狀態失敗:", error);
-    ElMessage.error("清除錯誤狀態失敗");
   }
 };
 
@@ -656,106 +885,6 @@ const formatExecutionTime = (time) => {
   return `${time.toFixed(2)}秒`;
 };
 
-// 節點包裝器引用
-const nodeWrapperRef = ref(null);
-// 節點內容引用
-const nodeContentRef = ref(null);
-// ResizeObserver 實例
-let resizeObserver = null;
-
-// 更新節點高度
-const updateNodeHeight = async () => {
-  if (!props.autoHeight || !nodeWrapperRef.value || !nodeContentRef.value)
-    return;
-
-  await nextTick();
-
-  // 獲取內容高度
-  const contentHeight = nodeContentRef.value.scrollHeight;
-  // 獲取節點頭部高度
-  const headerHeight =
-    nodeWrapperRef.value.querySelector(".node-header")?.offsetHeight || 0;
-  // 獲取節點狀態區域高度
-  const statusHeight =
-    nodeWrapperRef.value.querySelector(".node-status")?.offsetHeight || 0;
-
-  // 計算總高度，加上一些額外的間距
-  const totalHeight = contentHeight + headerHeight + statusHeight + 20;
-
-  // 確保高度不小於最小高度
-  const finalHeight = Math.max(totalHeight, props.minHeight);
-
-  console.log(`節點 ${props.id} 高度計算:`, {
-    contentHeight,
-    headerHeight,
-    statusHeight,
-    totalHeight,
-    finalHeight,
-  });
-
-  // 更新節點高度
-  if (nodeWrapperRef.value) {
-    nodeWrapperRef.value.style.height = `${finalHeight}px`;
-  }
-
-  // 通知 Vue Flow 節點尺寸已變更
-  emit("nodeSizeChange", { id: props.id, height: finalHeight });
-};
-
-// 監聽內容變化
-watch(
-  () => props.isExpanded,
-  async () => {
-    await nextTick();
-    updateNodeHeight();
-  },
-  { immediate: true }
-);
-
-// 監聽節點選擇狀態變化
-watch(
-  () => props.selected,
-  async () => {
-    await nextTick();
-    updateNodeHeight();
-  },
-  { immediate: true }
-);
-
-// 監聽節點狀態變化
-watch(
-  () => props.status,
-  async () => {
-    await nextTick();
-    updateNodeHeight();
-  },
-  { immediate: true }
-);
-
-// 監聽節點內容變化
-onMounted(() => {
-  nextTick(() => {
-    updateNodeHeight();
-
-    // 創建 ResizeObserver 來監聽內容尺寸變化
-    if (window.ResizeObserver && nodeContentRef.value) {
-      resizeObserver = new ResizeObserver(() => {
-        updateNodeHeight();
-      });
-
-      resizeObserver.observe(nodeContentRef.value);
-    }
-  });
-});
-
-// 清理 ResizeObserver
-onUnmounted(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
-});
-
 // 暴露方法和屬性
 defineExpose({
   nodeState,
@@ -764,6 +893,9 @@ defineExpose({
   handleRun,
   handleClearError,
   formatErrorMessage,
+  setRunningState,
+  updateNodeStatus, // 暴露統一的狀態更新方法
+  sendStateChangeEvent, // 暴露發送狀態變更事件的方法
 });
 </script>
 
@@ -799,33 +931,6 @@ defineExpose({
   @apply px-3 py-2 border-t bg-gray-50 rounded-b-lg;
 }
 
-.icon-area {
-  @apply flex items-center justify-center p-4 transition-all duration-300 ease-in-out cursor-pointer hover:bg-gray-50;
-  min-height: 160px;
-}
-
-.icon-area:hover {
-  @apply border-gray-300 bg-gray-50;
-}
-
-.icon-area-collapsed {
-  @apply transform scale-100;
-}
-
-.expandable-content {
-  @apply absolute top-0 left-0 w-full bg-white opacity-0 invisible transition-all duration-300 ease-in-out p-4;
-  transform: translateY(10px);
-}
-
-.expandable-content-expanded {
-  @apply opacity-100 visible static;
-  transform: translateY(0);
-}
-
-.collapse-button {
-  @apply absolute bottom-2 right-2 p-1 rounded-full hover:bg-gray-100 transition-colors duration-200;
-}
-
 .flow-node {
   @apply relative bg-white rounded-md shadow-sm border border-gray-200 overflow-hidden;
   min-width: 200px;
@@ -839,8 +944,9 @@ defineExpose({
 }
 
 .flow-node--running {
-  @apply border-blue-400;
-  animation: pulse 2s infinite;
+  @apply border-purple-500 bg-purple-50;
+  animation: purplePulse 1.5s infinite;
+  box-shadow: 0 0 15px rgba(147, 51, 234, 0.7) !important;
 }
 
 .flow-node--completed {
@@ -1016,5 +1122,47 @@ defineExpose({
 :deep(.vue-flow__handle.right) {
   right: 0;
   transform: translateX(50%);
+}
+
+@keyframes purplePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(147, 51, 234, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+  }
+}
+
+/* 執行中節點的特殊樣式 */
+.node-wrapper.flow-node--running::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 3px solid #a855f7;
+  border-radius: 12px;
+  animation: borderPulse 2s infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes borderPulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

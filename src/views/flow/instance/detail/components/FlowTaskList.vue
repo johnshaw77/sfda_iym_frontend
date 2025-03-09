@@ -103,7 +103,8 @@
         v-if="selectedNode"
         :node="selectedNode"
         :incoming-edges="getIncomingEdges(selectedNode.id)"
-        :outgoing-edges="getOutgoingEdges(selectedNode.id)" />
+        :outgoing-edges="getOutgoingEdges(selectedNode.id)"
+        :all-nodes="props.nodes" />
     </el-dialog>
   </div>
 </template>
@@ -111,8 +112,8 @@
 <script setup>
 import NodeDetailView from "./NodeDetailView.vue";
 
-import JsonViewer from "vue-json-viewer";
-import "vue-json-viewer/style.css";
+// import JsonViewer from "vue-json-viewer";
+// import "vue-json-viewer/style.css";
 
 const props = defineProps({
   nodes: {
@@ -255,6 +256,7 @@ const getStatusText = (status) => {
 
 // 查看節點詳情
 const handleViewDetail = (node) => {
+  console.log("node", node);
   selectedNode.value = node;
   detailDialogVisible.value = true;
 };

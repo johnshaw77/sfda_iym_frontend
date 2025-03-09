@@ -75,12 +75,6 @@ const updateBreadcrumb = (shouldLoadProject = true) => {
       fromProject,
       noLoadProject: !shouldLoadProject,
     });
-
-    console.log("已更新麵包屑路徑", {
-      breadcrumbPath: flowStore.getBreadcrumbPath,
-      fromProject,
-      shouldLoadProject,
-    });
   }
 };
 
@@ -103,7 +97,6 @@ const loadFlowInstance = async () => {
     loading.value = true;
     const response = await getFlowInstanceById(route.params.id);
     flowInstance.value = response.data;
-    console.log("載入的流程實例數據:", flowInstance.value);
 
     // 設置麵包屑
     if (flowInstance.value) {

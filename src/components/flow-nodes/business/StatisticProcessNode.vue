@@ -1,11 +1,11 @@
 <template>
   <BaseNode
     :id="id"
+    ref="nodeRef"
     nodeType="statistic-process"
     :title="title"
     :description="description"
     icon="BarChart2"
-    :status="status"
     :selected="selected"
     header-bg-color="#bfdeee"
     :handles="handles"
@@ -106,10 +106,10 @@ const handles = {
 };
 
 // 節點狀態
-const status = ref("idle");
 const errorMessage = ref("");
 const errorDetails = ref(null);
 const outputData = ref(null);
+const nodeRef = ref(null);
 
 // 模擬數據
 const factors = ref([
@@ -164,12 +164,8 @@ const handleDisconnect = (data) => {
 // 數據處理函數
 const processData = (inputData) => {
   return new Promise((resolve) => {
-    status.value = "running";
-
     // 模擬數據處理
     setTimeout(() => {
-      status.value = "completed";
-
       const result = {
         factors: factors.value,
         chiSquareValue: chiSquareValue.value,
@@ -187,17 +183,64 @@ const processData = (inputData) => {
   });
 };
 
+// 統一的狀態更新方法
+const updateNodeStatus = (newStatus, result = null, error = null) => {
+  console.log(
+    `[StatisticProcessNode] 更新節點 ${props.id} 狀態為 ${newStatus}`
+  );
+
+  // 如果有節點引用，使用 BaseNode 中的方法更新狀態
+  if (nodeRef.value) {
+    console.log(`[StatisticProcessNode] 使用 nodeRef 更新狀態`);
+    nodeRef.value.updateNodeStatus(newStatus, result, error);
+  } else {
+    // 如果節點引用不可用，直接更新 flowStore
+    console.log(`[StatisticProcessNode] nodeRef 不可用，直接更新 flowStore`);
+    flowStore.updateNodeState(props.id, {
+      status: newStatus,
+      data: result,
+      error: error ? error.message || "未知錯誤" : null,
+    });
+  }
+};
+
 // 執行節點
-const handleRun = async () => {
+const handleRun = async (context = {}) => {
   try {
-    status.value = "running";
+    // 檢查是否有來自上一個節點的數據
+    if (context && context.sourceNodeId) {
+      console.log(
+        `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
+      );
+      console.log("上下文數據:", context);
+
+      // 如果有上一個節點的輸出數據，可以使用它
+      if (context.sourceNodeOutput) {
+        console.log("使用上一個節點的輸出數據:", context.sourceNodeOutput);
+        // 這裡可以根據需要處理上一個節點的輸出數據
+      }
+
+      // 如果有客訴單號，可以使用它
+      if (context.complaintId) {
+        console.log(`使用客訴單號: ${context.complaintId}`);
+        // 這裡可以根據客訴單號獲取相關數據
+      }
+    }
+
+    // 統一使用 updateNodeStatus 方法更新狀態
+    updateNodeStatus("running");
+
     errorMessage.value = "";
     errorDetails.value = null;
 
     // 使用 composable 執行節點
     const result = await executeNode(
       props.id,
-      {}, // 輸入數據
+      {
+        // 如果有上下文數據，則包含在輸入數據中
+        ...(context || {}),
+        timestamp: new Date().toISOString(),
+      },
       processData // 處理函數
     );
 
@@ -211,19 +254,42 @@ const handleRun = async () => {
     });
 
     // 更新組件狀態
-    status.value = "success";
     outputData.value = result;
     ElMessage.success("統計處理執行成功");
+
+    // 統一使用 updateNodeStatus 方法更新狀態
+    updateNodeStatus("completed", {
+      ...result,
+      factors: factors.value,
+      chiSquareValue: chiSquareValue.value,
+      pValue: pValue.value,
+      // 如果有客訴單號等重要信息，也傳遞過去
+      ...(context.complaintId
+        ? {
+            complaintId: context.complaintId,
+            complaintDetail: context.complaintDetail,
+          }
+        : {}),
+    });
+
+    return result;
   } catch (error) {
     console.error("執行節點時發生錯誤:", error);
-    status.value = "error";
+
     errorMessage.value = error.message || "執行節點時發生未知錯誤";
     errorDetails.value = {
       message: error.message,
       stack: error.stack,
     };
 
+    // 統一使用 updateNodeStatus 方法更新狀態
+    updateNodeStatus("error", null, error);
+
     ElMessage.error(`執行失敗: ${errorMessage.value}`);
+    throw error;
+  } finally {
+    // 重置 loading 狀態
+    nodeRef.value?.setRunningState(false);
   }
 };
 

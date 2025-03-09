@@ -37,6 +37,121 @@
             @highlight-node="handleHighlightNode" />
         </div>
       </el-card>
+
+      <!-- 工作流控制面板 -->
+      <el-card class="w-[300px] absolute top-2 right-2 z-10">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <span class="text-lg font-medium">工作流控制</span>
+            <el-switch
+              v-model="showWorkflowControls"
+              active-text="顯示"
+              inactive-text="隱藏" />
+          </div>
+        </template>
+        <div
+          v-if="showWorkflowControls"
+          class="p-2 space-y-4">
+          <!-- 工作流控制按鈕 -->
+          <div class="flex flex-col space-y-2">
+            <el-button
+              type="primary"
+              @click="startWorkflow()"
+              :disabled="workflowManager.isExecuting">
+              <component
+                :is="Play"
+                :size="16"
+                :stroke-width="1.5"
+                class="mr-1" />
+              啟動工作流
+            </el-button>
+            <el-button
+              type="warning"
+              @click="executeSpecificNode(selectedNode?.id)"
+              :disabled="!selectedNode">
+              <component
+                :is="PlayCircle"
+                :size="16"
+                :stroke-width="1.5"
+                class="mr-1" />
+              執行選中節點
+            </el-button>
+          </div>
+
+          <!-- 執行狀態顯示 -->
+          <div
+            v-if="workflowManager.isExecuting"
+            class="p-2 bg-blue-50 rounded">
+            <div class="flex items-center">
+              <component
+                :is="Loader"
+                :size="16"
+                :stroke-width="1.5"
+                class="mr-1 animate-spin" />
+              <span
+                >正在執行節點:
+                {{ workflowManager.currentExecutingNodeId }}</span
+              >
+            </div>
+          </div>
+
+          <!-- 執行錯誤顯示 -->
+          <div
+            v-if="workflowManager.executionError"
+            class="p-2 bg-red-50 rounded">
+            <div class="text-red-600">
+              <component
+                :is="AlertCircle"
+                :size="16"
+                :stroke-width="1.5"
+                class="mr-1" />
+              執行錯誤: {{ workflowManager.executionError.message }}
+            </div>
+          </div>
+
+          <!-- 執行歷史 -->
+          <div
+            v-if="workflowManager.executionHistory.length > 0"
+            class="p-2 bg-gray-50 rounded">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium">執行歷史</span>
+              <el-button
+                type="text"
+                size="small"
+                @click="showExecutionHistory = !showExecutionHistory">
+                {{ showExecutionHistory ? "隱藏" : "顯示" }}
+              </el-button>
+            </div>
+            <div
+              v-if="showExecutionHistory"
+              class="max-h-40 overflow-auto">
+              <div
+                v-for="(item, index) in workflowManager.executionHistory"
+                :key="index"
+                class="text-xs p-1 border-b border-gray-200">
+                <div class="flex justify-between">
+                  <span>{{
+                    new Date(item.timestamp).toLocaleTimeString()
+                  }}</span>
+                  <el-tag
+                    size="small"
+                    :type="
+                      item.action === 'error'
+                        ? 'danger'
+                        : item.action === 'complete'
+                        ? 'success'
+                        : 'info'
+                    ">
+                    {{ item.action }}
+                  </el-tag>
+                </div>
+                <div class="text-gray-600">節點: {{ item.nodeId }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </el-card>
+
       <VueFlow
         v-model="elements"
         class="h-full"
@@ -261,7 +376,6 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
 import {
   VueFlow,
   useVueFlow,
@@ -273,7 +387,6 @@ import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
 import dagre from "@dagrejs/dagre"; // 自動布局
-import { ElMessageBox, ElMessage } from "element-plus";
 import JsonViewer from "vue-json-viewer";
 import "vue-json-viewer/style.css";
 
@@ -288,10 +401,14 @@ import { updateFlowInstance } from "@/api/modules/flow";
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import FileNode from "@/components/flow-nodes/base/FileNode.vue";
 import FlowTaskList from "./FlowTaskList.vue";
+import { useWorkflowManager } from "@/composables/useWorkflowManager";
+import { Play, PlayCircle, Loader, AlertCircle } from "lucide-vue-next";
+
 // 節點類型定義
 const NODE_TYPES = ref({});
 
 const props = defineProps({
+  // 工作流實例
   flowInstance: {
     type: Object,
     required: true,
@@ -389,6 +506,45 @@ const snapToGrid = ref(true);
 
 // 定義 showJsonDrawer 變數
 const showJsonDrawer = ref(false);
+
+// 使用工作流管理器
+const workflowManager = useWorkflowManager();
+
+// 添加工作流控制面板
+const showWorkflowControls = ref(false);
+const selectedStartNode = ref(null);
+
+// 執行歷史顯示控制
+const showExecutionHistory = ref(false);
+
+// 啟動工作流
+const startWorkflow = async (startNodeId = null) => {
+  try {
+    ElMessage.info("正在啟動工作流...");
+    await workflowManager.executeWorkflow(startNodeId);
+    ElMessage.success("工作流啟動成功");
+  } catch (error) {
+    console.error("啟動工作流時發生錯誤:", error);
+    ElMessage.error(`啟動工作流失敗: ${error.message}`);
+  }
+};
+
+// 執行特定節點
+const executeSpecificNode = async (nodeId, context = {}) => {
+  try {
+    if (!nodeId) {
+      ElMessage.warning("請先選擇要執行的節點");
+      return;
+    }
+
+    ElMessage.info(`正在執行節點 ${nodeId}...`);
+    await workflowManager.executeNode(nodeId, context);
+    ElMessage.success(`節點 ${nodeId} 執行成功`);
+  } catch (error) {
+    console.error(`執行節點 ${nodeId} 時發生錯誤:`, error);
+    ElMessage.error(`執行節點失敗: ${error.message}`);
+  }
+};
 
 // 修改歷史記錄系統
 const history = ref({
@@ -571,6 +727,13 @@ onMounted(() => {
   setTimeout(() => {
     handleFitView();
   }, 100);
+
+  // 添加節點狀態變更事件監聽器
+  window.addEventListener("flow:nodeStateChange", handleNodeStateChange);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("flow:nodeStateChange", handleNodeStateChange);
 });
 
 const onNodeClick = (event) => {
@@ -863,8 +1026,6 @@ onMounted(async () => {
     props.flowInstance.nodes &&
     props.flowInstance.edges
   ) {
-    console.log("初始化流程實例數據", props.flowInstance);
-
     // 處理節點，設置 FileNode 可拖動，其他節點不可拖動
     const processedNodes = props.flowInstance.nodes.map((node) => {
       // 如果是 FileNode 類型，設置為可拖動
@@ -1204,7 +1365,51 @@ const handleNodeSizeChange = ({ id, height }) => {
   // 通知 Vue Flow 更新
   useVueFlow().updateNodeInternals([id]);
 
-  console.log(`節點 ${id} 高度已更新為 ${height}px`);
+  //console.log(`節點 ${id} 高度已更新為 ${height}px`);
+};
+
+// 處理節點狀態變更事件
+const handleNodeStateChange = async (event) => {
+  const { nodeId, status, result, error } = event.detail;
+
+  console.log(`節點 ${nodeId} 狀態變更為 ${status}`, result || error);
+
+  // 更新節點視覺狀態
+  const node = elements.value.find((el) => el.id === nodeId && !el.source);
+  if (node) {
+    // 更新節點狀態
+    if (status === "completed") {
+      // 高亮顯示節點（綠色邊框）
+      node.style = {
+        ...node.style,
+        border: "2px solid #22c55e",
+        boxShadow: "0 0 10px rgba(34, 197, 94, 0.5)",
+      };
+
+      // 通知工作流管理器節點已完成
+      await workflowManager.handleNodeCompleted(nodeId, result);
+    } else if (status === "running") {
+      // 高亮顯示節點（藍色邊框）
+      node.style = {
+        ...node.style,
+        border: "2px solid #3b82f6",
+        boxShadow: "0 0 10px rgba(59, 130, 246, 0.5)",
+      };
+    } else if (status === "error") {
+      // 高亮顯示節點（紅色邊框）
+      node.style = {
+        ...node.style,
+        border: "2px solid #ef4444",
+        boxShadow: "0 0 10px rgba(239, 68, 68, 0.5)",
+      };
+
+      // 通知工作流管理器節點執行錯誤
+      await workflowManager.handleNodeError(nodeId, error);
+    }
+
+    // 更新元素
+    elements.value = [...elements.value];
+  }
 };
 
 // // 暴露方法給父組件

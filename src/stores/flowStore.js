@@ -47,7 +47,6 @@ export const useFlowStore = defineStore("flow", () => {
 
   // 設置麵包屑路徑
   function setBreadcrumbPath(path) {
-    console.log("設置麵包屑路徑", path);
     breadcrumbPath.value = path;
   }
 
@@ -63,7 +62,6 @@ export const useFlowStore = defineStore("flow", () => {
 
   // 設置專案名稱
   function setProjectName(name) {
-    console.log("setProjectName", name);
     projectName.value = name;
   }
 
@@ -97,7 +95,6 @@ export const useFlowStore = defineStore("flow", () => {
         // 避免與 setBreadcrumbInstance 重複呼叫
       }
 
-      console.log("instance", instance);
       if (instance.templateId) {
         setTemplateId(instance.templateId);
       }
@@ -112,28 +109,24 @@ export const useFlowStore = defineStore("flow", () => {
 
     // 如果已經有緩存，直接使用緩存
     if (projectCache.value[projectId]) {
-      console.log("使用緩存的專案資訊:", projectId);
       setProjectName(projectCache.value[projectId].name);
       return;
     }
 
     // 如果正在載入，則不重複請求
     if (loadingProjects.value.has(projectId)) {
-      console.log("專案資訊正在載入中，跳過重複請求:", projectId);
       return;
     }
 
     try {
       // 標記為正在載入
       loadingProjects.value.add(projectId);
-      console.log("開始載入專案資訊:", projectId);
 
       const response = await getProjectById(projectId);
       if (response && response.data) {
         // 保存到緩存
         projectCache.value[projectId] = response.data;
         setProjectName(response.data.name);
-        console.log("專案資訊載入成功並緩存:", projectId);
       }
     } catch (error) {
       console.error("載入專案資訊失敗:", error);
@@ -155,11 +148,19 @@ export const useFlowStore = defineStore("flow", () => {
   // Getters
   const getNodeStateById = computed(() => (nodeId) => {
     if (!currentInstance.value || !nodeId) {
+      console.log(
+        `[flowStore] getNodeStateById: 無法獲取節點 ${nodeId} 的狀態，currentInstance 或 nodeId 不存在`
+      );
       return { status: "default" };
     }
 
     const nodeStates = currentInstance.value.nodeStates || {};
-    return nodeStates[nodeId] || { status: "default" };
+    const state = nodeStates[nodeId] || { status: "default" };
+    console.log(
+      `[flowStore] getNodeStateById: 獲取節點 ${nodeId} 的狀態:`,
+      state
+    );
+    return state;
   });
 
   const getNodeContextById = computed(() => (nodeId) => {
@@ -533,31 +534,55 @@ export const useFlowStore = defineStore("flow", () => {
   };
 
   // 更新節點狀態
-  const updateNodeState = async (instanceId, nodeId, state) => {
-    if (!instanceId || !nodeId) {
-      throw new Error("更新節點狀態需要提供 instanceId 和 nodeId");
+  const updateNodeState = (nodeId, state) => {
+    if (!nodeId) {
+      console.error("更新節點狀態需要提供 nodeId");
+      return;
     }
 
     try {
       const instance = currentInstance.value;
       if (!instance) {
-        throw new Error(`找不到流程實例 ${instanceId}`);
+        console.error("找不到當前流程實例");
+        return;
+      }
+
+      console.log(`[flowStore] 更新節點 ${nodeId} 狀態:`, state);
+      console.log(`[flowStore] 當前節點狀態:`, instance.nodeStates?.[nodeId]);
+
+      // 確保 nodeStates 存在
+      if (!instance.nodeStates) {
+        instance.nodeStates = {};
       }
 
       // 更新本地節點狀態
-      currentInstance.value = {
-        ...instance,
-        nodeStates: {
-          ...instance.nodeStates,
-          [nodeId]: {
-            ...instance.nodeStates?.[nodeId],
-            ...state,
-          },
-        },
+      const updatedNodeStates = {
+        ...instance.nodeStates,
       };
 
-      // 這裡可以選擇是否同步到後端
-      // 如果需要同步到後端，可以調用 API
+      // 確保只更新指定節點的狀態
+      updatedNodeStates[nodeId] = {
+        ...updatedNodeStates[nodeId],
+        ...state,
+        // 確保更新時間戳
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 創建新的實例對象，確保響應式更新
+      currentInstance.value = {
+        ...instance,
+        nodeStates: updatedNodeStates,
+      };
+
+      console.log(
+        `[flowStore] 節點 ${nodeId} 狀態已更新:`,
+        updatedNodeStates[nodeId]
+      );
+      console.log(
+        `[flowStore] 所有節點狀態:`,
+        currentInstance.value.nodeStates
+      );
+
       return currentInstance.value.nodeStates[nodeId];
     } catch (error) {
       console.error("更新節點狀態失敗:", error);

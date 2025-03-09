@@ -1,9 +1,10 @@
 <template>
   <BaseNode
     :id="id"
+    ref="nodeRef"
     node-type="custom-input"
-    title="決策樹分析"
-    description="使用決策樹模型分析數據並提供視覺化結果"
+    :title="title"
+    :description="description"
     :icon="GitBranch"
     :selected="selected"
     :disabled="disabled"
@@ -15,7 +16,7 @@
     :handles="handles"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
-    @run="handleAnalyze">
+    @run="handleRun">
     <div class="p-4">
       <div class="mb-4">
         <h3 class="text-sm font-medium text-gray-700 mb-2">決策樹模型參數</h3>
@@ -121,8 +122,8 @@
       <div class="mt-4">
         <el-button
           type="primary"
-          @click="handleAnalyze"
-          :loading="analyzing"
+          @click="handleRun"
+          :loading="executing"
           :disabled="!canAnalyze">
           執行決策樹分析
         </el-button>
@@ -136,6 +137,7 @@ import BaseNode from "../base/BaseNode.vue";
 import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
+import { GitBranch } from "lucide-vue-next";
 
 // 定義 props
 const props = defineProps({
@@ -146,6 +148,14 @@ const props = defineProps({
   selected: {
     type: Boolean,
     default: false,
+  },
+  title: {
+    type: String,
+    default: "決策樹分析",
+  },
+  description: {
+    type: String,
+    default: "使用決策樹模型分析數據並提供視覺化結果",
   },
   disabled: {
     type: Boolean,
@@ -173,24 +183,6 @@ const props = defineProps({
   },
 });
 
-// 連接點配置
-const handles = {
-  inputs: [
-    {
-      id: "input",
-      type: "target",
-      position: "left",
-    },
-  ],
-  outputs: [
-    {
-      id: "output",
-      type: "source",
-      position: "right",
-    },
-  ],
-};
-
 // 定義事件
 const emit = defineEmits([
   "handle-connect",
@@ -209,8 +201,17 @@ const handleDisconnect = (data) => {
 };
 
 // 使用流程實例 composable
-const { executeNode, clearNodeError, flowStore } = useFlowInstance();
-const { currentInstance } = storeToRefs(flowStore);
+const {
+  executeNode,
+  clearNodeError,
+  flowStore,
+  updateSharedData,
+  getSharedData,
+  getExecutionPhase,
+} = useFlowInstance();
+
+// 節點引用
+const nodeRef = ref(null);
 
 // 初始化 nodeContext，提供默認值避免 undefined 錯誤
 const nodeContext = ref({
@@ -219,16 +220,12 @@ const nodeContext = ref({
   status: "idle",
 });
 
-// 表單數據
-const formData = ref({
-  maxDepth: 3,
-  minSamplesSplit: 5,
-  targetVariable: "",
-  featureVariables: [],
-});
-
 // 分析狀態
-const analyzing = ref(false);
+const executing = ref(false);
+// 移除本地狀態變數，使用 BaseNode 的 nodeState.status
+const errorMessage = ref("");
+const errorDetails = ref(null);
+const outputData = ref(null);
 
 // 可用的目標變量
 const targetVariables = ref([
@@ -253,6 +250,26 @@ const featureVariables = ref([
   "工作時段",
 ]);
 
+// 模擬數據
+// 0-4 隨機數
+const getRandomNumber = () => {
+  return Math.floor(Math.random() * 5);
+};
+const mokeTargetVariable = targetVariables.value[getRandomNumber()];
+
+// 從 featureVariables 中隨機選擇 3 個
+const mokeFeatureVariables = featureVariables.value.slice(
+  getRandomNumber(),
+  getRandomNumber() + 3
+);
+// 表單數據
+const formData = ref({
+  maxDepth: 3,
+  minSamplesSplit: 5,
+  targetVariable: mokeTargetVariable,
+  featureVariables: mokeFeatureVariables,
+});
+
 // 計算是否可以分析
 const canAnalyze = computed(() => {
   return (
@@ -267,59 +284,159 @@ const getImportanceColor = (importance) => {
   return "#f56c6c"; // 紅色
 };
 
-// 執行決策樹分析
-const handleAnalyze = async () => {
-  if (!canAnalyze.value) {
-    ElMessage.warning("請先選擇目標變量和至少一個特徵變量");
-    return;
+// 數據處理函數
+const processData = (inputData) => {
+  return new Promise((resolve) => {
+    // 模擬數據處理
+    setTimeout(() => {
+      // 模擬結果 - 實際應用中這部分會由後端返回
+      const mockResult = {
+        treeImageUrl: "/uploads/iym/tree.png", // 使用指定的圖片路徑
+        modelInfo: {
+          accuracy: 0.87,
+          sampleCount: 1250,
+          featureImportance: {
+            溫度: 0.35,
+            壓力: 0.25,
+            濕度: 0.15,
+            原料供應商: 0.12,
+            維護頻率: 0.08,
+            操作員: 0.05,
+          },
+        },
+        myName: "john",
+      };
+
+      resolve(mockResult);
+    }, 5000);
+  });
+};
+
+// 統一的狀態更新方法
+const updateNodeStatus = (newStatus, result = null, error = null) => {
+  console.log(
+    `[DecisionTreeAnalysisNode] 更新節點 ${props.id} 狀態為 ${newStatus}`
+  );
+
+  // 如果有節點引用，使用 BaseNode 中的方法更新狀態
+  if (nodeRef.value) {
+    console.log(`[DecisionTreeAnalysisNode] 使用 nodeRef 更新狀態`);
+    nodeRef.value.updateNodeStatus(newStatus, result, error);
+  } else {
+    // 如果節點引用不可用，直接更新 flowStore
+    console.log(
+      `[DecisionTreeAnalysisNode] nodeRef 不可用，直接更新 flowStore`
+    );
+    flowStore.updateNodeState(props.id, {
+      status: newStatus,
+      data: result,
+      error: error ? error.message || "未知錯誤" : null,
+    });
+  }
+};
+
+// 實作 handleRun 方法，處理節點執行
+const handleRun = async (context = {}) => {
+  console.log(
+    `[${new Date().toISOString()}] 決策樹分析節點 handleRun 被調用`,
+    context
+  );
+
+  // 檢查是否有來自上一個節點的數據
+  if (context && context.sourceNodeId) {
+    console.log(`節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`);
+    console.log("上下文數據:", context);
+
+    // 如果有上下文數據，可以在這裡處理
+    if (context.sourceNodeOutput) {
+      console.log(`收到上一個節點的輸出數據`);
+      // 可以根據上一個節點的數據設置一些參數
+    }
   }
 
-  analyzing.value = true;
+  executing.value = true;
+
   try {
-    const result = await executeNode(props.id, {
-      action: "analyze",
-      params: {
-        maxDepth: formData.value.maxDepth,
-        minSamplesSplit: formData.value.minSamplesSplit,
-        targetVariable: formData.value.targetVariable,
-        featureVariables: formData.value.featureVariables,
-      },
+    // 統一使用 updateNodeStatus 方法更新狀態
+    updateNodeStatus("running");
+
+    // 準備輸入數據
+    const inputData = {
+      // 如果有上下文數據，則包含在輸入數據中
+      ...(context || {}),
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log("準備執行決策樹分析，輸入數據:", inputData);
+
+    // 使用 composable 執行節點
+    const result = await executeNode(
+      props.id,
+      inputData,
+      processData // 處理函數
+    );
+
+    // 將分析結果保存到共享數據中
+    await updateSharedData(props.id, {
+      detail: result,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+      nodeName: props.title,
     });
 
-    // 模擬結果 - 實際應用中這部分會由後端返回
-    const mockResult = {
-      treeImageUrl: "/uploads/iym/tree.png", // 使用指定的圖片路徑
-      modelInfo: {
-        accuracy: 0.87,
-        sampleCount: 1250,
-        featureImportance: {
-          溫度: 0.35,
-          壓力: 0.25,
-          濕度: 0.15,
-          原料供應商: 0.12,
-          維護頻率: 0.08,
-          操作員: 0.05,
-        },
-      },
-    };
-
-    // 更新節點上下文
-    nodeContext.value = {
-      ...nodeContext.value,
-      output: mockResult,
-      status: "completed",
-    };
-
+    outputData.value = result;
     ElMessage.success("決策樹分析完成");
+
+    // 統一使用 updateNodeStatus 方法更新狀態
+    updateNodeStatus("completed", result);
+
+    return result;
   } catch (error) {
     console.error("決策樹分析失敗", error);
     ElMessage.error(`決策樹分析失敗: ${error.message || "未知錯誤"}`);
+
     // 設置錯誤狀態
-    nodeContext.value.status = "error";
+    errorMessage.value = error.message || "執行節點時發生未知錯誤";
+    errorDetails.value = {
+      message: error.message,
+      stack: error.stack,
+    };
+
+    // 統一使用 updateNodeStatus 方法更新狀態
+    updateNodeStatus("error", null, error);
+
+    throw error;
   } finally {
-    analyzing.value = false;
+    executing.value = false;
+    // 重置 loading 狀態
+    nodeRef.value?.setRunningState(false);
   }
 };
+
+// 清除錯誤
+const handleClearError = async () => {
+  await clearNodeError(props.id);
+};
+
+// 檢查是否有之前的分析結果
+onMounted(async () => {
+  // 嘗試從共享數據中獲取之前的分析結果
+  const previousData = getSharedData(props.id);
+  if (previousData && previousData.detail) {
+    console.log("找到之前的分析結果:", previousData);
+    // 恢復之前的分析結果
+    nodeContext.value = {
+      ...nodeContext.value,
+      output: previousData.detail,
+    };
+  }
+});
+
+// 暴露方法給父元件
+defineExpose({
+  handleRun,
+  handleClearError,
+});
 </script>
 
 <style scoped>
