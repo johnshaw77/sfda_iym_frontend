@@ -183,6 +183,24 @@ const props = defineProps({
   },
 });
 
+// 連接點配置
+const handles = {
+  inputs: [
+    {
+      id: "input",
+      type: "target",
+      position: "left",
+    },
+  ],
+  outputs: [
+    {
+      id: "output",
+      type: "source",
+      position: "right",
+    },
+  ],
+};
+
 // 定義事件
 const emit = defineEmits([
   "handle-connect",

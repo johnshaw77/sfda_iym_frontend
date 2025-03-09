@@ -33,7 +33,12 @@
         <div
           v-if="data.uploadProgress < 100"
           class="upload-overlay">
-          {{ data.uploadProgress }}%
+          <div class="progress-text">{{ data.uploadProgress }}%</div>
+          <div class="progress-bar-container">
+            <div
+              class="progress-bar"
+              :style="{ width: `${data.uploadProgress}%` }"></div>
+          </div>
         </div>
       </div>
 
@@ -249,19 +254,6 @@
 
 <script setup>
 import { Handle } from "@vue-flow/core";
-// import {
-//   Eye,
-//   Download,
-//   Trash,
-//   ZoomIn,
-//   ZoomOut,
-//   X,
-//   Minimize2,
-//   Maximize2,
-//   ChevronLeft,
-//   ChevronRight,
-//   AlertTriangle,
-// } from "lucide-vue-next";
 import { useFileNode } from "@/composables/flow/useFileNode";
 
 // 定義 props
@@ -435,13 +427,35 @@ watch(previewVisible, (newValue) => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
+  background-color: rgba(255, 255, 255, 0.8);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  font-size: 12px;
-  border-radius: 8px;
+  align-items: center;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.progress-text {
+  font-size: 14px;
+  font-weight: bold;
+  color: #3b82f6;
+  margin-bottom: 8px;
+}
+
+.progress-bar-container {
+  width: 80%;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 4px;
+  transition: width 0.3s ease;
 }
 
 .file-info {

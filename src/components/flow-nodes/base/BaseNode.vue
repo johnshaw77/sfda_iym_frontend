@@ -89,7 +89,6 @@
             :disabled="nodeState.status === 'running'"
             >{{ hasExecutedBefore ? "重新執行" : "執行" }}</el-button
           >
-          123
           <el-tag
             :type="statusType"
             size="small"

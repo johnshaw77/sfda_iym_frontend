@@ -37,15 +37,21 @@
             <span>工作流程 JSON</span>
           </div>
         </template>
+
         <div class="p-4">
-          <json-viewer
+          <JsonViewer
+            :jsonData="elements"
+            :expand-depth="2"
+            :expand-on-click="true" />
+
+          <!-- <json-viewer
             :value="elements"
             :expand-depth="2"
             expandIconStyle="circle"
             sort
             boxed
             :expand-on-click="true"
-            class="custom-json-viewer" />
+            class="custom-json-viewer" /> -->
         </div>
       </el-drawer>
 
@@ -139,8 +145,9 @@ import EdgeWithButton from "@/components/flow-nodes/base/EdgeWithButton.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
-import JsonViewer from "vue-json-viewer";
-import "vue-json-viewer/style.css";
+
+import JsonViewer from "@/components/JsonViewer.vue";
+//import "vue-json-viewer/style.css";
 
 // 導入子元件
 import ToolPanel from "./components/ToolPanel.vue";

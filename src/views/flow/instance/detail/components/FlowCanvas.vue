@@ -8,150 +8,6 @@
     :class="{ 'is-dragover': isDragOver }"
     ref="flowCanvasRef">
     <div class="flex-1">
-      <el-card class="w-[500px] absolute top-2 left-2 z-10">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <el-descriptions
-              class="margin-top"
-              title="工作流實例(開發者測試用)"
-              :column="2"
-              :size="size"
-              border
-              :style="blockMargin">
-              <el-descriptions-item
-                label="flowInstance.id"
-                :span="2"
-                >{{ flowInstance?.id }}</el-descriptions-item
-              >
-              <el-descriptions-item label="狀態">{{
-                flowInstance?.status
-              }}</el-descriptions-item>
-              <el-descriptions-item label="Place">Suzhou</el-descriptions-item>
-            </el-descriptions>
-          </div>
-        </template>
-        <div class="p-1">
-          <flow-task-list
-            :nodes="flowInstance?.nodes"
-            :edges="flowInstance?.edges"
-            @highlight-node="handleHighlightNode" />
-        </div>
-      </el-card>
-
-      <!-- 工作流控制面板 -->
-      <el-card class="w-[300px] absolute top-2 right-2 z-10">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <span class="text-lg font-medium">工作流控制</span>
-            <el-switch
-              v-model="showWorkflowControls"
-              active-text="顯示"
-              inactive-text="隱藏" />
-          </div>
-        </template>
-        <div
-          v-if="showWorkflowControls"
-          class="p-2 space-y-4">
-          <!-- 工作流控制按鈕 -->
-          <div class="flex flex-col space-y-2">
-            <el-button
-              type="primary"
-              @click="startWorkflow()"
-              :disabled="workflowManager.isExecuting">
-              <component
-                :is="Play"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1" />
-              啟動工作流
-            </el-button>
-            <el-button
-              type="warning"
-              @click="executeSpecificNode(selectedNode?.id)"
-              :disabled="!selectedNode">
-              <component
-                :is="PlayCircle"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1" />
-              執行選中節點
-            </el-button>
-          </div>
-
-          <!-- 執行狀態顯示 -->
-          <div
-            v-if="workflowManager.isExecuting"
-            class="p-2 bg-blue-50 rounded">
-            <div class="flex items-center">
-              <component
-                :is="Loader"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1 animate-spin" />
-              <span
-                >正在執行節點:
-                {{ workflowManager.currentExecutingNodeId }}</span
-              >
-            </div>
-          </div>
-
-          <!-- 執行錯誤顯示 -->
-          <div
-            v-if="workflowManager.executionError"
-            class="p-2 bg-red-50 rounded">
-            <div class="text-red-600">
-              <component
-                :is="AlertCircle"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1" />
-              執行錯誤: {{ workflowManager.executionError.message }}
-            </div>
-          </div>
-
-          <!-- 執行歷史 -->
-          <div
-            v-if="workflowManager.executionHistory.length > 0"
-            class="p-2 bg-gray-50 rounded">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium">執行歷史</span>
-              <el-button
-                type="text"
-                size="small"
-                @click="showExecutionHistory = !showExecutionHistory">
-                {{ showExecutionHistory ? "隱藏" : "顯示" }}
-              </el-button>
-            </div>
-            <div
-              v-if="showExecutionHistory"
-              class="max-h-40 overflow-auto">
-              <div
-                v-for="(item, index) in workflowManager.executionHistory"
-                :key="index"
-                class="text-xs p-1 border-b border-gray-200">
-                <div class="flex justify-between">
-                  <span>{{
-                    new Date(item.timestamp).toLocaleTimeString()
-                  }}</span>
-                  <el-tag
-                    size="small"
-                    :type="
-                      item.action === 'error'
-                        ? 'danger'
-                        : item.action === 'complete'
-                        ? 'success'
-                        : 'info'
-                    ">
-                    {{ item.action }}
-                  </el-tag>
-                </div>
-                <div class="text-gray-600">節點: {{ item.nodeId }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </el-card>
-
       <VueFlow
         v-model="elements"
         class="h-full"
@@ -162,42 +18,24 @@
         :edge-types="edgeTypes"
         :default-edge-options="defaultEdgeOptions"
         :auto-connect="false"
-        :edges-updatable="false"
-        :edges-draggable="false"
-        :edges-focusable="false"
-        :edges-selectable="false"
         :select-nodes-on-drag="false"
-        :connect-on-click="false"
-        :snap-to-grid="snapToGrid"
+        :snap-to-grid="true"
         :snap-grid="[20, 20]"
         :connection-mode="ConnectionMode.Loose"
         :elevate-edges-on-select="true"
         :fit-view-on-init="false"
         :prevent-scrolling="true"
         :enable-pan-over-edges="true"
-        :enable-edge-updates="false"
-        :update-edge-on-drag="false"
-        :enable-connection-on-drag="false"
-        :enable-strict-connect="false"
-        :enable-edge-hover="false"
-        :enable-edge-markers="false"
-        :enable-edge-labels="false"
-        :enable-edge-buttons="false"
-        :enable-edge-update-on-drag="true"
-        :enable-edge-update-on-mode-change="true"
-        :enable-edge-update-on-handle-change="true"
         :nodes-draggable="false"
         @nodeClick="onNodeClick"
         @connect="onConnect"
         @paneClick="onPaneClick"
-        @edgeUpdateStart="onEdgeUpdateStart"
-        @edgeUpdateEnd="onEdgeUpdateEnd"
         @nodeDragStart="onNodeDragStart"
         @nodeDragStop="onNodeDragStop"
         @nodesChange="onNodesChange"
         @nodes-initialized="() => {}">
         <Background
-          pattern="lines"
+          pattern="dots"
           :gap="20"
           :size="1" />
 
@@ -209,19 +47,26 @@
           position="top-right"
           class="bg-white p-2 rounded shadow-md">
           <div class="flex flex-wrap gap-2">
-            <el-button
-              v-for="nodeType in Object.values(NODE_TYPES)"
-              :key="nodeType.type"
-              size="small"
-              @click="() => handleAddNode(nodeType)">
-              <component
-                :is="nodeType.icon"
-                :size="16"
-                :stroke-width="1.5"
-                class="mr-1" />
-              {{ nodeType.label }}
-            </el-button>
-            <el-divider direction="vertical" />
+            <!-- 模擬慢速上傳開關 (僅開發環境顯示) -->
+            <el-tooltip
+              v-if="isDevelopment"
+              :content="
+                simulateSlowUpload ? '關閉模擬慢速上傳' : '開啟模擬慢速上傳'
+              "
+              placement="top"
+              effect="light">
+              <el-button
+                size="small"
+                :type="simulateSlowUpload ? 'success' : 'info'"
+                @click="toggleSimulateSlowUpload">
+                <component
+                  :is="Upload"
+                  :size="16"
+                  :stroke-width="1.5"
+                  class="mr-1" />
+                {{ simulateSlowUpload ? "慢速" : "正常" }}
+              </el-button>
+            </el-tooltip>
             <el-tooltip
               content="添加便利貼"
               placement="top"
@@ -278,7 +123,9 @@
               effect="light">
               <el-button
                 size="small"
-                @click="toggleFullscreen">
+                type="primary"
+                plain
+                @click="handleToggleFullscreen">
                 <component
                   :is="isFullscreen ? Minimize2 : Maximize2"
                   :size="16"
@@ -360,14 +207,10 @@
             </div>
           </template>
           <div class="p-4">
-            <json-viewer
-              :value="elements"
+            <JsonViewer
+              :jsonData="elements"
               :expand-depth="2"
-              expandIconStyle="circle"
-              sort
-              boxed
-              :expand-on-click="true"
-              class="custom-json-viewer" />
+              :expand-on-click="true" />
           </div>
         </el-drawer>
       </VueFlow>
@@ -376,36 +219,56 @@
 </template>
 
 <script setup>
-import {
-  VueFlow,
-  useVueFlow,
-  Panel,
-  Position,
-  ConnectionMode,
-} from "@vue-flow/core";
+//#region import
+import { VueFlow, useVueFlow, Panel, ConnectionMode } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
 import dagre from "@dagrejs/dagre"; // 自動布局
-import JsonViewer from "vue-json-viewer";
-import "vue-json-viewer/style.css";
-
 import StickyNote from "@/components/flow-nodes/base/StickyNote.vue";
+import FileNode from "@/components/flow-nodes/base/FileNode.vue";
+
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import "@vue-flow/minimap/dist/style.css";
+
+// 引入 API
 import { uploadDocument } from "@/api/modules/flowDocument";
 import { updateFlowInstance } from "@/api/modules/flow";
 
-import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
-import FileNode from "@/components/flow-nodes/base/FileNode.vue";
-import FlowTaskList from "./FlowTaskList.vue";
+// 引入 composable
 import { useWorkflowManager } from "@/composables/useWorkflowManager";
-import { Play, PlayCircle, Loader, AlertCircle } from "lucide-vue-next";
+import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
+import { useFileNode } from "@/composables/flow/useFileNode";
 
-// 節點類型定義
-const NODE_TYPES = ref({});
+//import FlowTaskList from "./FlowTaskList.vue";
+import { useFullscreen } from "@vueuse/core";
+import JsonViewer from "@/components/JsonViewer.vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  Maximize2,
+  Minimize2,
+  Copy,
+  StickyNote as StickyNoteIcon,
+  Upload,
+} from "lucide-vue-next";
+//#endregion
+
+// 開發環境標誌
+const isDevelopment = process.env.NODE_ENV === "development";
+// 模擬慢速上傳控制
+const simulateSlowUpload = ref(
+  localStorage.getItem("simulateSlowUpload") !== "false"
+);
+
+// 切換模擬慢速上傳
+const toggleSimulateSlowUpload = () => {
+  simulateSlowUpload.value = !simulateSlowUpload.value;
+  localStorage.setItem("simulateSlowUpload", simulateSlowUpload.value);
+  ElMessage.info(`模擬慢速上傳已${simulateSlowUpload.value ? "開啟" : "關閉"}`);
+};
 
 const props = defineProps({
   // 工作流實例
@@ -417,7 +280,6 @@ const props = defineProps({
 
 // 註冊自定義節點類型
 const nodeTypes = {
-  //custom: CustomNode,
   sticky: StickyNote,
   file: FileNode,
 };
@@ -475,76 +337,24 @@ const defaultEdgeOptions = {
   },
 };
 
-const {
-  project,
-  fitView,
-  nodes,
-  edges,
-  viewport,
-  getZoom,
-  onConnect: vueFlowConnect,
-  setEdges,
-  addEdges,
-  updateEdge,
-  addNodes,
-  removeNodes,
-} = useVueFlow({
+const { project, fitView, nodes, addNodes } = useVueFlow({
   defaultEdgeOptions,
-  edgesUpdatable: true,
-  edgesDraggable: true,
-  edgesFocusable: true,
+  edgesUpdatable: false,
+  edgesDraggable: false,
+  edgesFocusable: false,
   selectNodesOnDrag: false,
-  elevateEdgesOnSelect: true,
+  elevateEdgesOnSelect: false,
 });
 const selectedNode = ref(null);
 
-// 定義 elements 變數
+// 定義 elements 變數, 用於保存節點和連線
 const elements = ref([]);
-
-// 定義 snapToGrid 變數
-const snapToGrid = ref(true);
-
-// 定義 showJsonDrawer 變數
-const showJsonDrawer = ref(false);
 
 // 使用工作流管理器
 const workflowManager = useWorkflowManager();
 
-// 添加工作流控制面板
-const showWorkflowControls = ref(false);
-const selectedStartNode = ref(null);
-
-// 執行歷史顯示控制
-const showExecutionHistory = ref(false);
-
-// 啟動工作流
-const startWorkflow = async (startNodeId = null) => {
-  try {
-    ElMessage.info("正在啟動工作流...");
-    await workflowManager.executeWorkflow(startNodeId);
-    ElMessage.success("工作流啟動成功");
-  } catch (error) {
-    console.error("啟動工作流時發生錯誤:", error);
-    ElMessage.error(`啟動工作流失敗: ${error.message}`);
-  }
-};
-
-// 執行特定節點
-const executeSpecificNode = async (nodeId, context = {}) => {
-  try {
-    if (!nodeId) {
-      ElMessage.warning("請先選擇要執行的節點");
-      return;
-    }
-
-    ElMessage.info(`正在執行節點 ${nodeId}...`);
-    await workflowManager.executeNode(nodeId, context);
-    ElMessage.success(`節點 ${nodeId} 執行成功`);
-  } catch (error) {
-    console.error(`執行節點 ${nodeId} 時發生錯誤:`, error);
-    ElMessage.error(`執行節點失敗: ${error.message}`);
-  }
-};
+// 定義 showJsonDrawer 變數
+const showJsonDrawer = ref(false);
 
 // 修改歷史記錄系統
 const history = ref({
@@ -588,10 +398,15 @@ const onNodeDragStart = (event) => {
 
   // 檢查節點是否可拖動
   if (!node.draggable) {
+    console.log("節點不可拖動", node);
     return; // 如果節點不可拖動，則不處理
   }
 
-  dragStartPosition.value = { ...node.position };
+  dragStartPosition.value = {
+    nodeId: node.id,
+    type: node.type,
+    ...node.position,
+  };
 };
 
 // 節點拖動結束時記錄位置變化
@@ -606,13 +421,18 @@ const onNodeDragStop = (event) => {
   if (dragStartPosition.value) {
     recordAction(ActionTypes.NODE_MOVED, {
       id: node.id,
-      oldPosition: dragStartPosition.value,
+      oldPosition: {
+        x: dragStartPosition.value.x,
+        y: dragStartPosition.value.y,
+      },
       newPosition: { ...node.position },
     });
-    dragStartPosition.value = null;
 
     // 節點拖動後更新流程實例
     updateFlowInstanceState();
+
+    // 重置拖動位置
+    dragStartPosition.value = null;
   }
 };
 
@@ -623,214 +443,104 @@ const updateFlowInstanceState = async () => {
     const updatedNodes = elements.value.filter((el) => !el.source);
     const updatedEdges = elements.value.filter((el) => el.source);
 
+    console.log("updatedNodes", updatedNodes);
+    console.log("updatedEdges", updatedEdges);
+
+    // 檢查是否只有檔案節點或便利貼節點的位置變更
+    const isOnlyPositionUpdate =
+      dragStartPosition.value &&
+      updatedNodes.some(
+        (node) =>
+          node.id === dragStartPosition.value.nodeId &&
+          (node.type === "file" || node.type === "sticky")
+      );
+
     // 調用 API 更新流程實例
-    await updateFlowInstance(props.flowInstance.id, {
+    const updateData = {
       nodes: updatedNodes,
       edges: updatedEdges,
-    });
+    };
+
+    // 如果只是檔案節點或便利貼節點的位置變更，添加 nodeData 屬性使其被視為數據更新
+    if (isOnlyPositionUpdate) {
+      // 找到被移動的節點
+      const movedNode = updatedNodes.find(
+        (node) => node.id === dragStartPosition.value.nodeId
+      );
+      if (movedNode) {
+        // 將節點位置信息添加到 nodeData 中，使 API 將其視為數據更新而非結構更新
+        return saveNodeAsDataUpdate(movedNode.id, movedNode, true);
+      }
+    }
+
+    // 如果不是位置更新，則進行普通的結構更新
+    await updateFlowInstance(props.flowInstance.id, updateData);
 
     // 無需顯示提示，因為會打擾用戶體驗
-    console.log("流程實例已更新");
+    console.log(
+      "流程實例已更新",
+      isOnlyPositionUpdate ? "（僅位置更新）" : "（結構更新）"
+    );
   } catch (error) {
     console.error("更新流程實例失敗", error);
     ElMessage.warning("節點位置變更無法保存：" + (error.message || "未知錯誤"));
   }
 };
 
-// 監聽節點變化
-const onNodesChange = (changes) => {
-  if (!history.value.isRecording) return;
+// 將節點保存為數據更新而非結構更新
+const saveNodeAsDataUpdate = async (nodeId, node, isPositionUpdate = false) => {
+  try {
+    const updatedNodes = elements.value.filter((el) => !el.source);
+    const updatedEdges = elements.value.filter((el) => el.source);
 
-  changes.forEach((change) => {
-    switch (change.type) {
-      case "add":
-        recordAction(ActionTypes.NODE_ADDED, { node: change.item });
-        break;
-      case "remove":
-        recordAction(ActionTypes.NODE_REMOVED, { node: change.item });
-        break;
-      // 其他類型的變化...
-    }
-  });
-};
-
-// 監聽連線變化
-const onEdgesChange = (changes) => {
-  if (!history.value.isRecording) return;
-
-  changes.forEach((change) => {
-    switch (change.type) {
-      case "add":
-        recordAction(ActionTypes.EDGE_ADDED, { edge: change.item });
-        break;
-      case "remove":
-        recordAction(ActionTypes.EDGE_REMOVED, { edge: change.item });
-        break;
-      // 其他類型的變化...
-    }
-  });
-};
-
-// 修改自動布局函數
-const autoLayout = () => {
-  const oldElements = JSON.parse(JSON.stringify(elements.value));
-
-  const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: "TB", nodesep: 120, ranksep: 160 });
-  g.setDefaultEdgeLabel(() => ({}));
-
-  const nodes = elements.value.filter((el) => !el.source);
-  const edges = elements.value.filter((el) => el.source);
-
-  // 添加節點
-  nodes.forEach((node) => {
-    g.setNode(node.id, { width: 240, height: 120 });
-  });
-
-  // 添加邊
-  edges.forEach((edge) => {
-    g.setEdge(edge.source, edge.target);
-  });
-
-  // 計算布局
-  dagre.layout(g);
-
-  // 更新節點位置
-  const layoutedNodes = nodes.map((node) => {
-    const nodeWithPosition = g.node(node.id);
-    return {
-      ...node,
-      position: {
-        x: nodeWithPosition.x - nodeWithPosition.width / 2,
-        y: nodeWithPosition.y - nodeWithPosition.height / 2,
+    // 創建更新數據對象
+    const updateData = {
+      nodes: updatedNodes,
+      edges: updatedEdges,
+      // 將節點添加到 nodeData 中，使其被視為數據更新而非結構更新
+      nodeData: {
+        [nodeId]: isPositionUpdate
+          ? {
+              // 如果是位置更新，只保存位置信息
+              position: node.position,
+              type: node.type,
+              isPositionUpdate: true,
+            }
+          : {
+              // 如果是新節點，保存完整信息
+              ...(node.data || {}),
+              position: node.position,
+              type: node.type,
+              isNewNode: true,
+            },
       },
     };
-  });
 
-  // 更新所有元素
-  elements.value = [...layoutedNodes, ...edges];
+    // 直接調用 API
+    await updateFlowInstance(props.flowInstance.id, updateData);
 
-  // 記錄布局變化
-  recordAction(ActionTypes.LAYOUT_CHANGED, {
-    oldElements,
-    newElements: elements.value,
-  });
+    if (isPositionUpdate) {
+      console.log(`${node.type} 節點位置已更新（數據更新）`);
+    } else {
+      console.log(`${node.type} 節點已添加（數據更新）`);
+    }
 
-  setTimeout(() => {
-    handleFitView();
-    // 自動布局後更新流程實例 TODO: need update??
-    updateFlowInstanceState();
-  }, 100);
-};
-
-onMounted(() => {
-  setTimeout(() => {
-    handleFitView();
-  }, 100);
-
-  // 添加節點狀態變更事件監聽器
-  window.addEventListener("flow:nodeStateChange", handleNodeStateChange);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("flow:nodeStateChange", handleNodeStateChange);
-});
-
-const onNodeClick = (event) => {
-  selectedNode.value = event.node;
-};
-
-const onPaneClick = () => {
-  selectedNode.value = null;
-};
-
-const handleAddNode = (type) => {
-  // 找出當前最小的 zIndex
-  const minZIndex = Math.min(
-    ...elements.value
-      .filter((el) => !el.source) // 只考慮節點，不考慮連線
-      .map((el) => el.zIndex || 0)
-  );
-  const id = `node_${Date.now()}`;
-  console.log("handleAddNode", type);
-  const newNode = {
-    id,
-    type: type === "sticky" ? "sticky" : "",
-    data:
-      type === "sticky"
-        ? {
-            content: "",
-            color: "#fef3c7",
-          }
-        : {
-            type: type.type,
-            content: `新的${type.label}-${id}`,
-            status: "IDLE",
-            config: { ...type.defaultConfig },
-          },
-    position: project({ x: 100, y: 100 }),
-    zIndex: type === "sticky" ? minZIndex - 1 : 1,
-    // 設置節點是否可拖動
-    draggable: type === "file" || type === "sticky",
-  };
-
-  // 先記錄動作
-  recordAction(ActionTypes.NODE_ADDED, {
-    node: newNode,
-    elements: elements.value, // 保存當前狀態
-  });
-
-  // 再更新畫布
-  elements.value = [...elements.value, newNode];
-
-  // 添加節點後更新流程實例
-  updateFlowInstanceState();
-};
-
-const updateNode = (updatedNode) => {
-  const index = elements.value.findIndex((el) => el.id === updatedNode.id);
-  if (index !== -1) {
-    const newElements = [...elements.value];
-    newElements[index] = updatedNode;
-    recordAction(ActionTypes.NODE_MOVED, {
-      id: updatedNode.id,
-      oldPosition: elements.value[index].position,
-      newPosition: updatedNode.position,
-    });
-
-    // 節點更新後更新流程實例
-    updateFlowInstanceState();
+    return true;
+  } catch (error) {
+    const action = isPositionUpdate ? "更新位置" : "添加";
+    console.error(`${action} ${node.type} 節點失敗`, error);
+    ElMessage.warning(
+      `${node.type} ${action}失敗：${error.message || "未知錯誤"}`
+    );
+    return false;
   }
 };
 
 // 連接處理函數
-const onConnect = (params) => {
+const onConnect = () => {
   // 禁用添加新連接線
   ElMessage.warning("當前模式下不允許添加新連接線");
   return;
-};
-
-// 刪除線條
-const deleteEdge = (edgeId) => {
-  // 由於所有邊都不可刪除，所以直接返回
-  ElMessage.warning("當前模式下不允許刪除連接線");
-  return;
-};
-
-const onEdgeUpdateStart = (params) => {
-  console.log("onEdgeUpdateStart", params);
-};
-
-const onEdgeUpdateEnd = (event) => {
-  //console.log("onEdgeUpdateEnd", event);
-};
-
-// 線條更新事件(Cursor 原本給的答案是錯的)
-const onEdgeUpdate = ({ edge, connection }) => {};
-
-// 線條點擊事件
-const onEdgeClick = (event) => {
-  // 可以在這裡添加其他線條點擊相關的邏輯
 };
 
 // 複製 JSON 到剪貼簿
@@ -847,20 +557,9 @@ const handleCopyJson = () => {
 
 // 修改適應工作區功能
 const handleFitView = () => {
-  const handleFitView = () => {
-    setTimeout(() => {
-      fitView({ padding: 0.2 });
-    }, 400);
-  };
-  // setTimeout(() => {
-  //   fitView({
-  //     padding: 0.2,
-  //     maxZoom: 1,
-  //     minZoom: 0.6,
-  //     duration: 150,
-  //     includeHiddenNodes: true,
-  //   });
-  // }, 100);
+  setTimeout(() => {
+    fitView({ padding: 0.2 });
+  }, 100);
 };
 
 // 修改撤銷功能
@@ -1005,31 +704,29 @@ const handleKeyDown = (event) => {
       event.shiftKey &&
       event.key.toLowerCase() === "f")
   ) {
-    toggleFullscreen();
     event.preventDefault();
+    handleToggleFullscreen();
   }
 };
 
 // 監聽鍵盤事件
-onMounted(async () => {
-  // try {
-  //   const response = await getFlowNodeDefinitions();
-  //   NODE_TYPES.value = response.data;
-  // } catch (error) {
-  //   console.error("獲取節點類型定義失敗：", error);
-  //   ElMessage.error("獲取節點類型定義失敗");
-  // }
+onMounted(() => {
+  // 初始化模擬慢速上傳設置
+  if (isDevelopment && localStorage.getItem("simulateSlowUpload") === null) {
+    localStorage.setItem("simulateSlowUpload", "true");
+  }
 
+  // 初始化工作流
   // 初始化 elements，從 flowInstance 中獲取節點和邊緣數據
   if (
     props.flowInstance &&
     props.flowInstance.nodes &&
     props.flowInstance.edges
   ) {
-    // 處理節點，設置 FileNode 可拖動，其他節點不可拖動
+    // 處理節點，設置 FileNode, StickyNode 可拖動，其他節點不可拖動
     const processedNodes = props.flowInstance.nodes.map((node) => {
       // 如果是 FileNode 類型，設置為可拖動
-      if (node.type === "file") {
+      if (node.type === "file" || node.type === "sticky") {
         return {
           ...node,
           draggable: true,
@@ -1054,25 +751,31 @@ onMounted(async () => {
     elements.value = [...processedNodes, ...processedEdges];
 
     // 適應視窗大小
-    setTimeout(() => {
-      fitView({ padding: 0.2 });
-    }, 100);
+    handleFitView();
   } else {
     console.warn("流程實例數據不完整", props.flowInstance);
   }
 
   // 其他初始化代碼...
   window.addEventListener("keydown", handleKeyDown);
+  handleFitView();
+
+  // 添加節點狀態變更事件監聽器
+  window.addEventListener("flow:nodeStateChange", handleNodeStateChange);
 });
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
+  window.removeEventListener("flow:nodeStateChange", handleNodeStateChange);
 });
 
-// 拖放相關
+// 拖放相關(檔案拖放上傳)
 const isDragOver = ref(false);
 // 添加一個標誌變數，用於防止重複處理拖放事件
 const isProcessingDrop = ref(false);
+
+// 使用 useFileNode 中的功能
+const { isFileTypeAllowed, handleFileDrop } = useFileNode();
 
 const handleDragOver = (event) => {
   // 阻止事件冒泡，確保事件不會被重複處理
@@ -1105,56 +808,7 @@ const handleDrop = async (event) => {
 
   // 設置標誌，表示正在處理拖放事件
   isProcessingDrop.value = true;
-
   isDragOver.value = false;
-  const files = Array.from(event.dataTransfer.files);
-
-  // 檢查檔案類型
-  const isFileTypeAllowed = (file) => {
-    const ALLOWED_FILE_TYPES = {
-      "image/*": "圖片檔案",
-      "application/pdf": "PDF 檔案",
-      "text/plain": "文字檔案",
-      "text/csv": "CSV 檔案",
-      "application/json": "JSON 檔案",
-      // Excel 相關
-      "application/vnd.ms-excel": "Excel 檔案",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-        "Excel 檔案",
-      "application/excel": "Excel 檔案",
-      "application/x-excel": "Excel 檔案",
-      "application/x-msexcel": "Excel 檔案",
-      // PPT 相關
-      "application/vnd.ms-powerpoint": "PPT 檔案",
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-        "PPT 檔案",
-      "application/powerpoint": "PPT 檔案",
-      "application/mspowerpoint": "PPT 檔案",
-      "application/x-mspowerpoint": "PPT 檔案",
-      "application/ppt": "PPT 檔案",
-      //word 相關
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-        "Word 檔案",
-      "application/word": "Word 檔案",
-      "application/x-word": "Word 檔案",
-      "application/vnd.ms-word": "Word 檔案",
-    };
-
-    return Object.keys(ALLOWED_FILE_TYPES).some((type) => {
-      if (type.endsWith("*")) {
-        return file.type.startsWith(type.slice(0, -1));
-      }
-      return file.type === type;
-    });
-  };
-
-  const invalidFiles = files.filter((file) => !isFileTypeAllowed(file));
-  if (invalidFiles.length > 0) {
-    ElMessage.error(
-      `不支援的檔案類型：${invalidFiles.map((f) => f.name).join(", ")}`
-    );
-    return;
-  }
 
   // 獲取滑鼠在畫布上的位置
   const bounds = event.currentTarget.getBoundingClientRect();
@@ -1163,74 +817,117 @@ const handleDrop = async (event) => {
     y: event.clientY - bounds.top,
   });
 
-  // 處理每個檔案
-  for (const file of files) {
-    try {
-      // 創建檔案節點（先顯示上傳進度）
-      const nodeId = `file-${Date.now()}-${Math.random()
-        .toString(36)
-        .substr(2, 9)}`;
-      const newNode = {
-        id: nodeId,
-        type: "file",
-        position,
-        draggable: true, // 檔案節點可拖動
-        data: {
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-          uploadProgress: 0,
-        },
-      };
+  try {
+    // 獲取拖放的檔案
+    const files = Array.from(event.dataTransfer.files);
 
-      // 添加節點
-      addNodes([newNode]);
+    // 檢查檔案類型
+    const invalidFiles = files.filter((file) => !isFileTypeAllowed(file));
+    if (invalidFiles.length > 0) {
+      ElMessage.error(
+        `不支援的檔案類型：${invalidFiles.map((f) => f.name).join(", ")}`
+      );
+      isProcessingDrop.value = false;
+      return;
+    }
 
-      // 模擬上傳進度
-      const updateProgress = (progress) => {
-        const node = nodes.value.find((n) => n.id === nodeId);
-        if (node) {
-          node.data = { ...node.data, uploadProgress: progress };
-        }
-      };
+    // 處理每個檔案
+    for (const file of files) {
+      try {
+        // 創建臨時節點 ID
+        const nodeId = `file-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
 
-      // 模擬分段上傳進度
-      for (let progress = 0; progress <= 100; progress += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        updateProgress(progress);
-      }
-
-      // 上傳檔案
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("projectId", props.flowInstance.projectId);
-      formData.append("instanceId", props.flowInstance.id);
-      formData.append("docType", file.type);
-
-      // 上傳檔案
-      const result = await uploadDocument(formData);
-
-      // 更新節點資訊
-      const node = nodes.value.find((n) => n.id === nodeId);
-      if (node) {
-        node.data = {
-          ...node.data,
-          fileId: result.data.id,
-          fileUrl: result.data.url,
-          fileName: result.data.name,
-          uploadProgress: 100,
+        // 創建臨時節點數據
+        const tempNodeData = {
+          id: nodeId,
+          type: "file",
+          position,
+          draggable: true,
+          data: {
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+            uploadProgress: 0,
+          },
         };
+
+        // 添加臨時節點到畫布
+        addNodes([tempNodeData]);
 
         // 確保節點被添加到 elements 陣列中
         if (!elements.value.some((el) => el.id === nodeId)) {
-          elements.value = [...elements.value, node];
+          elements.value = [...elements.value, tempNodeData];
+        }
+
+        // 創建一個監聽器，用於更新節點的上傳進度
+        const updateNodeProgress = (progress) => {
+          const node = nodes.value.find((n) => n.id === nodeId);
+          if (node) {
+            node.data = { ...node.data, uploadProgress: progress };
+          }
+        };
+
+        // 監聽 uploadProgress 的變化
+        const { uploadProgress, uploadFile } = useFileNode();
+
+        // 創建一個監視器，用於監視上傳進度的變化
+        const unwatch = watch(uploadProgress, (newProgress) => {
+          updateNodeProgress(newProgress);
+        });
+
+        // 上傳檔案
+        const result = await uploadFile(
+          file,
+          props.flowInstance.projectId,
+          props.flowInstance.id
+        );
+
+        // 停止監視上傳進度
+        unwatch();
+
+        // 更新節點資訊
+        const node = nodes.value.find((n) => n.id === nodeId);
+        if (node) {
+          node.data = {
+            ...node.data,
+            fileId: result.data.id,
+            fileUrl: result.data.url,
+            fileName: result.data.name,
+            uploadProgress: 100,
+          };
         }
 
         // 將更新後的節點保存到流程實例中
         try {
-          // 使用共用的更新函數
-          await updateFlowInstanceState();
-          ElMessage.success(`檔案 ${file.name} 上傳並保存到流程實例成功`);
+          // 準備要更新的數據
+          const updatedNodes = elements.value.filter((el) => !el.source);
+          const updatedEdges = elements.value.filter((el) => el.source);
+
+          // 創建更新數據對象
+          const updateData = {
+            nodes: updatedNodes,
+            edges: updatedEdges,
+            // 將檔案節點添加到 nodeData 中，使其被視為數據更新而非結構更新
+            nodeData: {
+              [nodeId]: {
+                fileId: result.data.id,
+                fileUrl: result.data.url,
+                fileName: result.data.name,
+                position: node.position,
+                type: "file",
+                isNewFileNode: true, // 標記為新上傳的檔案節點
+              },
+            },
+          };
+
+          // 直接調用 API 而不是使用 updateFlowInstanceState
+          await updateFlowInstance(props.flowInstance.id, updateData);
+
+          ElMessage.success(
+            `檔案 ${result.data.name} 上傳並保存到流程實例成功`
+          );
         } catch (updateError) {
           console.error("保存流程實例失敗", updateError);
           ElMessage.warning(
@@ -1239,52 +936,37 @@ const handleDrop = async (event) => {
             }`
           );
         }
+      } catch (error) {
+        console.error("檔案處理失敗", error);
+        ElMessage.error(
+          `檔案 ${file.name} 上傳失敗：${error.message || "未知錯誤"}`
+        );
       }
-    } catch (error) {
-      console.error("檔案上傳失敗", error);
-      ElMessage.error(
-        `檔案 ${file.name} 上傳失敗：${error.message || "未知錯誤"}`
-      );
     }
+  } catch (error) {
+    console.error("檔案處理失敗", error);
+    ElMessage.error(`檔案處理失敗：${error.message || "未知錯誤"}`);
+  } finally {
+    // 重置標誌，表示拖放事件處理完成
+    isProcessingDrop.value = false;
   }
-
-  // 重置標誌，表示拖放事件處理完成
-  isProcessingDrop.value = false;
 };
 
-// 全屏狀態
-const isFullscreen = ref(false);
+// 全屏狀態(TODO: 改用 vueuse 的 useFullscreen)
 const flowCanvasRef = ref(null);
 
-// 處理全屏切換
-const toggleFullscreen = () => {
-  if (!document.fullscreenElement) {
-    // 進入全屏
-    flowCanvasRef.value?.requestFullscreen();
-    isFullscreen.value = true;
-    // 進入全屏後自動適應視窗大小
+// 使用 VueUse 的 useFullscreen
+const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(flowCanvasRef);
+
+// 處理全屏切換並適應視窗大小
+const handleToggleFullscreen = () => {
+  toggleFullscreen();
+  // 進入全屏後自動適應視窗大小
+  if (!isFullscreen.value) {
     setTimeout(() => {
       handleFitView();
     }, 300);
-  } else {
-    // 退出全屏
-    document.exitFullscreen();
-    isFullscreen.value = false;
   }
-};
-
-// 監聽全屏變化事件
-onMounted(() => {
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("fullscreenchange", handleFullscreenChange);
-});
-
-// 全屏狀態變更處理
-const handleFullscreenChange = () => {
-  isFullscreen.value = !!document.fullscreenElement;
 };
 
 // 判斷是否為 Mac 平台
@@ -1293,52 +975,6 @@ const ctrlOrCmd = isMac ? "⌘" : "Ctrl+";
 const shiftSymbol = isMac ? "⇧" : "Shift+";
 
 // 高亮顯示節點
-const handleHighlightNode = (nodeId) => {
-  // 找到對應的節點
-  const node = elements.value.find((el) => el.id === nodeId && !el.source);
-  if (!node) return;
-
-  // 高亮顯示節點（可以通過修改節點樣式或添加特殊類）
-  const updatedElements = elements.value.map((el) => {
-    if (el.id === nodeId && !el.source) {
-      return {
-        ...el,
-        style: {
-          ...el.style,
-          border: "2px solid #409EFF",
-          boxShadow: "0 0 10px rgba(64, 158, 255, 0.5)",
-        },
-        // 可以添加一個標記，表示該節點被高亮
-        highlighted: true,
-      };
-    }
-    // 移除其他節點的高亮
-    if (!el.source && el.highlighted) {
-      const { highlighted, ...style } = el.style || {};
-      return {
-        ...el,
-        style: {
-          ...style,
-          border: null,
-          boxShadow: null,
-        },
-        highlighted: false,
-      };
-    }
-    return el;
-  });
-
-  // 更新元素
-  elements.value = updatedElements;
-
-  // 將視圖中心移動到該節點
-  if (node.position) {
-    const { x, y } = node.position;
-    // 使用 Vue Flow 的 API 將視圖中心移動到節點位置
-    const { setCenter } = useVueFlow();
-    setCenter(x, y, { zoom: 1.5, duration: 500 });
-  }
-};
 
 // 添加處理節點尺寸變化的方法
 const handleNodeSizeChange = ({ id, height }) => {
@@ -1412,10 +1048,129 @@ const handleNodeStateChange = async (event) => {
   }
 };
 
-// // 暴露方法給父組件
-// defineExpose({
-//   highlightNode,
-// });
+// 監聽節點變化
+const onNodesChange = (changes) => {
+  if (!history.value.isRecording) return;
+
+  changes.forEach((change) => {
+    switch (change.type) {
+      case "add":
+        recordAction(ActionTypes.NODE_ADDED, { node: change.item });
+        break;
+      case "remove":
+        recordAction(ActionTypes.NODE_REMOVED, { node: change.item });
+        break;
+      // 其他類型的變化...
+    }
+  });
+};
+
+// 修改自動布局函數(TODO: 刪除不用)
+const autoLayout = () => {
+  const oldElements = JSON.parse(JSON.stringify(elements.value));
+
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: "TB", nodesep: 120, ranksep: 160 });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  const nodes = elements.value.filter((el) => !el.source);
+  const edges = elements.value.filter((el) => el.source);
+
+  // 添加節點
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: 240, height: 120 });
+  });
+
+  // 添加邊
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
+  });
+
+  // 計算布局
+  dagre.layout(g);
+
+  // 更新節點位置
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = g.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - nodeWithPosition.width / 2,
+        y: nodeWithPosition.y - nodeWithPosition.height / 2,
+      },
+    };
+  });
+
+  // 更新所有元素
+  elements.value = [...layoutedNodes, ...edges];
+
+  // 記錄布局變化
+  recordAction(ActionTypes.LAYOUT_CHANGED, {
+    oldElements,
+    newElements: elements.value,
+  });
+
+  handleFitView();
+  // 自動布局後更新流程實例 TODO: need update??
+  updateFlowInstanceState();
+};
+
+const onNodeClick = (event) => {
+  selectedNode.value = event.node;
+};
+
+const onPaneClick = () => {
+  selectedNode.value = null;
+};
+
+// 在此主要用於新增便利貼(!TODO: 先保留)
+const handleAddNode = (type) => {
+  // 找出當前最小的 zIndex
+  const minZIndex = Math.min(
+    ...elements.value
+      .filter((el) => !el.source) // 只考慮節點，不考慮連線
+      .map((el) => el.zIndex || 0)
+  );
+  const id = `node_${Date.now()}`;
+  const newNode = {
+    id,
+    type: type === "sticky" ? "sticky" : "",
+    data:
+      type === "sticky"
+        ? {
+            content: "",
+            color: "#fef3c7",
+          }
+        : {
+            type: type.type,
+            content: `新的${type.label}-${id}`,
+            status: "IDLE",
+            config: { ...type.defaultConfig },
+          },
+    position: project({ x: 100, y: 100 }),
+    zIndex: type === "sticky" ? 90 : 10,
+    // 設置節點是否可拖動
+    draggable: type === "file" || type === "sticky",
+  };
+
+  // 先記錄動作
+  recordAction(ActionTypes.NODE_ADDED, {
+    node: newNode,
+    elements: elements.value, // 保存當前狀態
+  });
+
+  // 再更新畫布
+  elements.value = [...elements.value, newNode];
+
+  // 添加節點後更新流程實例
+  if (type === "sticky") {
+    // 如果是便利貼節點，將其視為數據更新而非結構更新
+    saveNodeAsDataUpdate(id, newNode);
+  } else {
+    // 其他類型節點使用原有的更新方式
+    updateFlowInstanceState();
+  }
+};
 </script>
 
 <style scoped>
@@ -1580,42 +1335,5 @@ const handleNodeStateChange = async (event) => {
 :fullscreen .vue-flow__panel button:hover {
   transform: scale(1.05);
   transition: transform 0.2s ease;
-}
-
-/* JSON Viewer 自定義樣式 */
-.custom-json-viewer {
-  background-color: #f9fafb !important;
-  padding: 1rem !important;
-  border-radius: 0.5rem !important;
-  border: 1px solid #e5e7eb !important;
-}
-
-.custom-json-viewer :deep(.jv-container) {
-  background: none !important;
-}
-
-.custom-json-viewer :deep(.jv-container .jv-code) {
-  padding: 0 !important;
-  background: none !important;
-}
-
-.custom-json-viewer :deep(.jv-container .jv-key) {
-  color: #2563eb !important;
-}
-
-.custom-json-viewer :deep(.jv-container .jv-item.jv-string) {
-  color: #059669 !important;
-}
-
-.custom-json-viewer :deep(.jv-container .jv-item.jv-number) {
-  color: #d97706 !important;
-}
-
-.custom-json-viewer :deep(.jv-container .jv-item.jv-boolean) {
-  color: #7c3aed !important;
-}
-
-.custom-json-viewer :deep(.jv-container .jv-item.jv-null) {
-  color: #dc2626 !important;
 }
 </style>
