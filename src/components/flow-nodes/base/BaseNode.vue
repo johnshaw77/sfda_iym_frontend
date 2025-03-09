@@ -268,6 +268,7 @@ import "@vue-flow/node-resizer/dist/style.css";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { Box, RefreshCw } from "lucide-vue-next";
 import { onMounted, onUnmounted, ref, computed, watch, nextTick } from "vue";
+import { logger } from "@/utils/logger";
 
 // 定義 props
 const props = defineProps({
@@ -398,55 +399,43 @@ const sendStateChangeEvent = (status, result = null, error = null) => {
   window.dispatchEvent(event);
 };
 
-// 統一的狀態更新方法
-const updateNodeStatus = (nodeId, newStatus, result = null, error = null) => {
-  // 如果第一個參數不是 nodeId，而是 newStatus，則調整參數順序
+// 更新節點狀態
+const updateNodeStatus = (newStatus, result = null, error = null) => {
+  // 避免重複更新相同狀態
   if (
-    typeof nodeId === "string" &&
-    (nodeId === "running" ||
-      nodeId === "completed" ||
-      nodeId === "error" ||
-      nodeId === "default" ||
-      nodeId === "info")
+    nodeState.value.status === newStatus &&
+    JSON.stringify(nodeState.value.data) === JSON.stringify(result) &&
+    nodeState.value.error === (error ? error.message : null)
   ) {
-    error = result;
-    result = newStatus;
-    newStatus = nodeId;
-    nodeId = props.id;
-  }
-
-  console.log(
-    `[BaseNode] 更新節點 ${nodeId} 狀態為 ${newStatus}，當前節點ID: ${props.id}`
-  );
-
-  // 確保只更新當前節點的狀態，而不是其他節點
-  if (nodeId !== props.id) {
-    console.warn(
-      `[BaseNode] 嘗試從節點 ${props.id} 更新其他節點 ${nodeId} 的狀態，這可能導致狀態混亂。已忽略此操作。`
-    );
+    logger.debug("BaseNode", `節點 ${props.id} 狀態未變更，跳過更新`);
     return;
   }
 
-  // 更新 flowStore 中的狀態
-  const updatedState = {
+  logger.debug("BaseNode", `更新節點 ${props.id} 狀態為 ${newStatus}`);
+
+  // 更新本地狀態
+  nodeState.value = {
+    ...nodeState.value,
     status: newStatus,
     data: result,
     error: error ? error.message || "未知錯誤" : null,
     updatedAt: new Date().toISOString(),
   };
 
-  console.log(`[BaseNode] 準備更新 flowStore 中的節點狀態:`, updatedState);
-
-  // 更新本地 ref 狀態
-  nodeState.value = { ...nodeState.value, ...updatedState };
-
-  // 更新 flowStore 中的狀態
-  flowStore.updateNodeState(nodeId, updatedState);
-
-  console.log(`[BaseNode] 狀態更新完成，當前節點狀態:`, nodeState.value);
-
-  // 發送狀態變更事件
-  sendStateChangeEvent(newStatus, result, error);
+  // 如果有流程實例，更新 flowStore 中的狀態
+  if (flowStore.currentInstance?.id) {
+    flowStore.updateNodeState(flowStore.currentInstance.id, props.id, {
+      status: newStatus,
+      data: result,
+      error: error ? error.message || "未知錯誤" : null,
+      errorDetails: error
+        ? { message: error.message, stack: error.stack }
+        : null,
+      _isDataUpdate: true, // 標記為數據更新
+    });
+  } else {
+    logger.warn("BaseNode", `無法更新節點 ${props.id} 狀態：當前實例不存在`);
+  }
 };
 
 // 修改狀態類型映射
@@ -622,11 +611,13 @@ const customHeaderClass = computed(() => {
 });
 
 const running = ref(false);
-// 修改測試執行函數為空方法，讓子類別必須自行實作
-const handleRun = async () => {
-  console.log("BaseNode handleRun 被調用，但這是一個空方法，應該由子類別實作");
-  // 不再拋出錯誤，而是提供一個默認的空實現
-  // 實際的執行邏輯應該由子類別通過監聽 run 事件來實現
+// 處理節點執行
+const handleRun = async (context = {}) => {
+  logger.debug(
+    "BaseNode",
+    `handleRun 被調用，但這是一個空方法，應該由子類別實作`
+  );
+  // 空方法，由子類別實作
 };
 
 // 處理執行按鈕點擊

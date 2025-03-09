@@ -213,6 +213,7 @@ import { createFlowInstance } from "@/api/modules/flow";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { Box } from "@element-plus/icons-vue";
 import { formatTimestamp } from "@/utils/dateUtils";
+import { logger } from "@/utils/logger";
 
 const props = defineProps({
   id: {
@@ -409,14 +410,20 @@ const nodeRef = ref(null);
 const handleRun = async (context = {}) => {
   // 檢查是否有來自上一個節點的數據
   if (context && context.sourceNodeId) {
-    console.log(`節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`);
-    console.log("上下文數據:", context);
+    logger.info(
+      "ComplaintSelectorNode",
+      `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
+    );
+    logger.debug("ComplaintSelectorNode", "上下文數據:", context);
 
     // 如果上下文中有客訴單號，則自動選擇
     if (context.complaintId) {
       selectedComplaint.value = context.complaintId;
       complaintDetail.value = context.complaintDetail;
-      console.log(`自動選擇客訴單號: ${selectedComplaint.value}`);
+      logger.info(
+        "ComplaintSelectorNode",
+        `自動選擇客訴單號: ${selectedComplaint.value}`
+      );
     }
   }
 
@@ -431,7 +438,7 @@ const handleRun = async (context = {}) => {
   }
 
   try {
-    // 設置狀態為運行中 - 統一使用 updateNodeStatus 方法
+    // 設置狀態為運行中
     executing.value = true;
     updateNodeStatus("running");
 
@@ -446,71 +453,80 @@ const handleRun = async (context = {}) => {
       nodeType: "ComplaintSelectorNode", // 確保指定節點類型
     };
 
-    // 檢查是否有活動的流程實例
-    if (flowStore.currentInstance) {
-      const instanceId = flowStore.currentInstance.id;
+    // 使用 executeNode 執行節點
+    const result = await executeNode(props.id, inputData, async (input) => {
+      // 模擬處理過程
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // 更新節點數據
-      await flowStore.updateNodeData(props.id, {
-        ...inputData,
-        selectedComplaint: selectedComplaint.value,
-        complaintDetail: complaintDetail.value,
-        nodeType: "ComplaintSelectorNode",
-      });
+      // 返回處理結果
+      return {
+        ...input,
+        processed: true,
+        processingTime: new Date().toISOString(),
+      };
+    });
 
-      // 執行節點
-      const result = await flowStore.executeNode(
-        instanceId,
-        props.id,
-        inputData
-      );
-
-      // 更新本地狀態
-      executing.value = false;
-
-      ElMessage.success(`客訴單號 ${selectedComplaint.value} 處理成功`);
-
-      // 將選擇的客訴單號保存到共享數據和全域變數中
-      await updateSharedData(props.id, {
-        id: selectedComplaint.value,
-        detail: complaintDetail.value,
-        timestamp: new Date().toISOString(),
-        nodeId: props.id,
-        nodeName: props.title,
-      });
-
-      // 設置全域變數，方便其他節點使用
-      await updateGlobalVariable("complaintId", selectedComplaint.value);
-      await updateGlobalVariable("complaintDetail", complaintDetail.value);
-
-      // 統一使用 updateNodeStatus 方法更新狀態
-      updateNodeStatus("completed", {
-        ...result,
-        complaintId: selectedComplaint.value,
-        complaintDetail: complaintDetail.value,
-      });
-
-      return result;
-    } else {
-      ElMessage.warning("沒有活動的流程實例，無法執行節點");
-    }
-  } catch (error) {
-    console.error("執行節點時發生錯誤:", error);
+    // 更新本地狀態
     executing.value = false;
 
+    ElMessage.success(`客訴單號 ${selectedComplaint.value} 處理成功`);
+
+    // 將選擇的客訴單號保存到共享數據和全域變數中
+    await updateSharedData(props.id, {
+      id: selectedComplaint.value,
+      detail: complaintDetail.value,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+      nodeName: props.title,
+    });
+
+    // 設置全域變數，方便其他節點使用
+    await updateGlobalVariable("complaintId", selectedComplaint.value);
+    await updateGlobalVariable("complaintDetail", complaintDetail.value);
+
+    // 構建完整的結果對象，確保包含所有必要信息
+    const completeResult = {
+      complaintId: selectedComplaint.value,
+      complaintDetail: complaintDetail.value,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+      nodeName: props.title,
+      processed: true,
+      ...result,
+    };
+
+    // 更新節點狀態為完成，並傳遞完整結果
+    updateNodeStatus("completed", completeResult);
+
+    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
+    const event = new CustomEvent("node:stateChange", {
+      detail: {
+        nodeId: props.id,
+        status: "completed",
+        result: completeResult,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    window.dispatchEvent(event);
+
+    logger.info("ComplaintSelectorNode", "節點執行完成，已觸發狀態變更事件");
+
+    return completeResult;
+  } catch (error) {
+    logger.error("ComplaintSelectorNode", "執行節點時發生錯誤:", error);
+    executing.value = false;
+
+    // 更新錯誤狀態
     errorMessage.value = error.message || "執行節點時發生未知錯誤";
     errorDetails.value = {
       message: error.message,
       stack: error.stack,
     };
 
-    // 統一使用 updateNodeStatus 方法更新狀態
+    // 更新節點狀態為錯誤
     updateNodeStatus("error", null, error);
 
-    ElMessage.error(`執行節點時發生錯誤: ${error.message}`);
     throw error;
-  } finally {
-    nodeRef.value?.setRunningState(false);
   }
 };
 

@@ -61,6 +61,7 @@ import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { BarChart3 } from "lucide-vue-next";
+import { logger } from "@/utils/logger";
 
 // 節點基本屬性
 const props = defineProps({
@@ -194,46 +195,46 @@ const processData = (inputData) => {
 
 // 統一的狀態更新方法
 const updateNodeStatus = (newStatus, result = null, error = null) => {
-  console.log(`[TopDefectsNode] 更新節點 ${props.id} 狀態為 ${newStatus}`);
+  logger.debug("TopDefectsNode", `更新節點 ${props.id} 狀態為 ${newStatus}`);
 
   // 如果有節點引用，使用 BaseNode 中的方法更新狀態
   if (nodeRef.value) {
-    console.log(`[TopDefectsNode] 使用 nodeRef 更新狀態`);
+    logger.debug("TopDefectsNode", `使用 nodeRef 更新狀態`);
     nodeRef.value.updateNodeStatus(newStatus, result, error);
   } else {
     // 如果節點引用不可用，直接更新 flowStore
-    console.log(`[TopDefectsNode] nodeRef 不可用，直接更新 flowStore`);
-    flowStore.updateNodeState(props.id, {
+    logger.debug("TopDefectsNode", `nodeRef 不可用，直接更新 flowStore`);
+    flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
       status: newStatus,
       data: result,
       error: error ? error.message || "未知錯誤" : null,
+      _isDataUpdate: true, // 標記為數據更新
     });
   }
 };
 
 // 實作 handleRun 方法，處理節點執行
 const handleRun = async (context = {}) => {
-  console.log(
-    `[${new Date().toISOString()}] 前五大不良分析節點 handleRun 被調用`,
-    context
-  );
+  logger.info("TopDefectsNode", `前五大不良分析節點 handleRun 被調用`);
+  logger.debug("TopDefectsNode", "上下文數據:", context);
 
   // 檢查是否有來自上一個節點的數據
   if (context && context.sourceNodeId) {
-    console.log(`節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`);
-    console.log("上下文數據:", context);
+    logger.info(
+      "TopDefectsNode",
+      `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
+    );
 
     // 如果有上下文數據，可以在這裡處理
     if (context.sourceNodeOutput) {
-      console.log(`收到上一個節點的輸出數據`);
-      // 可以根據上一個節點的數據設置一些參數
+      logger.debug("TopDefectsNode", `收到上一個節點的輸出數據`);
     }
   }
 
   executing.value = true;
 
   try {
-    // 統一使用 updateNodeStatus 方法更新狀態
+    // 更新節點狀態為執行中
     updateNodeStatus("running");
 
     // 準備輸入數據
@@ -243,14 +244,11 @@ const handleRun = async (context = {}) => {
       timestamp: new Date().toISOString(),
     };
 
-    console.log("準備執行前五大不良分析，輸入數據:", inputData);
+    logger.info("TopDefectsNode", "準備執行前五大不良分析");
+    logger.debug("TopDefectsNode", "輸入數據:", inputData);
 
-    // 使用 composable 執行節點
-    const result = await executeNode(
-      props.id,
-      inputData,
-      processData // 處理函數
-    );
+    // 使用 executeNode 執行節點
+    const result = await executeNode(props.id, inputData, processData);
 
     // 將分析結果保存到共享數據中
     await updateSharedData(props.id, {
@@ -263,12 +261,35 @@ const handleRun = async (context = {}) => {
     outputData.value = result;
     ElMessage.success("前五大不良分析完成");
 
-    // 統一使用 updateNodeStatus 方法更新狀態
-    updateNodeStatus("completed", result);
+    // 構建完整的結果對象，確保包含所有必要信息
+    const completeResult = {
+      topDefects: topDefects.value,
+      totalDefects: totalDefects.value,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+      nodeName: props.title,
+      ...result,
+    };
 
-    return result;
+    // 更新節點狀態為完成，並傳遞完整結果
+    updateNodeStatus("completed", completeResult);
+
+    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
+    const event = new CustomEvent("node:stateChange", {
+      detail: {
+        nodeId: props.id,
+        status: "completed",
+        result: completeResult,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    window.dispatchEvent(event);
+
+    logger.info("TopDefectsNode", "節點執行完成，已觸發狀態變更事件");
+
+    return completeResult;
   } catch (error) {
-    console.error("前五大不良分析失敗", error);
+    logger.error("TopDefectsNode", "前五大不良分析失敗", error);
     ElMessage.error(`前五大不良分析失敗: ${error.message || "未知錯誤"}`);
 
     // 設置錯誤狀態
@@ -278,7 +299,7 @@ const handleRun = async (context = {}) => {
       stack: error.stack,
     };
 
-    // 統一使用 updateNodeStatus 方法更新狀態
+    // 更新節點狀態為錯誤
     updateNodeStatus("error", null, error);
 
     throw error;

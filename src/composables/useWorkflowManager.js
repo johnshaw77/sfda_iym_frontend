@@ -1,6 +1,7 @@
 import { ref, computed, watch } from "vue";
 import { useFlowStore } from "@/stores/flowStore";
 import { useFlowInstance } from "@/composables/useFlowInstance";
+import { logger } from "@/utils/logger";
 
 /**
  * 工作流管理器 Composable
@@ -125,23 +126,23 @@ export function useWorkflowManager() {
           ...context,
         },
       });
-      console.log(
+      logger.info(
         `[${new Date().toISOString()}] 工作流管理器觸發節點 ${nodeId} 執行事件，上下文:`,
         context
       );
       window.dispatchEvent(event);
 
-      console.log(`工作流管理器已觸發節點 ${nodeId} 的執行`);
+      logger.info(`工作流管理器已觸發節點 ${nodeId} 的執行`);
 
       // 等待節點執行完成
       // 注意：這裡我們不直接等待節點執行完成，而是通過事件監聽來處理
       // 節點執行完成後會更新狀態，我們通過監聽狀態變化來處理後續流程
-      console.log(
+      logger.info(
         "注意：這裡我們不直接等待節點執行完成，而是通過事件監聽來處理"
       );
       return true;
     } catch (error) {
-      console.error(`工作流管理器執行節點 ${nodeId} 時發生錯誤:`, error);
+      logger.error(`工作流管理器執行節點 ${nodeId} 時發生錯誤:`, error);
       executionError.value = error;
 
       // 更新節點狀態為錯誤
@@ -205,9 +206,9 @@ export function useWorkflowManager() {
       // 執行起始節點
       await executeNode(startNodeId);
 
-      console.log(`工作流從節點 ${startNodeId} 開始執行`);
+      logger.info(`工作流從節點 ${startNodeId} 開始執行`);
     } catch (error) {
-      console.error("執行工作流時發生錯誤:", error);
+      logger.error("執行工作流時發生錯誤:", error);
       executionError.value = error;
       throw error;
     }
@@ -222,7 +223,7 @@ export function useWorkflowManager() {
     if (!nodeId) return;
 
     try {
-      console.log(
+      logger.info(
         `[${new Date().toISOString()}] 處理節點 ${nodeId} 完成事件開始`
       );
 
@@ -239,22 +240,22 @@ export function useWorkflowManager() {
 
       // 獲取下一個節點
       const nextNodes = getNextNodes(nodeId);
-      console.log(`節點 ${nodeId} 的下一個節點: [${nextNodes.join(", ")}]`);
+      logger.info(`節點 ${nodeId} 的下一個節點: [${nextNodes.join(", ")}]`);
 
       // 如果沒有下一個節點，則工作流執行完成
       if (nextNodes.length === 0) {
-        console.log(`節點 ${nodeId} 沒有下一個節點，工作流執行完成`);
+        logger.info(`節點 ${nodeId} 沒有下一個節點，工作流執行完成`);
         return;
       }
 
       // 將下一個節點加入執行隊列
       for (const nextNodeId of nextNodes) {
-        console.log(`將節點 ${nextNodeId} 加入執行隊列`);
+        logger.info(`將節點 ${nextNodeId} 加入執行隊列`);
         executionQueue.value.push(nextNodeId);
 
         // 檢查下一個節點是否可以執行
         if (canExecuteNode(nextNodeId)) {
-          console.log(`節點 ${nextNodeId} 可以執行，準備上下文數據`);
+          logger.info(`節點 ${nextNodeId} 可以執行，準備上下文數據`);
           // 準備上下文數據
           const context = {
             sourceNodeId: nodeId,
@@ -269,15 +270,15 @@ export function useWorkflowManager() {
           };
 
           // 執行下一個節點
-          console.log(`開始執行節點 ${nextNodeId}，上下文:`, context);
+          logger.info(`開始執行節點 ${nextNodeId}，上下文:`, context);
           await executeNode(nextNodeId, context);
-          console.log(`節點 ${nextNodeId} 執行完成`);
+          logger.info(`節點 ${nextNodeId} 執行完成`);
         } else {
-          console.log(`節點 ${nextNodeId} 的前置條件未滿足，暫時不執行`);
+          logger.info(`節點 ${nextNodeId} 的前置條件未滿足，暫時不執行`);
         }
       }
     } catch (error) {
-      console.error(`處理節點 ${nodeId} 完成事件時發生錯誤:`, error);
+      logger.error(`處理節點 ${nodeId} 完成事件時發生錯誤:`, error);
     }
   };
 
@@ -304,11 +305,11 @@ export function useWorkflowManager() {
         error: error.message || "執行節點時發生未知錯誤",
       });
 
-      console.error(`節點 ${nodeId} 執行失敗:`, error);
+      logger.error(`節點 ${nodeId} 執行失敗:`, error);
 
       // 這裡可以添加錯誤處理策略，例如重試、跳過等
     } catch (err) {
-      console.error(`處理節點 ${nodeId} 錯誤事件時發生錯誤:`, err);
+      logger.error(`處理節點 ${nodeId} 錯誤事件時發生錯誤:`, err);
     }
   };
 
@@ -322,10 +323,10 @@ export function useWorkflowManager() {
       const { nodeId, status, result, error, timestamp } = event.detail;
 
       // 添加更詳細的日誌，幫助追蹤狀態變更
-      console.log(
+      logger.info(
         `[${new Date().toISOString()}] 接收到節點 ${nodeId} 狀態變更事件: ${status}, 時間戳: ${timestamp}`
       );
-      console.log(
+      logger.info(
         `當前執行節點: ${
           currentExecutingNodeId.value
         }, 執行隊列: [${executionQueue.value.join(", ")}]`
@@ -333,31 +334,35 @@ export function useWorkflowManager() {
 
       // 檢查是否是當前正在執行的節點，避免重複處理
       if (status === "running" && currentExecutingNodeId.value === nodeId) {
-        console.log(`節點 ${nodeId} 已經在執行中，忽略重複的運行事件`);
+        logger.info(`節點 ${nodeId} 已經在執行中，忽略重複的運行事件`);
         return;
       }
 
       // 檢查執行隊列中是否已經有這個節點，避免重複添加
       if (status === "completed" && executionQueue.value.includes(nodeId)) {
-        console.log(`節點 ${nodeId} 已經在執行隊列中，避免重複處理`);
+        logger.info(`節點 ${nodeId} 已經在執行隊列中，避免重複處理`);
         // 不要直接返回，因為我們仍然需要處理完成事件
       }
 
       if (status === "completed") {
-        console.log(`準備處理節點 ${nodeId} 的完成事件，結果:`, result);
+        logger.info(`準備處理節點 ${nodeId} 的完成事件，結果:`, result);
         await handleNodeCompleted(nodeId, result);
       } else if (status === "error") {
-        console.log(`準備處理節點 ${nodeId} 的錯誤事件，錯誤:`, error);
+        logger.info(`準備處理節點 ${nodeId} 的錯誤事件，錯誤:`, error);
         await handleNodeError(nodeId, error);
       }
     };
 
-    // 添加事件監聽器
-    window.addEventListener("flow:nodeStateChange", handleNodeStateChange);
+    // 移除舊的事件監聽器（如果有的話）
+    window.removeEventListener("flow:nodeStateChange", handleNodeStateChange);
+    window.removeEventListener("node:stateChange", handleNodeStateChange);
+
+    // 添加新的事件監聽器
+    window.addEventListener("node:stateChange", handleNodeStateChange);
 
     // 返回清理函數
     return () => {
-      window.removeEventListener("flow:nodeStateChange", handleNodeStateChange);
+      window.removeEventListener("node:stateChange", handleNodeStateChange);
     };
   };
 
@@ -380,5 +385,6 @@ export function useWorkflowManager() {
     canExecuteNode,
     handleNodeCompleted,
     handleNodeError,
+    setupNodeStateListeners,
   };
 }

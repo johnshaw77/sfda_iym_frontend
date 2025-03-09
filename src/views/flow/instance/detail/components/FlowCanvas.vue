@@ -241,6 +241,7 @@ import { updateFlowInstance } from "@/api/modules/flow";
 import { useWorkflowManager } from "@/composables/useWorkflowManager";
 import { useFlowNodeComponents } from "@/composables/useFlowNodeComponents";
 import { useFileNode } from "@/composables/flow/useFileNode";
+import { logger } from "@/utils/logger";
 
 //import FlowTaskList from "./FlowTaskList.vue";
 import { useFullscreen } from "@vueuse/core";
@@ -709,64 +710,44 @@ const handleKeyDown = (event) => {
   }
 };
 
-// 監聽鍵盤事件
+// 初始化
 onMounted(() => {
-  // 初始化模擬慢速上傳設置
-  if (isDevelopment && localStorage.getItem("simulateSlowUpload") === null) {
-    localStorage.setItem("simulateSlowUpload", "true");
-  }
+  logger.info("FlowCanvas", "初始化流程畫布");
 
-  // 初始化工作流
-  // 初始化 elements，從 flowInstance 中獲取節點和邊緣數據
-  if (
-    props.flowInstance &&
-    props.flowInstance.nodes &&
-    props.flowInstance.edges
-  ) {
-    // 處理節點，設置 FileNode, StickyNode 可拖動，其他節點不可拖動
-    const processedNodes = props.flowInstance.nodes.map((node) => {
-      // 如果是 FileNode 類型，設置為可拖動
-      if (node.type === "file" || node.type === "sticky") {
-        return {
-          ...node,
-          draggable: true,
-        };
-      }
-      // 其他節點設置為不可拖動
-      return {
-        ...node,
-        draggable: false,
-      };
-    });
-
-    // 處理邊，確保所有邊都不可更新和刪除
-    const processedEdges = props.flowInstance.edges.map((edge) => {
-      return {
-        ...edge,
-        deletable: false,
-        updatable: false,
-      };
-    });
-
-    elements.value = [...processedNodes, ...processedEdges];
-
-    // 適應視窗大小
-    handleFitView();
+  // 初始化工作流管理器
+  // 確保 workflowManager 已經正確初始化
+  if (typeof workflowManager.setupNodeStateListeners === "function") {
+    logger.info("FlowCanvas", "設置工作流管理器節點狀態監聽器");
+    workflowManager.setupNodeStateListeners();
   } else {
-    console.warn("流程實例數據不完整", props.flowInstance);
+    logger.warn(
+      "FlowCanvas",
+      "workflowManager.setupNodeStateListeners 不是一個函數，可能需要更新 useWorkflowManager.js"
+    );
   }
 
-  // 其他初始化代碼...
-  window.addEventListener("keydown", handleKeyDown);
-  handleFitView();
+  // 監聽節點狀態變更事件
+  logger.info("FlowCanvas", "添加節點狀態變更事件監聽器");
+  window.addEventListener("node:stateChange", handleNodeStateChange);
 
-  // 添加節點狀態變更事件監聽器
-  window.addEventListener("flow:nodeStateChange", handleNodeStateChange);
+  // 監聽節點大小變更事件
+  window.addEventListener("node:sizeChange", handleNodeSizeChange);
+
+  // 初始化元素
+  initializeElements();
+
+  // 適應視圖
+  setTimeout(() => {
+    fitView({ padding: 0.2 });
+    logger.info("FlowCanvas", "已適應視圖大小");
+  }, 100);
 });
 
+// 清理
 onUnmounted(() => {
-  window.removeEventListener("keydown", handleKeyDown);
-  window.removeEventListener("flow:nodeStateChange", handleNodeStateChange);
+  // 移除事件監聽器
+  window.removeEventListener("node:stateChange", handleNodeStateChange);
+  window.removeEventListener("node:sizeChange", handleNodeSizeChange);
 });
 
 // 拖放相關(檔案拖放上傳)
@@ -1008,7 +989,8 @@ const handleNodeSizeChange = ({ id, height }) => {
 const handleNodeStateChange = async (event) => {
   const { nodeId, status, result, error } = event.detail;
 
-  console.log(`節點 ${nodeId} 狀態變更為 ${status}`, result || error);
+  logger.info("FlowCanvas", `節點 ${nodeId} 狀態變更為 ${status}`);
+  logger.debug("FlowCanvas", "狀態變更詳情:", { status, result, error });
 
   // 更新節點視覺狀態
   const node = elements.value.find((el) => el.id === nodeId && !el.source);
@@ -1023,7 +1005,16 @@ const handleNodeStateChange = async (event) => {
       };
 
       // 通知工作流管理器節點已完成
-      await workflowManager.handleNodeCompleted(nodeId, result);
+      try {
+        logger.info("FlowCanvas", `通知工作流管理器節點 ${nodeId} 已完成`);
+        await workflowManager.handleNodeCompleted(nodeId, result);
+      } catch (error) {
+        logger.error(
+          "FlowCanvas",
+          `處理節點 ${nodeId} 完成事件時發生錯誤:`,
+          error
+        );
+      }
     } else if (status === "running") {
       // 高亮顯示節點（藍色邊框）
       node.style = {
@@ -1040,11 +1031,22 @@ const handleNodeStateChange = async (event) => {
       };
 
       // 通知工作流管理器節點執行錯誤
-      await workflowManager.handleNodeError(nodeId, error);
+      try {
+        logger.info("FlowCanvas", `通知工作流管理器節點 ${nodeId} 執行錯誤`);
+        await workflowManager.handleNodeError(nodeId, error);
+      } catch (err) {
+        logger.error(
+          "FlowCanvas",
+          `處理節點 ${nodeId} 錯誤事件時發生錯誤:`,
+          err
+        );
+      }
     }
 
     // 更新元素
     elements.value = [...elements.value];
+  } else {
+    logger.warn("FlowCanvas", `找不到節點 ${nodeId}，無法更新視覺狀態`);
   }
 };
 
@@ -1170,6 +1172,62 @@ const handleAddNode = (type) => {
     // 其他類型節點使用原有的更新方式
     updateFlowInstanceState();
   }
+};
+
+// 初始化元素
+const initializeElements = () => {
+  // 初始化模擬慢速上傳設置
+  if (isDevelopment && localStorage.getItem("simulateSlowUpload") === null) {
+    localStorage.setItem("simulateSlowUpload", "true");
+  }
+
+  // 初始化 elements，從 flowInstance 中獲取節點和邊緣數據
+  if (
+    props.flowInstance &&
+    props.flowInstance.nodes &&
+    props.flowInstance.edges
+  ) {
+    // 處理節點，設置 FileNode, StickyNode 可拖動，其他節點不可拖動
+    const processedNodes = props.flowInstance.nodes.map((node) => {
+      // 如果是 FileNode 類型，設置為可拖動
+      if (node.type === "file" || node.type === "sticky") {
+        return {
+          ...node,
+          draggable: true,
+        };
+      }
+      // 其他節點設置為不可拖動
+      return {
+        ...node,
+        draggable: false,
+      };
+    });
+
+    // 處理邊，確保所有邊都不可更新和刪除
+    const processedEdges = props.flowInstance.edges.map((edge) => {
+      return {
+        ...edge,
+        deletable: false,
+        updatable: false,
+      };
+    });
+
+    elements.value = [...processedNodes, ...processedEdges];
+
+    // 適應視窗大小
+    handleFitView();
+
+    logger.info("FlowCanvas", "流程實例元素已初始化");
+    logger.debug(
+      "FlowCanvas",
+      `已載入 ${processedNodes.length} 個節點和 ${processedEdges.length} 條連線`
+    );
+  } else {
+    logger.warn("FlowCanvas", "流程實例數據不完整", props.flowInstance);
+  }
+
+  // 其他初始化代碼...
+  window.addEventListener("keydown", handleKeyDown);
 };
 </script>
 

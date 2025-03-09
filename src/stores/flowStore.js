@@ -19,6 +19,7 @@ import {
 } from "@/api/modules/flow";
 import { getProjectById } from "@/api/modules/project";
 import { ElMessage } from "element-plus";
+import { logger } from "@/utils/logger";
 
 // 合併後的工作流程 store
 export const useFlowStore = defineStore("flow", () => {
@@ -30,6 +31,9 @@ export const useFlowStore = defineStore("flow", () => {
   const executing = ref(false);
   const error = ref(null);
   const executionLogs = ref([]);
+
+  // 正在執行的節點集合，用於防止重複執行
+  const executingNodes = ref(new Set());
 
   // 給麵包屑使用
   const projectName = ref("");
@@ -44,6 +48,22 @@ export const useFlowStore = defineStore("flow", () => {
   const projectCache = ref({});
   // 正在載入的專案 ID 集合，用於防止並發請求
   const loadingProjects = ref(new Set());
+
+  // 檢查節點是否正在執行
+  function isNodeExecuting(nodeId) {
+    return executingNodes.value.has(nodeId);
+  }
+
+  // 設置節點執行狀態
+  function setNodeExecuting(nodeId, isExecuting) {
+    if (isExecuting) {
+      executingNodes.value.add(nodeId);
+      logger.debug("flowStore", `節點 ${nodeId} 標記為執行中`);
+    } else {
+      executingNodes.value.delete(nodeId);
+      logger.debug("flowStore", `節點 ${nodeId} 標記為執行完成`);
+    }
+  }
 
   // 設置麵包屑路徑
   function setBreadcrumbPath(path) {
@@ -365,137 +385,59 @@ export const useFlowStore = defineStore("flow", () => {
    * @returns {Promise<object>} - 執行結果
    */
   const executeNode = async (instanceId, nodeId, input = {}) => {
-    if (!instanceId) {
-      throw new Error("未提供實例ID");
+    // 檢查節點是否已在執行中
+    if (isNodeExecuting(nodeId)) {
+      logger.warn("flowStore", `節點 ${nodeId} 已在執行中，忽略重複執行請求`);
+      return;
     }
 
-    if (!nodeId) {
-      throw new Error("未提供節點ID");
-    }
-
-    // 檢查輸入數據是否為空
-    if (!input || Object.keys(input).length === 0) {
-      throw new Error("輸入數據不能為空");
-    }
-
-    // console.log(`準備執行節點 - 實例ID: ${instanceId}, 節點ID: ${nodeId}`);
-    // console.log("輸入數據:", JSON.stringify(input, null, 2));
+    // 標記節點為執行中
+    setNodeExecuting(nodeId, true);
+    executing.value = true;
 
     try {
-      executing.value = true;
+      logger.info("flowStore", `開始執行節點 ${nodeId}`);
 
-      // 獲取當前實例
-      const instance = currentInstance.value;
-      if (!instance) {
-        throw new Error(`找不到流程實例 ${instanceId}`);
-      }
+      // 更新節點狀態為執行中
+      await updateNodeState(instanceId, nodeId, {
+        status: "running",
+        error: null,
+        errorDetails: null,
+        startedAt: new Date().toISOString(),
+      });
 
-      // 獲取節點數據
-      const nodeData = instance.nodeData?.[nodeId] || {};
-      // console.log("節點數據:", JSON.stringify(nodeData, null, 2));
+      // 調用 API 執行節點
+      const response = await executeNodeAPI(instanceId, nodeId, input);
+      logger.info("flowStore", `節點 ${nodeId} 執行成功`);
 
-      // 合併節點數據和輸入數據
-      const mergedInput = {
-        ...nodeData,
-        ...input,
-      };
-      // console.log("合併後的輸入數據:", JSON.stringify(mergedInput, null, 2));
-
-      // 更新節點狀態為運行中
-      const updatedNodeStates = {
-        ...instance.nodeStates,
-        [nodeId]: {
-          ...instance.nodeStates?.[nodeId],
-          status: "running",
-          startTime: new Date().toISOString(),
-        },
-      };
-
-      // 更新當前實例
-      currentInstance.value = {
-        ...instance,
-        nodeStates: updatedNodeStates,
-      };
-
-      // 調用API執行節點
-      const startTime = performance.now();
-      console.log(`開始調用執行節點API - ${new Date().toISOString()}`);
-
-      // 確保只傳遞節點數據，不修改流程結構
-      // 如果流程實例狀態為 running，則只更新節點數據和狀態
-      const apiPayload = {
-        ...mergedInput,
-        // 明確標記這是數據更新，而不是結構更新
-        _isDataUpdate: true,
-      };
-
-      const response = await executeNodeAPI(instanceId, nodeId, apiPayload);
-      const endTime = performance.now();
-      const executionTime = (endTime - startTime) / 1000; // 轉換為秒
-
-      console.log(`節點執行API響應 (${executionTime.toFixed(2)}秒):`, response);
-
-      // 更新節點狀態
-      const newNodeState = response.data.nodeStates?.[nodeId] || {};
-
-      // 檢查節點是否執行失敗
-      if (newNodeState.status === "failed") {
-        ElMessage.error(`節點執行失敗: ${newNodeState.error || "未知錯誤"}`);
-        console.error("節點執行失敗:", newNodeState.error);
-        console.error("錯誤詳情:", newNodeState.errorDetails);
-      }
-
-      // 更新當前實例
-      currentInstance.value = {
-        ...response.data,
-        nodeContext: {
-          ...instance.nodeContext,
-          [nodeId]: {
-            ...instance.nodeContext?.[nodeId],
-            executionTime,
-          },
-        },
-      };
+      // 更新節點狀態為完成
+      await updateNodeState(instanceId, nodeId, {
+        status: "completed",
+        data: response.data,
+        error: null,
+        errorDetails: null,
+        completedAt: new Date().toISOString(),
+      });
 
       return response.data;
     } catch (error) {
-      console.error("執行節點時發生錯誤:", error);
-      console.error("錯誤詳情:", {
-        message: error.message,
-        stack: error.stack,
-        code: error.code,
-        name: error.name,
-        response: error.response?.data,
-      });
+      logger.error("flowStore", `執行節點 ${nodeId} 失敗:`, error);
 
       // 更新節點狀態為錯誤
-      const instance = currentInstance.value;
-      if (instance) {
-        const updatedNodeStates = {
-          ...instance.nodeStates,
-          [nodeId]: {
-            ...instance.nodeStates?.[nodeId],
-            status: "error",
-            error: error.message || "執行節點時發生未知錯誤",
-            endTime: new Date().toISOString(),
-            errorDetails: {
-              message: error.message,
-              stack: error.stack,
-              code: error.code,
-              name: error.name,
-              response: error.response?.data,
-            },
-          },
-        };
-
-        currentInstance.value = {
-          ...instance,
-          nodeStates: updatedNodeStates,
-        };
-      }
+      await updateNodeState(instanceId, nodeId, {
+        status: "error",
+        error: error.message || "執行節點時發生未知錯誤",
+        errorDetails: {
+          message: error.message,
+          stack: error.stack,
+        },
+        failedAt: new Date().toISOString(),
+      });
 
       throw error;
     } finally {
+      // 標記節點為執行完成
+      setNodeExecuting(nodeId, false);
       executing.value = false;
     }
   };
@@ -533,60 +475,76 @@ export const useFlowStore = defineStore("flow", () => {
     }
   };
 
-  // 更新節點狀態
-  const updateNodeState = (nodeId, state) => {
-    if (!nodeId) {
-      console.error("更新節點狀態需要提供 nodeId");
+  // 更新節點狀態 - 優化版本
+  const updateNodeState = async (instanceId, nodeId, state) => {
+    // 檢查參數
+    if (!instanceId || !nodeId || !state) {
+      logger.warn("flowStore", "updateNodeState: 缺少必要參數");
+      return;
+    }
+
+    // 獲取實例
+    let instance = currentInstance.value;
+    if (instance?.id !== instanceId) {
+      logger.warn(
+        "flowStore",
+        `updateNodeState: 當前實例 ID 與請求的實例 ID 不匹配`
+      );
+      return;
+    }
+
+    // 檢查節點狀態是否已存在
+    if (!instance.nodeStates) {
+      instance.nodeStates = {};
+    }
+
+    // 檢查是否需要更新（避免重複更新相同狀態）
+    const currentState = instance.nodeStates[nodeId] || {};
+    if (
+      currentState.status === state.status &&
+      JSON.stringify(currentState.data) === JSON.stringify(state.data) &&
+      currentState.error === state.error
+    ) {
+      logger.debug("flowStore", `節點 ${nodeId} 狀態未變更，跳過更新`);
+      return;
+    }
+
+    logger.debug("flowStore", `更新節點 ${nodeId} 狀態:`, state);
+
+    // 更新本地狀態
+    instance.nodeStates[nodeId] = {
+      ...instance.nodeStates[nodeId],
+      ...state,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 如果是數據更新，則不需要調用 API
+    if (state._isDataUpdate) {
+      logger.debug(
+        "flowStore",
+        `節點 ${nodeId} 狀態更新為數據更新，不調用 API`
+      );
       return;
     }
 
     try {
-      const instance = currentInstance.value;
-      if (!instance) {
-        console.error("找不到當前流程實例");
-        return;
-      }
-
-      console.log(`[flowStore] 更新節點 ${nodeId} 狀態:`, state);
-      console.log(`[flowStore] 當前節點狀態:`, instance.nodeStates?.[nodeId]);
-
-      // 確保 nodeStates 存在
-      if (!instance.nodeStates) {
-        instance.nodeStates = {};
-      }
-
-      // 更新本地節點狀態
-      const updatedNodeStates = {
-        ...instance.nodeStates,
+      // 構建更新數據
+      const updateData = {
+        nodeStates: {
+          [nodeId]: instance.nodeStates[nodeId],
+        },
       };
 
-      // 確保只更新指定節點的狀態
-      updatedNodeStates[nodeId] = {
-        ...updatedNodeStates[nodeId],
-        ...state,
-        // 確保更新時間戳
-        updatedAt: new Date().toISOString(),
-      };
-
-      // 創建新的實例對象，確保響應式更新
-      currentInstance.value = {
-        ...instance,
-        nodeStates: updatedNodeStates,
-      };
-
-      console.log(
-        `[flowStore] 節點 ${nodeId} 狀態已更新:`,
-        updatedNodeStates[nodeId]
+      // 調用 API 更新節點狀態
+      const response = await updateFlowInstance(instanceId, updateData);
+      logger.debug(
+        "flowStore",
+        `節點 ${nodeId} 狀態已更新:`,
+        response.data.nodeStates?.[nodeId]
       );
-      console.log(
-        `[flowStore] 所有節點狀態:`,
-        currentInstance.value.nodeStates
-      );
-
-      return currentInstance.value.nodeStates[nodeId];
     } catch (error) {
-      console.error("更新節點狀態失敗:", error);
-      throw error;
+      logger.error("flowStore", `更新節點 ${nodeId} 狀態失敗:`, error);
+      ElMessage.error(`更新節點狀態失敗: ${error.message || "未知錯誤"}`);
     }
   };
 
@@ -742,5 +700,7 @@ export const useFlowStore = defineStore("flow", () => {
     loadInstanceLogs,
     loadNodeLogsById,
     setBreadcrumbInstance,
+    isNodeExecuting,
+    setNodeExecuting,
   };
 });

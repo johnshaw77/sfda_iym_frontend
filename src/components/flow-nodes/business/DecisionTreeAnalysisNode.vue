@@ -138,6 +138,7 @@ import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { GitBranch } from "lucide-vue-next";
+import { logger } from "@/utils/logger";
 
 // 定義 props
 const props = defineProps({
@@ -332,67 +333,77 @@ const processData = (inputData) => {
 
 // 統一的狀態更新方法
 const updateNodeStatus = (newStatus, result = null, error = null) => {
-  console.log(
-    `[DecisionTreeAnalysisNode] 更新節點 ${props.id} 狀態為 ${newStatus}`
+  logger.debug(
+    "DecisionTreeAnalysisNode",
+    `更新節點 ${props.id} 狀態為 ${newStatus}`
   );
 
   // 如果有節點引用，使用 BaseNode 中的方法更新狀態
   if (nodeRef.value) {
-    console.log(`[DecisionTreeAnalysisNode] 使用 nodeRef 更新狀態`);
+    logger.debug("DecisionTreeAnalysisNode", `使用 nodeRef 更新狀態`);
     nodeRef.value.updateNodeStatus(newStatus, result, error);
   } else {
     // 如果節點引用不可用，直接更新 flowStore
-    console.log(
-      `[DecisionTreeAnalysisNode] nodeRef 不可用，直接更新 flowStore`
+    logger.debug(
+      "DecisionTreeAnalysisNode",
+      `nodeRef 不可用，直接更新 flowStore`
     );
-    flowStore.updateNodeState(props.id, {
+    flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
       status: newStatus,
       data: result,
       error: error ? error.message || "未知錯誤" : null,
+      _isDataUpdate: true, // 標記為數據更新
     });
   }
 };
 
 // 實作 handleRun 方法，處理節點執行
 const handleRun = async (context = {}) => {
-  console.log(
-    `[${new Date().toISOString()}] 決策樹分析節點 handleRun 被調用`,
-    context
-  );
+  logger.info("DecisionTreeAnalysisNode", `決策樹分析節點 handleRun 被調用`);
+  logger.debug("DecisionTreeAnalysisNode", "上下文數據:", context);
 
   // 檢查是否有來自上一個節點的數據
   if (context && context.sourceNodeId) {
-    console.log(`節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`);
-    console.log("上下文數據:", context);
+    logger.info(
+      "DecisionTreeAnalysisNode",
+      `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
+    );
 
     // 如果有上下文數據，可以在這裡處理
     if (context.sourceNodeOutput) {
-      console.log(`收到上一個節點的輸出數據`);
+      logger.debug("DecisionTreeAnalysisNode", `收到上一個節點的輸出數據`);
       // 可以根據上一個節點的數據設置一些參數
     }
+  }
+
+  // 檢查是否可以執行分析
+  if (!canAnalyze.value) {
+    ElMessage.warning("請選擇目標變量和至少一個特徵變量");
+    return;
   }
 
   executing.value = true;
 
   try {
-    // 統一使用 updateNodeStatus 方法更新狀態
+    // 更新節點狀態為執行中
     updateNodeStatus("running");
 
     // 準備輸入數據
     const inputData = {
       // 如果有上下文數據，則包含在輸入數據中
       ...(context || {}),
+      maxDepth: formData.value.maxDepth,
+      minSamplesSplit: formData.value.minSamplesSplit,
+      targetVariable: formData.value.targetVariable,
+      featureVariables: formData.value.featureVariables,
       timestamp: new Date().toISOString(),
     };
 
-    console.log("準備執行決策樹分析，輸入數據:", inputData);
+    logger.info("DecisionTreeAnalysisNode", "準備執行決策樹分析");
+    logger.debug("DecisionTreeAnalysisNode", "輸入數據:", inputData);
 
-    // 使用 composable 執行節點
-    const result = await executeNode(
-      props.id,
-      inputData,
-      processData // 處理函數
-    );
+    // 使用 executeNode 執行節點
+    const result = await executeNode(props.id, inputData, processData);
 
     // 將分析結果保存到共享數據中
     await updateSharedData(props.id, {
@@ -402,15 +413,46 @@ const handleRun = async (context = {}) => {
       nodeName: props.title,
     });
 
+    // 更新本地狀態
     outputData.value = result;
+    nodeContext.value = {
+      ...nodeContext.value,
+      output: result,
+    };
+
     ElMessage.success("決策樹分析完成");
 
-    // 統一使用 updateNodeStatus 方法更新狀態
-    updateNodeStatus("completed", result);
+    // 構建完整的結果對象，確保包含所有必要信息
+    const completeResult = {
+      modelInfo: result.modelInfo,
+      treeImageUrl: result.treeImageUrl,
+      targetVariable: formData.value.targetVariable,
+      featureVariables: formData.value.featureVariables,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+      nodeName: props.title,
+      ...result,
+    };
 
-    return result;
+    // 更新節點狀態為完成，並傳遞完整結果
+    updateNodeStatus("completed", completeResult);
+
+    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
+    const event = new CustomEvent("node:stateChange", {
+      detail: {
+        nodeId: props.id,
+        status: "completed",
+        result: completeResult,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    window.dispatchEvent(event);
+
+    logger.info("DecisionTreeAnalysisNode", "節點執行完成，已觸發狀態變更事件");
+
+    return completeResult;
   } catch (error) {
-    console.error("決策樹分析失敗", error);
+    logger.error("DecisionTreeAnalysisNode", "決策樹分析失敗", error);
     ElMessage.error(`決策樹分析失敗: ${error.message || "未知錯誤"}`);
 
     // 設置錯誤狀態
@@ -420,7 +462,7 @@ const handleRun = async (context = {}) => {
       stack: error.stack,
     };
 
-    // 統一使用 updateNodeStatus 方法更新狀態
+    // 更新節點狀態為錯誤
     updateNodeStatus("error", null, error);
 
     throw error;
@@ -441,7 +483,9 @@ onMounted(async () => {
   // 嘗試從共享數據中獲取之前的分析結果
   const previousData = getSharedData(props.id);
   if (previousData && previousData.detail) {
-    console.log("找到之前的分析結果:", previousData);
+    logger.info("DecisionTreeAnalysisNode", "找到之前的分析結果");
+    logger.debug("DecisionTreeAnalysisNode", "之前的分析結果:", previousData);
+
     // 恢復之前的分析結果
     nodeContext.value = {
       ...nodeContext.value,

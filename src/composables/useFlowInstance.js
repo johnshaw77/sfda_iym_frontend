@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { ElMessage } from "element-plus";
 import { createFlowInstance } from "@/api/modules/flow";
 import { useFlowStore } from "@/stores/flowStore";
+import { logger } from "@/utils/logger";
 
 /**
  * 流程實例操作 Composable
@@ -58,7 +59,7 @@ export function useFlowInstance() {
     error.value = null;
 
     try {
-      console.log("ensureFlowInstance...");
+      logger.info("useFlowInstance", "創建臨時測試實例...");
 
       // 創建臨時實例數據
       const tempInstance = {
@@ -80,7 +81,7 @@ export function useFlowInstance() {
 
       // 調用 API 創建實例
       const response = await createFlowInstance(tempInstance);
-      console.log("成功創建臨時測試實例:", response.data);
+      logger.info("useFlowInstance", "成功創建臨時測試實例:", response.data);
 
       // 設置當前實例
       flowStore.setCurrentInstance(response.data);
@@ -88,7 +89,7 @@ export function useFlowInstance() {
       creating.value = false;
       return response.data;
     } catch (error) {
-      console.error("創建臨時測試實例失敗:", error);
+      logger.error("useFlowInstance", "創建臨時測試實例失敗:", error);
       ElMessage.error("創建臨時測試實例失敗: " + (error.message || "未知錯誤"));
 
       creating.value = false;
@@ -99,16 +100,28 @@ export function useFlowInstance() {
   };
 
   /**
-   * 執行節點並更新狀態
+   * 執行節點並更新狀態 - 優化版本
    * @param {String} nodeId - 節點ID
    * @param {Object} input - 輸入數據
    * @param {Function} processFunction - 處理數據的函數
    * @returns {Promise<Object>} 執行結果
    */
   const executeNode = async (nodeId, input = {}, processFunction) => {
+    // 檢查節點是否已在執行中
+    if (flowStore.isNodeExecuting(nodeId)) {
+      logger.warn(
+        "useFlowInstance",
+        `節點 ${nodeId} 已在執行中，忽略重複執行請求`
+      );
+      return;
+    }
+
     try {
       // 確保有流程實例
       const instance = await ensureFlowInstance({ id: nodeId });
+
+      // 標記節點為執行中
+      flowStore.setNodeExecuting(nodeId, true);
 
       // 更新流程上下文中的執行歷史
       await updateFlowContextField("executionHistory", (history = []) => {
@@ -125,8 +138,18 @@ export function useFlowInstance() {
       // 更新執行階段
       await updateFlowContextField("executionPhase", "processing");
 
+      // 更新節點狀態為執行中
+      await flowStore.updateNodeState(instance.id, nodeId, {
+        status: "running",
+        error: null,
+        errorDetails: null,
+        _isDataUpdate: true, // 標記為數據更新
+      });
+
       // 執行節點處理邏輯
+      logger.info("useFlowInstance", `開始執行節點 ${nodeId} 的處理函數`);
       const result = await processFunction(input);
+      logger.info("useFlowInstance", `節點 ${nodeId} 處理函數執行完成`);
 
       // 更新節點數據
       await flowStore.updateNodeData(instance.id, nodeId, {
@@ -140,6 +163,7 @@ export function useFlowInstance() {
         status: "completed",
         error: null,
         errorDetails: null,
+        _isDataUpdate: true, // 標記為數據更新
       });
 
       // 更新流程上下文中的執行歷史和統計資訊
@@ -160,7 +184,7 @@ export function useFlowInstance() {
 
       return result;
     } catch (error) {
-      console.error("執行節點時發生錯誤:", error);
+      logger.error("useFlowInstance", `執行節點 ${nodeId} 時發生錯誤:`, error);
 
       // 如果有流程實例，更新節點錯誤狀態
       if (flowStore.currentInstance?.id) {
@@ -171,6 +195,7 @@ export function useFlowInstance() {
             message: error.message,
             stack: error.stack,
           },
+          _isDataUpdate: true, // 標記為數據更新
         });
 
         // 更新流程上下文中的執行歷史
@@ -194,6 +219,9 @@ export function useFlowInstance() {
       }
 
       throw error;
+    } finally {
+      // 標記節點為執行完成
+      flowStore.setNodeExecuting(nodeId, false);
     }
   };
 
@@ -277,39 +305,55 @@ export function useFlowInstance() {
   };
 
   /**
-   * 更新流程上下文中的特定字段
-   * @param {String} field - 上下文字段名
-   * @param {Function|any} updater - 更新函數或新值
+   * 更新流程上下文字段
+   * @param {String} field - 字段名稱
+   * @param {*} valueOrUpdater - 新值或更新函數
+   * @returns {Promise<Object>} 更新後的上下文
    */
-  const updateFlowContextField = async (field, updater) => {
+  const updateFlowContextField = async (field, valueOrUpdater) => {
     try {
-      if (!flowStore.currentInstance?.id) return;
+      const instance = flowStore.currentInstance;
+      if (!instance) {
+        logger.warn("useFlowInstance", "無法更新流程上下文：當前實例不存在");
+        return null;
+      }
 
-      // 獲取當前上下文
-      const currentContext = flowStore.currentInstance.context || {};
-      console.log("currentContext", currentContext);
-      // 獲取當前字段值
-      const currentValue = currentContext[field];
+      // 確保上下文存在
+      if (!instance.context) {
+        instance.context = initializeContext();
+      }
 
       // 計算新值
-      const newValue =
-        typeof updater === "function" ? updater(currentValue) : updater;
+      let newValue;
+      if (typeof valueOrUpdater === "function") {
+        newValue = valueOrUpdater(instance.context[field]);
+      } else {
+        newValue = valueOrUpdater;
+      }
 
       // 更新上下文
       const updatedContext = {
-        ...currentContext,
+        ...instance.context,
         [field]: newValue,
       };
 
-      // 更新流程實例，標記為數據更新而不是結構更新
-      await flowStore.updateInstance(flowStore.currentInstance.id, {
+      // 更新實例
+      const updateData = {
         context: updatedContext,
-        _isDataUpdate: true, // 添加標記，表示這是數據更新而不是結構更新
-      });
+        _isDataUpdate: true, // 標記為數據更新
+      };
 
-      console.log(`流程上下文字段 ${field} 已更新`);
+      // 調用 API 更新流程實例
+      await flowStore.updateInstance(instance.id, updateData);
+
+      return updatedContext;
     } catch (error) {
-      console.error(`更新流程上下文字段 ${field} 失敗:`, error);
+      logger.error(
+        "useFlowInstance",
+        `更新流程上下文字段 ${field} 失敗:`,
+        error
+      );
+      throw error;
     }
   };
 

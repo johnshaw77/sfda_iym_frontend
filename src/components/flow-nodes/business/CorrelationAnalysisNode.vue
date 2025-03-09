@@ -198,6 +198,7 @@ import BaseNode from "../base/BaseNode.vue";
 import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
+import { logger } from "@/utils/logger";
 
 // 定義 props
 const props = defineProps({
@@ -308,6 +309,16 @@ const handleAnalyze = async () => {
   try {
     analyzing.value = true;
 
+    // 更新節點狀態為執行中
+    if (nodeRef.value) {
+      nodeRef.value.updateNodeStatus("running");
+    } else {
+      flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
+        status: "running",
+        _isDataUpdate: true,
+      });
+    }
+
     // 準備輸入數據
     const inputData = {
       method: formData.value.method,
@@ -317,22 +328,79 @@ const handleAnalyze = async () => {
       columns: formData.value.inputColumns,
     };
 
-    // 使用 composable 執行節點
-    await executeNode(props.id, inputData, async (input) => {
+    logger.info("CorrelationAnalysisNode", "開始執行相關性分析");
+    logger.debug("CorrelationAnalysisNode", "輸入數據:", inputData);
+
+    // 使用 executeNode 執行節點
+    const result = await executeNode(props.id, inputData, async (input) => {
       // 模擬分析過程
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // 生成模擬結果
-      const result = generateSimulatedResults(input);
-
-      return result;
+      return generateSimulatedResults(input);
     });
 
+    logger.info("CorrelationAnalysisNode", "相關性分析完成");
     ElMessage.success("相關性分析完成");
+
+    // 更新結果數據
+    analysisResult.value = result;
+
+    // 構建完整的結果對象，確保包含所有必要信息
+    const completeResult = {
+      correlationMatrix: result.correlationMatrix,
+      significantPairs: result.significantPairs,
+      method: formData.value.method,
+      significanceLevel: formData.value.significanceLevel,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+      nodeName: "相關性分析",
+      ...result,
+    };
+
+    // 更新節點狀態為完成
+    if (nodeRef.value) {
+      nodeRef.value.updateNodeStatus("completed", completeResult);
+    } else {
+      flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
+        status: "completed",
+        data: completeResult,
+        _isDataUpdate: true,
+      });
+    }
+
+    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
+    const event = new CustomEvent("node:stateChange", {
+      detail: {
+        nodeId: props.id,
+        status: "completed",
+        result: completeResult,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    window.dispatchEvent(event);
+
+    logger.info("CorrelationAnalysisNode", "節點執行完成，已觸發狀態變更事件");
+
     analyzing.value = false;
+    return completeResult;
   } catch (error) {
-    console.error("相關性分析失敗:", error);
+    logger.error("CorrelationAnalysisNode", "相關性分析失敗:", error);
     ElMessage.error(`分析失敗: ${error.message || "未知錯誤"}`);
+
+    // 更新節點狀態為錯誤
+    if (nodeRef.value) {
+      nodeRef.value.updateNodeStatus("error", null, error);
+    } else {
+      flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
+        status: "error",
+        error: error.message || "未知錯誤",
+        _isDataUpdate: true,
+      });
+    }
+
+    analyzing.value = false;
+    throw error;
   }
 };
 
