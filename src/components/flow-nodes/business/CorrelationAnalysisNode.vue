@@ -196,11 +196,8 @@
 <script setup>
 import BaseNode from "../base/BaseNode.vue";
 import { useFlowStore } from "@/stores/flowStore";
-import { storeToRefs } from "pinia";
-import { useFlowInstance } from "@/composables/useFlowInstance";
 import { logger } from "@/utils/logger";
 import { useNodeExecution } from "@/composables/useNodeExecution";
-import { globalEventBus, NodeEventType } from "@/utils/eventBus";
 
 // 定義 props
 const props = defineProps({

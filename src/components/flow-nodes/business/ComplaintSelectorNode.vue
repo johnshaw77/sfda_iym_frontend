@@ -209,13 +209,10 @@
 import BaseNode from "@/components/flow-nodes/base/BaseNode.vue";
 import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
-import { createFlowInstance } from "@/api/modules/flow";
-import { useFlowInstance } from "@/composables/useFlowInstance";
 import { Box } from "@element-plus/icons-vue";
 import { formatTimestamp } from "@/utils/dateUtils";
 import { logger } from "@/utils/logger";
 import { useNodeExecution } from "@/composables/useNodeExecution";
-import { globalEventBus, NodeEventType } from "@/utils/eventBus";
 
 const props = defineProps({
   id: {

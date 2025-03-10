@@ -2,7 +2,7 @@
   <BaseNode
     :id="id"
     ref="nodeRef"
-    node-type="custom-input"
+    node-type="custom-process"
     :title="title"
     :description="description"
     :icon="GitBranch"
@@ -12,7 +12,7 @@
     :node-height="nodeHeight"
     :show-handle-labels="showHandleLabels"
     header-bg-color="#d0f0c0"
-    :show-resizer="showResizer"
+    :show-resizer="false"
     :handles="handles"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
@@ -134,8 +134,6 @@
 
 <script setup>
 import BaseNode from "../base/BaseNode.vue";
-import { useFlowStore } from "@/stores/flowStore";
-import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
 import { GitBranch } from "lucide-vue-next";
 import { logger } from "@/utils/logger";

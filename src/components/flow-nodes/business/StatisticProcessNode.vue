@@ -2,59 +2,126 @@
   <BaseNode
     :id="id"
     ref="nodeRef"
-    nodeType="statistic-process"
+    node-type="statistic-process"
     :title="title"
     :description="description"
-    icon="BarChart2"
+    :icon="BarChart2"
     :selected="selected"
+    :disabled="disabled"
+    :node-width="nodeWidth"
+    :node-height="nodeHeight"
+    :show-handle-labels="showHandleLabels"
     header-bg-color="#bfdeee"
+    :show-resizer="false"
     :handles="handles"
-    :node-width="600"
-    :node-height="720"
-    @click="handleNodeClick"
     @handle-connect="handleConnect"
     @handle-disconnect="handleDisconnect"
     @run="handleRun">
-    <!-- 主要內容區域? -->
-    <div class="p-4 space-y-4">
-      <!-- 4M1E 分析結果 -->
-      <div class="bg-gray-50 p-4 rounded-lg">
-        <h3 class="text-sm font-medium text-gray-700 mb-3">4M1E 分析結果</h3>
-        <div class="space-y-3">
-          <div
-            v-for="(factor, index) in factors"
-            :key="index"
-            class="relative">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-sm text-gray-600">{{ factor.name }}</span>
-              <span class="text-sm font-medium text-gray-700">{{
-                factor.value
-              }}</span>
+    <div class="p-4">
+      <!-- 參數設定區域 -->
+      <div class="mb-4">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">4M1E 分析參數</h3>
+        <el-form
+          label-position="top"
+          size="small">
+          <el-form-item label="分析方法">
+            <el-select
+              v-model="formData.analysisMethod"
+              placeholder="請選擇分析方法"
+              class="w-full">
+              <el-option
+                v-for="method in analysisMethods"
+                :key="method.value"
+                :label="method.label"
+                :value="method.value" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="顯示項目數量">
+            <el-input-number
+              v-model="formData.displayCount"
+              :min="3"
+              :max="10"
+              :step="1"
+              class="w-full" />
+          </el-form-item>
+
+          <el-form-item label="顯示閾值 (%)">
+            <el-slider
+              v-model="formData.threshold"
+              :min="0"
+              :max="100"
+              :step="5"
+              show-input />
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <!-- 分析結果區域 -->
+      <div v-if="nodeContext && nodeContext.output">
+        <el-divider content-position="left">分析結果</el-divider>
+        <div class="result-container">
+          <!-- 4M1E 分析結果 -->
+          <div class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">
+              4M1E 分析結果
+            </h4>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="space-y-3">
+                <div
+                  v-for="(factor, index) in nodeContext.output.factors"
+                  :key="index"
+                  class="relative">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm text-gray-600">{{ factor.name }}</span>
+                    <span class="text-sm font-medium text-gray-700">{{
+                      factor.value
+                    }}</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      class="h-2 rounded-full transition-all duration-300"
+                      :style="{
+                        width: `${factor.percentage}%`,
+                        backgroundColor: getBarColor(index),
+                      }"></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-              <div
-                class="h-2 rounded-full transition-all duration-300"
-                :style="{
-                  width: `${factor.percentage}%`,
-                  backgroundColor: getBarColor(index),
-                }"></div>
-            </div>
+          </div>
+
+          <!-- 統計資訊 -->
+          <div class="mb-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">統計資訊</h4>
+            <el-descriptions
+              :column="2"
+              border>
+              <el-descriptions-item label="卡方值">
+                {{ nodeContext.output.chiSquareValue }}
+              </el-descriptions-item>
+              <el-descriptions-item label="P值">
+                {{ nodeContext.output.pValue }}
+              </el-descriptions-item>
+              <el-descriptions-item
+                label="分析時間"
+                :span="2">
+                {{ formatTimestamp(nodeContext.output.timestamp) }}
+              </el-descriptions-item>
+            </el-descriptions>
           </div>
         </div>
       </div>
 
-      <!-- 統計資訊 -->
-      <div class="grid grid-cols-2 gap-2">
-        <div class="p-2 bg-blue-50 rounded-lg">
-          <div class="text-xs text-gray-500">卡方值</div>
-          <div class="text-sm font-medium text-gray-700">
-            {{ chiSquareValue }}
-          </div>
-        </div>
-        <div class="p-2 bg-green-50 rounded-lg">
-          <div class="text-xs text-gray-500">P值</div>
-          <div class="text-sm font-medium text-gray-700">{{ pValue }}</div>
-        </div>
+      <!-- 執行按鈕 -->
+      <div class="mt-4">
+        <el-button
+          type="primary"
+          @click="handleRun"
+          :loading="executing"
+          :disabled="!canAnalyze">
+          執行統計分析
+        </el-button>
       </div>
     </div>
   </BaseNode>
@@ -62,10 +129,10 @@
 
 <script setup>
 import BaseNode from "../base/BaseNode.vue";
-import { useFlowStore } from "@/stores/flowStore";
-import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
-
+import { BarChart2 } from "lucide-vue-next";
+import { logger } from "@/utils/logger";
+import { formatTimestamp } from "@/utils/dateUtils";
 // 節點基本屬性
 const props = defineProps({
   id: {
@@ -84,6 +151,26 @@ const props = defineProps({
   selected: {
     type: Boolean,
     default: false,
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+  nodeWidth: {
+    type: Number,
+    default: 450,
+  },
+  nodeHeight: {
+    type: Number,
+    default: 650,
+  },
+  showHandleLabels: {
+    type: Boolean,
+    default: false,
+  },
+  showResizer: {
+    type: Boolean,
+    default: true,
   },
 });
 
@@ -110,6 +197,33 @@ const errorMessage = ref("");
 const errorDetails = ref(null);
 const outputData = ref(null);
 const nodeRef = ref(null);
+const executing = ref(false);
+
+// 初始化 nodeContext，提供默認值避免 undefined 錯誤
+const nodeContext = ref({
+  output: null,
+  input: null,
+  status: "idle",
+});
+
+// 分析方法選項
+const analysisMethods = [
+  { label: "卡方分析", value: "chi_square" },
+  { label: "帕累托分析", value: "pareto" },
+  { label: "因果分析", value: "cause_effect" },
+];
+
+// 表單數據
+const formData = ref({
+  analysisMethod: "chi_square",
+  displayCount: 5,
+  threshold: 20,
+});
+
+// 計算是否可以分析
+const canAnalyze = computed(() => {
+  return formData.value.analysisMethod !== "";
+});
 
 // 模擬數據
 const factors = ref([
@@ -144,21 +258,20 @@ const {
   getSharedData,
   getExecutionPhase,
 } = useFlowInstance();
-const { currentInstance } = storeToRefs(flowStore);
 
 // 事件處理
-const emit = defineEmits(["update:data", "click", "connect", "disconnect"]);
-
-const handleNodeClick = (event) => {
-  emit("click", { id: props.id, event });
-};
+const emit = defineEmits([
+  "update:data",
+  "handle-connect",
+  "handle-disconnect",
+]);
 
 const handleConnect = (data) => {
-  emit("connect", { id: props.id, ...data });
+  emit("handle-connect", { id: props.id, ...data });
 };
 
 const handleDisconnect = (data) => {
-  emit("disconnect", { id: props.id, ...data });
+  emit("handle-disconnect", { id: props.id, ...data });
 };
 
 // 數據處理函數
@@ -179,90 +292,112 @@ const processData = (inputData) => {
       });
 
       resolve(result);
-    }, 1000);
+    }, 3000);
   });
 };
 
 // 統一的狀態更新方法
 const updateNodeStatus = (newStatus, result = null, error = null) => {
-  console.log(
-    `[StatisticProcessNode] 更新節點 ${props.id} 狀態為 ${newStatus}`
+  logger.debug(
+    "StatisticProcessNode",
+    `更新節點 ${props.id} 狀態為 ${newStatus}`
   );
 
   // 如果有節點引用，使用 BaseNode 中的方法更新狀態
   if (nodeRef.value) {
-    console.log(`[StatisticProcessNode] 使用 nodeRef 更新狀態`);
+    logger.debug("StatisticProcessNode", `使用 nodeRef 更新狀態`);
     nodeRef.value.updateNodeStatus(newStatus, result, error);
   } else {
     // 如果節點引用不可用，直接更新 flowStore
-    console.log(`[StatisticProcessNode] nodeRef 不可用，直接更新 flowStore`);
-    flowStore.updateNodeState(props.id, {
+    logger.debug("StatisticProcessNode", `nodeRef 不可用，直接更新 flowStore`);
+    flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
       status: newStatus,
       data: result,
       error: error ? error.message || "未知錯誤" : null,
+      _isDataUpdate: true, // 標記為數據更新
     });
   }
 };
 
 // 執行節點
 const handleRun = async (context = {}) => {
-  try {
-    // 檢查是否有來自上一個節點的數據
-    if (context && context.sourceNodeId) {
-      console.log(
-        `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
-      );
-      console.log("上下文數據:", context);
+  logger.info("StatisticProcessNode", `統計分析節點 handleRun 被調用`);
+  logger.debug("StatisticProcessNode", "上下文數據:", context);
 
-      // 如果有上一個節點的輸出數據，可以使用它
-      if (context.sourceNodeOutput) {
-        console.log("使用上一個節點的輸出數據:", context.sourceNodeOutput);
-        // 這裡可以根據需要處理上一個節點的輸出數據
-      }
+  // 檢查是否有來自上一個節點的數據
+  if (context && context.sourceNodeId) {
+    logger.info(
+      "StatisticProcessNode",
+      `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
+    );
 
-      // 如果有客訴單號，可以使用它
-      if (context.complaintId) {
-        console.log(`使用客訴單號: ${context.complaintId}`);
-        // 這裡可以根據客訴單號獲取相關數據
-      }
+    // 如果有上一個節點的輸出數據，可以使用它
+    if (context.sourceNodeOutput) {
+      logger.debug("StatisticProcessNode", `收到上一個節點的輸出數據`);
+      // 這裡可以根據需要處理上一個節點的輸出數據
     }
 
+    // 如果有客訴單號，可以使用它
+    if (context.complaintId) {
+      logger.debug(
+        "StatisticProcessNode",
+        `使用客訴單號: ${context.complaintId}`
+      );
+      // 這裡可以根據客訴單號獲取相關數據
+    }
+  }
+
+  executing.value = true;
+
+  try {
     // 統一使用 updateNodeStatus 方法更新狀態
     updateNodeStatus("running");
 
     errorMessage.value = "";
     errorDetails.value = null;
 
+    // 準備輸入數據
+    const inputData = {
+      // 如果有上下文數據，則包含在輸入數據中
+      ...(context || {}),
+      analysisMethod: formData.value.analysisMethod,
+      displayCount: formData.value.displayCount,
+      threshold: formData.value.threshold,
+      timestamp: new Date().toISOString(),
+    };
+
+    logger.info("StatisticProcessNode", "準備執行統計分析");
+    logger.debug("StatisticProcessNode", "輸入數據:", inputData);
+
     // 使用 composable 執行節點
-    const result = await executeNode(
-      props.id,
-      {
-        // 如果有上下文數據，則包含在輸入數據中
-        ...(context || {}),
-        timestamp: new Date().toISOString(),
-      },
-      processData // 處理函數
-    );
+    const result = await executeNode(props.id, inputData, processData);
 
     // 將分析結果保存到共享數據中
-    await updateSharedData("statisticResults", {
-      factors: factors.value,
-      chiSquareValue: chiSquareValue.value,
-      pValue: pValue.value,
+    await updateSharedData(props.id, {
+      detail: result,
       timestamp: new Date().toISOString(),
       nodeId: props.id,
+      nodeName: props.title,
     });
 
-    // 更新組件狀態
+    // 更新本地狀態
     outputData.value = result;
+    nodeContext.value = {
+      ...nodeContext.value,
+      output: result,
+    };
+
     ElMessage.success("統計處理執行成功");
 
-    // 統一使用 updateNodeStatus 方法更新狀態
-    updateNodeStatus("completed", {
+    // 構建完整的結果對象
+    const completeResult = {
+      factors: result.factors,
+      chiSquareValue: result.chiSquareValue,
+      pValue: result.pValue,
+      timestamp: result.timestamp,
+      nodeId: props.id,
+      nodeName: props.title,
       ...result,
-      factors: factors.value,
-      chiSquareValue: chiSquareValue.value,
-      pValue: pValue.value,
       // 如果有客訴單號等重要信息，也傳遞過去
       ...(context.complaintId
         ? {
@@ -270,11 +405,28 @@ const handleRun = async (context = {}) => {
             complaintDetail: context.complaintDetail,
           }
         : {}),
-    });
+    };
 
-    return result;
+    // 統一使用 updateNodeStatus 方法更新狀態
+    updateNodeStatus("completed", completeResult);
+
+    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
+    const event = new CustomEvent("node:stateChange", {
+      detail: {
+        nodeId: props.id,
+        status: "completed",
+        result: completeResult,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    window.dispatchEvent(event);
+
+    logger.info("StatisticProcessNode", "節點執行完成，已觸發狀態變更事件");
+
+    return completeResult;
   } catch (error) {
-    console.error("執行節點時發生錯誤:", error);
+    logger.error("StatisticProcessNode", "統計分析失敗", error);
+    ElMessage.error(`執行失敗: ${error.message || "未知錯誤"}`);
 
     errorMessage.value = error.message || "執行節點時發生未知錯誤";
     errorDetails.value = {
@@ -285,31 +437,34 @@ const handleRun = async (context = {}) => {
     // 統一使用 updateNodeStatus 方法更新狀態
     updateNodeStatus("error", null, error);
 
-    ElMessage.error(`執行失敗: ${errorMessage.value}`);
     throw error;
   } finally {
+    executing.value = false;
     // 重置 loading 狀態
     nodeRef.value?.setRunningState(false);
   }
 };
 
-// 檢查是否有之前的分析結果
-onMounted(async () => {
-  // 嘗試從共享數據中獲取之前的分析結果
-  const previousResults = getSharedData("statisticResults");
-  if (previousResults && previousResults.nodeId === props.id) {
-    console.log("找到之前的分析結果:", previousResults);
-    // 可以選擇是否要恢復之前的結果
-    // factors.value = previousResults.factors;
-    // chiSquareValue.value = previousResults.chiSquareValue;
-    // pValue.value = previousResults.pValue;
-  }
-});
-
 // 清除錯誤
 const handleClearError = async () => {
   await clearNodeError(props.id);
 };
+
+// 檢查是否有之前的分析結果
+onMounted(async () => {
+  // 嘗試從共享數據中獲取之前的分析結果
+  const previousData = getSharedData(props.id);
+  if (previousData && previousData.detail) {
+    logger.info("StatisticProcessNode", "找到之前的分析結果");
+    logger.debug("StatisticProcessNode", "之前的分析結果:", previousData);
+
+    // 恢復之前的分析結果
+    nodeContext.value = {
+      ...nodeContext.value,
+      output: previousData.detail,
+    };
+  }
+});
 
 // 暴露方法給父元件
 defineExpose({
@@ -320,7 +475,8 @@ defineExpose({
 </script>
 
 <style scoped>
-.factor-bar {
-  @apply transition-all duration-300 ease-in-out;
+.result-container {
+  max-height: 400px;
+  overflow-y: auto;
 }
 </style>

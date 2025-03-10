@@ -1,19 +1,22 @@
 <template>
   <BaseNode
     :id="id"
-    node-type="custom-process"
-    title="變異數分析(ANOVA)"
-    description="比較多組數據之間的差異顯著性"
-    :icon="BotMessageSquare"
+    ref="nodeRef"
+    node-type="anova-analysis"
+    :title="title"
+    :description="description"
+    :icon="BarChart2"
     :selected="selected"
     :disabled="disabled"
     :node-width="nodeWidth"
-    :node-height="800"
+    :node-height="nodeHeight"
     :show-handle-labels="showHandleLabels"
     header-bg-color="#e6f598"
+    :show-resizer="false"
     :handles="handles"
     @handle-connect="handleConnect"
-    @handle-disconnect="handleDisconnect">
+    @handle-disconnect="handleDisconnect"
+    @run="handleRun">
     <div class="p-4">
       <div class="mb-4">
         <h3 class="text-sm font-medium text-gray-700 mb-2">ANOVA 分析設定</h3>
@@ -116,21 +119,22 @@
       <div class="mt-4 mb-4">
         <el-button
           type="primary"
-          @click="handleAnalyze"
+          @click="handleRun"
           :loading="analyzing"
           :disabled="!canAnalyze">
           執行變異數分析
         </el-button>
       </div>
 
-      <div v-if="showResults">
+      <div
+        v-if="nodeContext && nodeContext.output && nodeContext.output.results">
         <el-divider content-position="left">分析結果</el-divider>
         <div class="result-container">
           <!-- ANOVA 摘要表 -->
           <div class="mb-4">
             <h4 class="text-sm font-medium text-gray-700 mb-2">ANOVA 摘要表</h4>
             <el-table
-              :data="anovaResults.summary"
+              :data="nodeContext.output.results.summary"
               stripe
               style="width: 100%">
               <el-table-column
@@ -194,13 +198,16 @@
 
           <!-- 事後檢定結果 -->
           <div
-            v-if="anovaResults.postHoc && anovaResults.postHoc.length > 0"
+            v-if="
+              nodeContext.output.results.postHoc &&
+              nodeContext.output.results.postHoc.length > 0
+            "
             class="mb-4">
             <h4 class="text-sm font-medium text-gray-700 mb-2">
               事後檢定結果 ({{ formData.postHocTest }})
             </h4>
             <el-table
-              :data="anovaResults.postHoc"
+              :data="nodeContext.output.results.postHoc"
               stripe
               style="width: 100%">
               <el-table-column
@@ -263,7 +270,7 @@
           <div class="mb-4">
             <h4 class="text-sm font-medium text-gray-700 mb-2">組別統計信息</h4>
             <el-table
-              :data="anovaResults.groupStats"
+              :data="nodeContext.output.results.groupStats"
               stripe
               style="width: 100%">
               <el-table-column
@@ -310,7 +317,8 @@
               <div class="text-center text-gray-500">模擬盒鬚圖顯示區域</div>
               <div class="flex justify-around mt-4">
                 <div
-                  v-for="(stats, index) in anovaResults.groupStats"
+                  v-for="(stats, index) in nodeContext.output.results
+                    .groupStats"
                   :key="index"
                   class="boxplot-item">
                   <div
@@ -328,16 +336,16 @@
           <!-- 解釋文字 -->
           <div class="bg-blue-50 p-3 rounded text-sm">
             <p
-              v-if="anovaResults.isSignificant"
+              v-if="nodeContext.output.results.isSignificant"
               class="text-blue-800">
               <strong>結論：</strong>
               根據分析結果，有足夠的證據表明組間存在顯著差異 (p
               {{
-                anovaResults.mainPValue < 0.001
+                nodeContext.output.results.mainPValue < 0.001
                   ? "< 0.001"
-                  : `= ${anovaResults.mainPValue.toFixed(4)}`
+                  : `= ${nodeContext.output.results.mainPValue.toFixed(4)}`
               }})。
-              {{ anovaResults.interpretation }}
+              {{ nodeContext.output.results.interpretation }}
             </p>
             <p
               v-else
@@ -345,9 +353,9 @@
               <strong>結論：</strong>
               根據分析結果，沒有足夠的證據表明組間存在顯著差異 (p
               {{
-                anovaResults.mainPValue < 0.001
+                nodeContext.output.results.mainPValue < 0.001
                   ? "< 0.001"
-                  : `= ${anovaResults.mainPValue.toFixed(4)}`
+                  : `= ${nodeContext.output.results.mainPValue.toFixed(4)}`
               }})。
             </p>
           </div>
@@ -362,6 +370,8 @@ import BaseNode from "../base/BaseNode.vue";
 import { useFlowStore } from "@/stores/flowStore";
 import { storeToRefs } from "pinia";
 import { useFlowInstance } from "@/composables/useFlowInstance";
+import { BarChart2 } from "lucide-vue-next";
+import { logger } from "@/utils/logger";
 
 // 定義 props
 const props = defineProps({
@@ -369,7 +379,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
-
+  title: {
+    type: String,
+    default: "變異數分析(ANOVA)",
+  },
+  description: {
+    type: String,
+    default: "比較多組數據之間的差異顯著性",
+  },
   selected: {
     type: Boolean,
     default: false,
@@ -384,11 +401,7 @@ const props = defineProps({
   },
   nodeHeight: {
     type: Number,
-    default: 550,
-  },
-  style: {
-    type: Object,
-    default: () => ({}),
+    default: 800,
   },
   showHandleLabels: {
     type: Boolean,
@@ -400,11 +413,29 @@ const props = defineProps({
   },
 });
 
+// 連接點配置
+const handles = {
+  inputs: [
+    {
+      id: "input",
+      type: "target",
+      position: "left",
+    },
+  ],
+  outputs: [
+    {
+      id: "output",
+      type: "source",
+      position: "right",
+    },
+  ],
+};
+
 // 定義事件
 const emit = defineEmits([
+  "update:data",
   "handle-connect",
   "handle-disconnect",
-  "update:data",
 ]);
 
 // 處理連接事件
@@ -417,18 +448,32 @@ const handleDisconnect = (data) => {
   emit("handle-disconnect", { id: props.id, ...data });
 };
 
-// 使用流程實例 composable
-const { executeNode, clearNodeError, flowStore } = useFlowInstance();
-const { currentInstance } = storeToRefs(flowStore);
+// 節點引用
+const nodeRef = ref(null);
 
-console.log("385 currentInstance", flowStore.value);
+// 使用流程實例 composable
+const {
+  executeNode,
+  clearNodeError,
+  flowStore,
+  updateSharedData,
+  getSharedData,
+} = useFlowInstance();
+
+// 初始化 nodeContext，提供默認值避免 undefined 錯誤
+const nodeContext = ref({
+  output: null,
+  input: null,
+  status: "idle",
+});
+
 // 表單數據
 const formData = ref({
   anovaType: "one-way",
   alpha: 0.05,
   postHocTest: "tukey",
-  factors: [],
-  response: "",
+  factors: ["treatment"],
+  response: "defect_rate",
 });
 
 // 分析狀態
@@ -500,26 +545,52 @@ const getNodeContext = () => {
 };
 
 // 執行分析
-const handleAnalyze = async () => {
+const handleRun = async (context = {}) => {
+  logger.info("ANOVAnalysisNode", `ANOVA 分析節點 handleRun 被調用`);
+  logger.debug("ANOVAnalysisNode", "上下文數據:", context);
+
+  // 檢查是否有來自上一個節點的數據
+  if (context && context.sourceNodeId) {
+    logger.info(
+      "ANOVAnalysisNode",
+      `節點 ${props.id} 被節點 ${context.sourceNodeId} 自動觸發執行`
+    );
+
+    // 如果有上一個節點的輸出數據，可以使用它
+    if (context.sourceNodeOutput) {
+      logger.debug("ANOVAnalysisNode", `收到上一個節點的輸出數據`);
+      // 這裡可以根據需要處理上一個節點的輸出數據
+    }
+  }
+
   if (!canAnalyze.value) {
     ElMessage.warning("請先選擇必要的分析參數");
     return;
   }
 
+  analyzing.value = true;
+
   try {
-    analyzing.value = true;
+    // 更新節點狀態為執行中
+    updateNodeStatus("running");
 
     // 準備輸入數據
     const inputData = {
+      // 如果有上下文數據，則包含在輸入數據中
+      ...(context || {}),
       anovaType: formData.value.anovaType,
       alpha: formData.value.alpha,
       postHocTest: formData.value.postHocTest,
       factors: formData.value.factors,
       response: formData.value.response,
+      timestamp: new Date().toISOString(),
     };
 
+    logger.info("ANOVAnalysisNode", "準備執行變異數分析");
+    logger.debug("ANOVAnalysisNode", "輸入數據:", inputData);
+
     // 使用 composable 執行節點
-    await executeNode(props.id, inputData, async (input) => {
+    const result = await executeNode(props.id, inputData, async (input) => {
       // 模擬分析過程
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -537,12 +608,66 @@ const handleAnalyze = async () => {
       };
     });
 
+    // 將分析結果保存到共享數據中
+    await updateSharedData(props.id, {
+      detail: result,
+      timestamp: new Date().toISOString(),
+      nodeId: props.id,
+      nodeName: props.title,
+    });
+
+    // 更新本地狀態
+    nodeContext.value = {
+      ...nodeContext.value,
+      output: result,
+    };
+    showResults.value = true;
+
     ElMessage.success("ANOVA 分析完成");
+
+    // 構建完整的結果對象
+    const completeResult = {
+      anovaType: result.anovaType,
+      alpha: result.alpha,
+      postHocTest: result.postHocTest,
+      factors: result.factors,
+      response: result.response,
+      results: result.results,
+      timestamp: result.timestamp,
+      nodeId: props.id,
+      nodeName: props.title,
+      ...result,
+    };
+
+    // 更新節點狀態為完成
+    updateNodeStatus("completed", completeResult);
+
+    // 觸發節點狀態變更事件，確保工作流管理器能夠捕獲到
+    const event = new CustomEvent("node:stateChange", {
+      detail: {
+        nodeId: props.id,
+        status: "completed",
+        result: completeResult,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    window.dispatchEvent(event);
+
+    logger.info("ANOVAnalysisNode", "節點執行完成，已觸發狀態變更事件");
+
+    return completeResult;
   } catch (error) {
-    console.error("ANOVA 分析失敗:", error);
+    logger.error("ANOVAnalysisNode", "ANOVA 分析失敗", error);
     ElMessage.error(`分析失敗: ${error.message || "未知錯誤"}`);
+
+    // 更新節點狀態為錯誤
+    updateNodeStatus("error", null, error);
+
+    throw error;
   } finally {
     analyzing.value = false;
+    // 重置 loading 狀態
+    nodeRef.value?.setRunningState(false);
   }
 };
 
@@ -836,11 +961,42 @@ watch(
   }
 );
 
+// 統一的狀態更新方法
+const updateNodeStatus = (newStatus, result = null, error = null) => {
+  logger.debug("ANOVAnalysisNode", `更新節點 ${props.id} 狀態為 ${newStatus}`);
+
+  // 如果有節點引用，使用 BaseNode 中的方法更新狀態
+  if (nodeRef.value) {
+    logger.debug("ANOVAnalysisNode", `使用 nodeRef 更新狀態`);
+    nodeRef.value.updateNodeStatus(newStatus, result, error);
+  } else {
+    // 如果節點引用不可用，直接更新 flowStore
+    logger.debug("ANOVAnalysisNode", `nodeRef 不可用，直接更新 flowStore`);
+    flowStore.updateNodeState(flowStore.currentInstance?.id, props.id, {
+      status: newStatus,
+      data: result,
+      error: error ? error.message || "未知錯誤" : null,
+      _isDataUpdate: true, // 標記為數據更新
+    });
+  }
+};
+
 // 組件掛載時初始化
-onMounted(() => {
-  // 如果已有上下文數據，則恢復表單狀態
-  if (getNodeContext() && getNodeContext().input) {
-    const input = getNodeContext().input;
+onMounted(async () => {
+  // 嘗試從共享數據中獲取之前的分析結果
+  const previousData = getSharedData(props.id);
+  if (previousData && previousData.detail) {
+    logger.info("ANOVAnalysisNode", "找到之前的分析結果");
+    logger.debug("ANOVAnalysisNode", "之前的分析結果:", previousData);
+
+    // 恢復之前的分析結果
+    nodeContext.value = {
+      ...nodeContext.value,
+      output: previousData.detail,
+    };
+
+    // 恢復表單狀態
+    const input = previousData.detail;
     if (input.anovaType) formData.value.anovaType = input.anovaType;
     if (input.alpha) formData.value.alpha = input.alpha;
     if (input.postHocTest) formData.value.postHocTest = input.postHocTest;
@@ -853,6 +1009,12 @@ onMounted(() => {
       showResults.value = true;
     }
   }
+});
+
+// 暴露方法給父元件
+defineExpose({
+  handleRun,
+  handleClearError,
 });
 </script>
 

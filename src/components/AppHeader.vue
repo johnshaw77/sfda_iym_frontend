@@ -7,7 +7,11 @@
         <img
           src="/logo_flowchart.svg"
           class="w-6 h-6 mr-2" />
-        <h1 class="text-xl font-semibold text-gray-800">IYM 良率分析平台</h1>
+        <h1 class="text-xl font-semibold text-gray-800">
+          IYM <span class="text-blue-600">I</span>ntelligent
+          <span class="text-blue-600">Y</span>ield
+          <span class="text-blue-600">M</span>anagement 智能良率管理平台
+        </h1>
       </div>
 
       <!-- 右側工具列 -->
